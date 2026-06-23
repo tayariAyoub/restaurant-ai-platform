@@ -1,0 +1,222 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from decimal import Decimal
+
+from sqlalchemy.orm import Session, selectinload
+
+from app.core.database import get_db
+from app.models import (
+    ContactRequest,
+    Conversation,
+    DeliveryAddress,
+    MenuCategory,
+    MenuItem,
+    Message,
+    Order,
+    OrderItem,
+    OrderStatus,
+    Restaurant,
+)
+from app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    ContactCreate,
+    ContactOut,
+    OrderCreate,
+    OrderOut,
+    RestaurantOut,
+)
+from app.services.chat import answer_question
+from app.services.maps import distance_km, geocode
+
+router = APIRouter(tags=["public"])
+
+
+def public_restaurant_query():
+    return select(Restaurant).options(
+        selectinload(Restaurant.owner),
+        selectinload(Restaurant.theme),
+        selectinload(Restaurant.images),
+        selectinload(Restaurant.categories).selectinload(MenuCategory.items),
+    )
+
+
+def get_public_restaurant(db: Session, slug: str | None = None) -> Restaurant:
+    statement = public_restaurant_query().where(Restaurant.is_published.is_(True))
+    if slug:
+        statement = statement.where(Restaurant.slug == slug)
+    else:
+        statement = statement.order_by(Restaurant.id).limit(1)
+    restaurant = db.scalar(statement)
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    restaurant.categories.sort(key=lambda category: category.sort_order)
+    restaurant.images.sort(key=lambda image: image.sort_order)
+    return restaurant
+
+
+@router.get("/restaurant", response_model=RestaurantOut, response_model_exclude={"owner", "owner_id"})
+def legacy_restaurant(db: Session = Depends(get_db)) -> Restaurant:
+    return get_public_restaurant(db)
+
+
+@router.get(
+    "/restaurants/{slug}",
+    response_model=RestaurantOut,
+    response_model_exclude={"owner", "owner_id"},
+)
+def restaurant_details(slug: str, db: Session = Depends(get_db)) -> Restaurant:
+    return get_public_restaurant(db, slug)
+
+
+@router.post("/restaurants/{slug}/reservations", response_model=ContactOut, status_code=201)
+def create_reservation(
+    slug: str, payload: ContactCreate, db: Session = Depends(get_db)
+) -> ContactRequest:
+    restaurant = get_public_restaurant(db, slug)
+    request = ContactRequest(restaurant_id=restaurant.id, **payload.model_dump())
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    return request
+
+
+@router.post("/contact", response_model=ContactOut, status_code=201)
+def legacy_contact(payload: ContactCreate, db: Session = Depends(get_db)) -> ContactRequest:
+    restaurant = get_public_restaurant(db)
+    request = ContactRequest(restaurant_id=restaurant.id, **payload.model_dump())
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    return request
+
+
+def chat_for_restaurant(
+    restaurant: Restaurant, payload: ChatRequest, db: Session
+) -> ChatResponse:
+    conversation = (
+        db.get(Conversation, payload.conversation_id) if payload.conversation_id else None
+    )
+    if not conversation or conversation.restaurant_id != restaurant.id:
+        conversation = Conversation(restaurant_id=restaurant.id)
+        db.add(conversation)
+        db.flush()
+    db.add(Message(conversation_id=conversation.id, role="user", content=payload.message))
+    answer, unanswered = answer_question(db, restaurant.id, payload.message)
+    db.add(
+        Message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=answer,
+            is_unanswered=unanswered,
+        )
+    )
+    db.commit()
+    return ChatResponse(
+        answer=answer, conversation_id=conversation.id, unanswered=unanswered
+    )
+
+
+@router.post("/restaurants/{slug}/chat", response_model=ChatResponse)
+def restaurant_chat(
+    slug: str, payload: ChatRequest, db: Session = Depends(get_db)
+) -> ChatResponse:
+    return chat_for_restaurant(get_public_restaurant(db, slug), payload, db)
+
+
+@router.post("/chat", response_model=ChatResponse)
+def legacy_chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
+    return chat_for_restaurant(get_public_restaurant(db), payload, db)
+
+
+@router.post("/restaurants/{slug}/orders", response_model=OrderOut, status_code=201)
+def create_order(
+    slug: str, payload: OrderCreate, db: Session = Depends(get_db)
+) -> Order:
+    restaurant = get_public_restaurant(db, slug)
+    order_type = payload.order_type.upper()
+    if order_type not in {"PICKUP", "EAT_IN", "DELIVERY"}:
+        raise HTTPException(status_code=400, detail="Invalid order type")
+    if order_type == "DELIVERY" and not payload.delivery_address:
+        raise HTTPException(status_code=400, detail="Delivery address is required")
+
+    ids = [item.menu_item_id for item in payload.items]
+    menu_items = list(
+        db.scalars(
+            select(MenuItem)
+            .join(MenuCategory)
+            .where(
+                MenuItem.id.in_(ids),
+                MenuCategory.restaurant_id == restaurant.id,
+                MenuItem.is_available.is_(True),
+            )
+        )
+    )
+    menu_by_id = {item.id: item for item in menu_items}
+    if len(menu_by_id) != len(set(ids)):
+        raise HTTPException(status_code=400, detail="One or more items are unavailable")
+
+    subtotal = sum(
+        Decimal(menu_by_id[item.menu_item_id].price) * item.quantity for item in payload.items
+    )
+    delivery_fee = Decimal("3.50") if order_type == "DELIVERY" else Decimal("0")
+    order = Order(
+        restaurant_id=restaurant.id,
+        order_type=order_type,
+        customer_name=payload.customer_name,
+        customer_phone=payload.customer_phone,
+        customer_email=str(payload.customer_email or ""),
+        notes=payload.notes,
+        subtotal=subtotal,
+        delivery_fee=delivery_fee,
+        total=subtotal + delivery_fee,
+    )
+    db.add(order)
+    db.flush()
+    db.add(OrderStatus(order_id=order.id, status="NEW", note="Order placed by customer"))
+    for requested in payload.items:
+        item = menu_by_id[requested.menu_item_id]
+        unit_price = Decimal(item.price)
+        db.add(
+            OrderItem(
+                order_id=order.id,
+                menu_item_id=item.id,
+                item_name=item.name,
+                unit_price=unit_price,
+                quantity=requested.quantity,
+                line_total=unit_price * requested.quantity,
+                notes=requested.notes,
+            )
+        )
+
+    if payload.delivery_address:
+        address = payload.delivery_address
+        destination_text = f"{address.street}, {address.postal_code} {address.city}"
+        origin_text = f"{restaurant.address}, {restaurant.postal_code} {restaurant.city}"
+        destination = geocode(destination_text)
+        origin = geocode(origin_text)
+        db.add(
+            DeliveryAddress(
+                order_id=order.id,
+                street=address.street,
+                postal_code=address.postal_code,
+                city=address.city,
+                instructions=address.instructions,
+                latitude=destination[0] if destination else None,
+                longitude=destination[1] if destination else None,
+                approximate_distance_km=distance_km(origin, destination)
+                if origin and destination
+                else None,
+            )
+        )
+    db.commit()
+    return db.scalar(
+        select(Order)
+        .where(Order.id == order.id)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.delivery_address),
+            selectinload(Order.delivery_assignment),
+            selectinload(Order.status_history),
+        )
+    )
