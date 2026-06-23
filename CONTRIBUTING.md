@@ -3,7 +3,7 @@
 ## First setup
 
 ```powershell
-git clone https://github.com/YOUR-USER/restaurant-ai-platform.git
+git clone https://github.com/tayariAyoub/restaurant-ai-platform.git
 cd restaurant-ai-platform
 Copy-Item .env.example .env
 docker compose up --build -d
