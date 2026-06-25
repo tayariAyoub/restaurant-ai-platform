@@ -1094,32 +1094,96 @@ function ReservationsEditor({
   reservations: ContactRequest[];
   onUpdateStatus: (reservationId: number, value: string) => void;
 }) {
+  const counts = {
+    new: reservations.filter((reservation) => reservation.status === "new").length,
+    confirmed: reservations.filter((reservation) => reservation.status === "confirmed").length,
+    declined: reservations.filter((reservation) => reservation.status === "declined").length,
+    completed: reservations.filter((reservation) => reservation.status === "completed").length,
+  };
+  const ordered = [...reservations].sort((a, b) => {
+    const priority = { new: 0, confirmed: 1, declined: 2, completed: 3 } as Record<string, number>;
+    return (priority[a.status] ?? 9) - (priority[b.status] ?? 9) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
   return (
-    <section className={cardClass}>
-      <SectionHeader icon={Clock3} title="Reservations and contact requests" description="Review incoming table requests and keep their status current." />
-      <div className="mt-5 space-y-4">
+    <div className="space-y-6">
+      <section className={cardClass}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <SectionHeader icon={Clock3} title="Reservations and contact requests" description="Review table requests, confirm availability, and keep staff aligned for service." />
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+            <ReservationMetric label="New" value={counts.new} tone="orange" />
+            <ReservationMetric label="Confirmed" value={counts.confirmed} tone="green" />
+            <ReservationMetric label="Declined" value={counts.declined} tone="red" />
+            <ReservationMetric label="Done" value={counts.completed} tone="slate" />
+          </div>
+        </div>
+      </section>
+
+      <section className={cardClass}>
         {reservations.length === 0 ? (
           <EmptyState title="No reservation requests yet" description="Requests from the public restaurant website will appear here." />
         ) : (
-          reservations.map((reservation) => (
-            <article key={reservation.id} className="grid gap-4 rounded-xl border p-4 md:grid-cols-[1fr_auto]">
-              <div>
-                <p className="font-semibold">{reservation.name} - {reservation.party_size || "?"} guests</p>
-                <p className="mt-1 text-sm text-slate-500">{reservation.requested_at || "No requested time"} - {reservation.email} - {reservation.phone}</p>
-                {reservation.message && <p className="mt-3 text-sm leading-6">{reservation.message}</p>}
-              </div>
-              <select value={reservation.status} onChange={(event) => onUpdateStatus(reservation.id, event.target.value)} className="h-fit rounded-lg border px-3 py-2 text-sm">
-                <option value="new">New</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="declined">Declined</option>
-                <option value="completed">Completed</option>
-              </select>
-            </article>
-          ))
+          <div className="grid gap-4">
+            {ordered.map((reservation) => (
+              <article key={reservation.id} className={`rounded-2xl border p-4 ${reservation.status === "new" ? "border-orange-200 bg-orange-50/50" : "bg-white"}`}>
+                <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-xl font-semibold">{reservation.name}</h3>
+                      <ReservationStatusPill status={reservation.status} />
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">{reservation.party_size || "?"} guests</span>
+                    </div>
+                    <p className="mt-2 text-sm text-slate-500">{reservation.requested_at || "No requested time"} - {reservation.email} - {reservation.phone || "No phone"}</p>
+                    {reservation.message && <p className="mt-3 rounded-xl bg-white p-3 text-sm leading-6 shadow-sm">{reservation.message}</p>}
+                    <p className="mt-3 text-xs text-slate-400">Received {new Date(reservation.created_at).toLocaleString()}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 lg:w-56 lg:flex-col">
+                    {reservation.status !== "confirmed" && (
+                      <button onClick={() => onUpdateStatus(reservation.id, "confirmed")} className="rounded-xl bg-green-700 px-4 py-3 text-sm font-bold text-white">Confirm</button>
+                    )}
+                    {reservation.status !== "declined" && (
+                      <button onClick={() => onUpdateStatus(reservation.id, "declined")} className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Decline</button>
+                    )}
+                    {reservation.status !== "completed" && (
+                      <button onClick={() => onUpdateStatus(reservation.id, "completed")} className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Mark done</button>
+                    )}
+                    {reservation.status !== "new" && (
+                      <button onClick={() => onUpdateStatus(reservation.id, "new")} className="rounded-xl border bg-white px-4 py-3 text-sm font-bold text-slate-700">Reopen</button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         )}
-      </div>
-    </section>
+      </section>
+    </div>
   );
+}
+
+function ReservationMetric({ label, value, tone }: { label: string; value: number; tone: "orange" | "green" | "red" | "slate" }) {
+  const colors = {
+    orange: "bg-orange-50 text-orange-800",
+    green: "bg-green-50 text-green-800",
+    red: "bg-red-50 text-red-800",
+    slate: "bg-slate-100 text-slate-700",
+  };
+  return (
+    <div className={`rounded-xl px-4 py-3 ${colors[tone]}`}>
+      <p className="text-xs font-semibold opacity-70">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+function ReservationStatusPill({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    new: "bg-orange-100 text-orange-800",
+    confirmed: "bg-green-100 text-green-800",
+    declined: "bg-red-100 text-red-800",
+    completed: "bg-slate-100 text-slate-700",
+  };
+  return <span className={`rounded-full px-3 py-1 text-xs font-bold ${colors[status] || "bg-slate-100 text-slate-700"}`}>{status}</span>;
 }
 
 function EmptyState({ title, description }: { title: string; description: string }) {

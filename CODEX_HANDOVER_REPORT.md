@@ -56,6 +56,36 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 
 **Validation:**
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+
+## Codex Phase 3 - Restaurant Operations
+
+**Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
+
+**Orders dashboard improvements:**
+- Rebuilt the orders page into an operations dashboard with live metrics for pending, preparing, and ready orders.
+- Added professional order cards with status pills, order type labels, customer details, timestamps, ETA, item totals, notes, delivery information, route links, timeline details, and clear action buttons.
+- Added loading, error, refreshing, and empty states.
+- Replaced preparation-time prompt workflow with fast accept buttons for 15, 25, and 35 minute estimates.
+
+**Kitchen mode:**
+- Added a tablet-friendly kitchen board with large lanes for Pending, Accepted, Preparing, and Ready.
+- Added large touch targets, simplified order item lists, priority highlighting for new orders, and fast status updates.
+
+**Delivery/driver workflow:**
+- Preserved existing driver APIs and improved delivery controls inside order cards.
+- Kept driver management with clearer empty states and operational helper copy.
+
+**Reservations workflow:**
+- Improved reservation management with status metrics, sorted priority order, clearer reservation cards, direct Confirm/Decline/Done/Reopen actions, and stronger empty states.
+
+**Files changed in this phase:**
+- `frontend/components/admin/OrdersDashboard.tsx`
+- `frontend/components/admin/RestaurantEditor.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
+- Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
 - Backend: local `pytest` could not run because `pytest` was not installed.
 - Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
 - Docker fallback could not run because Docker Desktop engine was not running.
