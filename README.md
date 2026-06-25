@@ -1,6 +1,6 @@
 # RestaurantAI Platform
 
-RestaurantAI is a multi-restaurant platform that combines professional restaurant websites, online ordering, reservations, delivery management, and a restaurant-specific AI assistant.
+RestaurantAI is a multi-restaurant platform that combines professional restaurant websites, online ordering, reservations, delivery management, and a restaurant-specific AI Maître d'.
 
 Each restaurant has isolated content, menu data, branding, conversations, and orders. Public websites are available at routes such as `/restaurants/bella-napoli`, while owners manage their restaurant through the admin dashboard.
 
@@ -14,7 +14,7 @@ Each restaurant has isolated content, menu data, branding, conversations, and or
 - Restaurant admin and platform super-admin roles
 - Restaurant design templates and branding controls
 - PDF/TXT knowledge uploads
-- OpenAI-powered RAG chatbot using restaurant-scoped pgvector retrieval
+- OpenAI-powered AI Maître d' using restaurant-scoped pgvector retrieval
 - Saved customer conversations and unanswered-question tracking
 - Demo data for the Bella Napoli pizza restaurant
 
@@ -104,9 +104,9 @@ Use this flow when showing the product to a restaurant owner.
    - menu and online ordering
    - photo gallery
    - opening hours and reservation form
-   - AI assistant in the bottom-right corner
+   - AI Maître d' in the bottom-right corner
 
-3. Ask the AI assistant customer-style questions:
+3. Ask the AI Maître d' customer-style questions:
    - "What should I order?"
    - "Which dishes are vegetarian?"
    - "Do any dishes contain nuts or gluten?"
@@ -122,17 +122,17 @@ Use this flow when showing the product to a restaurant owner.
    http://localhost:3000/admin/login
 
 6. Show the restaurant owner workflow:
-   - Dashboard: daily orders, reservations, AI gaps, setup progress
+   - Dashboard: daily orders, reservations, AI Maître d' gaps, setup progress
    - Information: edit restaurant details and opening hours
    - Design: change template, colors, font, and preview the site
    - Menu: add categories, dishes, prices, allergens, and availability
    - Images: upload hero image, logo, food photos, and gallery photos
-   - AI Chatbot: upload knowledge, review what the AI knows, see missing information, test common questions
+   - AI Maître d': upload knowledge, review what the AI knows, see missing information, test common questions
    - Orders: use the live operations board and tablet-friendly kitchen mode
    - Reservations: confirm, decline, complete, or reopen booking requests
 
 7. Close with the business value:
-   RestaurantAI gives a restaurant a professional website, online ordering, daily operations tools, and a restaurant-trained AI employee from one dashboard.
+   RestaurantAI gives a restaurant a professional website, online ordering, daily operations tools, and a restaurant-trained AI Maître d' from one dashboard.
 
 ## How to test the demo
 
@@ -140,7 +140,7 @@ Test as a customer:
 
 1. Open http://localhost:3000/restaurants/bella-napoli
 2. Browse the menu.
-3. Ask the AI assistant a question.
+3. Ask the AI Maître d' a question.
 4. Add items to the cart.
 5. Submit a pickup, dine-in, or delivery order.
 6. Send a reservation request.
@@ -150,7 +150,7 @@ Test as a restaurant owner:
 1. Open http://localhost:3000/admin/login
 2. Sign in with `owner@restaurantai.com` / `owner12345`.
 3. Open the assigned restaurant.
-4. Edit information, hours, design, menu, images, chatbot knowledge, orders, and reservations.
+4. Edit information, hours, design, menu, images, AI Maître d' knowledge, orders, and reservations.
 5. Open Kitchen Mode from the Orders page to update order status.
 
 Test as a super admin:
