@@ -247,6 +247,37 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend was not changed in this step.
 
+## V1 Step 6 - Backend Tenant Safety Tests
+
+**Goal:** Add focused backend/API safety coverage so RestaurantAI is safer and more professional technically.
+
+**Tests added:**
+- Restaurant owner can access only their own restaurant.
+- Super admin can access all restaurants.
+- Orders are scoped to the authenticated restaurant owner.
+- Reservations are scoped to the authenticated restaurant owner.
+- Public order tracking cannot leak another restaurant's order by public ID.
+- AI/RAG context retrieval remains restaurant-scoped.
+
+**Test setup improvements:**
+- Added `backend/pytest.ini` with `pythonpath = .` so tests can import the app consistently.
+- Updated `backend/Dockerfile` to copy `pytest.ini` and `tests/` into the backend image.
+- Updated `backend/.dockerignore` so tests are not excluded from Docker test runs.
+- Updated README test instructions to call out Python 3.12 as the supported backend runtime and document both local and Docker test commands.
+
+**Files changed:**
+- `backend/tests/test_tenant_safety.py`
+- `backend/pytest.ini`
+- `backend/Dockerfile`
+- `backend/.dockerignore`
+- `README.md`
+
+**Validation:**
+- Local syntax: `python -m py_compile tests\\test_tenant_safety.py tests\\test_knowledge.py` passed in `backend/`.
+- Docker backend build: `docker compose build backend` passed.
+- Backend tests: `docker compose run --rm backend pytest` passed with `8 passed, 1 warning`.
+- Local `python -m pytest` still cannot run on this machine because the active local Python is 3.14 and backend dependencies are not installed there. Use Docker or Python 3.12 as documented.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.

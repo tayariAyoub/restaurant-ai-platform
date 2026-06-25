@@ -226,10 +226,36 @@ npm run dev
 
 ## Tests and checks
 
+The backend is developed and tested with Python 3.12, matching `backend/Dockerfile`.
+
+Recommended backend test flow:
+
+```powershell
+cd backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pytest
+```
+
+If you are running the Docker demo:
+
 ```powershell
 docker compose exec backend pytest
-docker compose exec frontend npm run build
+docker compose exec frontend pnpm build
 ```
+
+Useful quick checks:
+
+```powershell
+cd backend
+python -m py_compile app\api\admin.py app\api\public.py app\services\chat.py app\services\knowledge.py
+
+cd ..\frontend
+pnpm build
+```
+
+Note: Python 3.14 is newer than the backend target and may not have compatible wheels for all pinned dependencies yet. Use Python 3.12 or Docker for backend tests.
 
 ## Main project structure
 
