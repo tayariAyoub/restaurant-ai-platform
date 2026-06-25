@@ -332,6 +332,32 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend was not changed.
 
+## V1.5 Public Website Design Language Refinement
+
+**Goal:** Create a more original RestaurantAI public-customer design language inspired by fine dining, premium SaaS, mobile ordering, and restaurant operations without copying any single reference.
+
+**Design language direction:**
+- Calm luxury and editorial storytelling for first impression.
+- Cinematic food and atmosphere presentation.
+- Mobile-first ordering clarity.
+- Practical restaurant website structure with premium polish.
+- AI waiter presented as part of hospitality, not a generic chatbot.
+
+**Customer website refinements:**
+- Replaced customer-visible unfinished image states with an elegant editorial `Chef selection` fallback.
+- Removed cheap/internal placeholder language like `Food photo coming soon` from the menu experience.
+- Improved no-gallery fallback so it reads like an intentional dining-room preview.
+- Renamed the quick-add area to `Signature dishes` with warmer hospitality copy.
+- Added premium hover/motion treatment to signature dishes and menu item cards.
+- Preserved all existing menu, cart, checkout, reservation, and AI functionality.
+
+**Files changed:**
+- `frontend/components/RestaurantSite.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend was not changed.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.

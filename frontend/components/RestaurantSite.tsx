@@ -236,8 +236,9 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                     />
                   ))
                 ) : (
-                  <div className="col-span-3 rounded-2xl bg-white/10 p-8 text-sm text-white/70">
-                    Upload gallery photos to create a premium first impression.
+                  <div className="col-span-3 rounded-2xl border border-white/10 bg-white/10 p-8 text-sm text-white/75">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">At the table</p>
+                    <p className="mt-3 text-lg font-semibold">An intimate preview of the dining room will appear here.</p>
                   </div>
                 )}
               </div>
@@ -328,8 +329,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                   <div className="mt-10 rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
                     <div className="flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Popular starting points</p>
-                        <h3 className="mt-1 text-2xl font-semibold">Ask the AI waiter or add directly</h3>
+                        <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
+                        <h3 className="mt-1 text-2xl font-semibold">A few plates to begin with.</h3>
                       </div>
                       <Sparkles className="hidden opacity-40 sm:block" />
                     </div>
@@ -338,9 +339,9 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                         <button
                           key={item.id}
                           onClick={() => changeCart(item, 1)}
-                          className="w-56 shrink-0 overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                          className="premium-lift w-56 shrink-0 overflow-hidden rounded-2xl border bg-white text-left shadow-sm"
                         >
-                          {item.image_url ? <img src={item.image_url} alt={item.name} className="h-28 w-full object-cover" /> : <div className="h-20 bg-black/[.04]" />}
+                          {item.image_url ? <img src={item.image_url} alt={item.name} className="h-28 w-full object-cover" /> : <FoodFallback name={item.name} compact />}
                           <span className="block p-3">
                             <span className="block truncate font-semibold">{item.name}</span>
                             <span className="mt-1 flex items-center justify-between text-sm opacity-65">
@@ -619,6 +620,18 @@ function StorySignal({ icon: Icon, label, value }: { icon: LucideIcon; label: st
   );
 }
 
+function FoodFallback({ name, compact = false }: { name: string; compact?: boolean }) {
+  return (
+    <div className={`relative overflow-hidden bg-[#1d1a16] text-white ${compact ? "h-28" : "h-44 sm:h-48"}`}>
+      <div className="absolute inset-0 opacity-70" style={{ background: "radial-gradient(circle at 20% 20%, rgba(255,255,255,.16), transparent 9rem), linear-gradient(135deg, rgba(200,75,49,.28), rgba(107,112,72,.18))" }} />
+      <div className="absolute inset-x-4 bottom-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/45">Chef selection</p>
+        <p className="mt-1 line-clamp-2 font-display text-xl font-semibold leading-tight">{name}</p>
+      </div>
+    </div>
+  );
+}
+
 function MenuItemCard({
   item,
   quantity,
@@ -635,12 +648,12 @@ function MenuItemCard({
   onAdd: () => void;
 }) {
   return (
-    <article className={`group grid overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:block ${!item.is_available ? "opacity-60" : ""}`}>
+    <article className={`premium-lift group grid overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm sm:block ${!item.is_available ? "opacity-60" : ""}`}>
       <div className="relative">
         {item.image_url ? (
           <img src={item.image_url} alt={item.name} className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-48" />
         ) : (
-          <div className="grid h-28 place-items-center bg-black/[.03] text-sm opacity-50 sm:h-36">Food photo coming soon</div>
+          <FoodFallback name={item.name} />
         )}
         {quantity > 0 && (
           <span className="absolute right-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-bold shadow-lg" style={{ color: primary }}>
