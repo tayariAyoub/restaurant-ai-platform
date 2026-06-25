@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. I am the AI maître d' for ${restaurantName}. I can guide you through the menu, explain allergy notes, help plan a pickup order, or prepare a reservation request from this restaurant's own knowledge.`,
+    content: `Good evening. I am the AI maitre d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
   };
 }
 
@@ -76,8 +76,8 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} Maître d'</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Menu, allergies, reservations</p>
+                  <p className="font-semibold leading-tight">{restaurantName} Maitre d'</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} aria-label="Close chat" className="rounded-full bg-white/15 p-2 hover:bg-white/25">
@@ -85,7 +85,7 @@ export default function ChatWidget({
               </button>
             </div>
             <p className="relative mt-4 rounded-2xl bg-white/12 p-3 text-sm leading-6 text-white/85">
-              Tell me your mood, allergies, timing, or table plans. I will guide you like a careful member of the dining room team.
+              Start with a craving, an allergy, a date-night plan, or a pickup time. I will suggest a thoughtful path through the restaurant.
             </p>
           </div>
 
@@ -94,10 +94,10 @@ export default function ChatWidget({
           </div>
 
           <div className="grid grid-cols-3 border-b bg-white text-center text-[11px] font-bold text-stone-500">
-            <button onClick={() => send(undefined, "Recommend a full meal for pickup")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+            <button onClick={() => send(undefined, "Recommend a full meal for my mood tonight")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
               <Utensils size={14} /> Meal
             </button>
-            <button onClick={() => send(undefined, "Help me order for pickup")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+            <button onClick={() => send(undefined, "Help me build a pickup order")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
               <ShoppingBag size={14} /> Order
             </button>
             <button onClick={() => send(undefined, "Can I reserve a table?")} className="flex items-center justify-center gap-1 px-2 py-3 hover:bg-stone-50">
@@ -155,7 +155,7 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={loading ? "AI waiter is checking..." : "Ask about dishes, allergies, hours, reservations..."}
+              placeholder={loading ? "AI maitre d' is checking..." : "Tell me your mood, allergies, occasion..."}
               className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm outline-none focus:border-stone-500"
               disabled={loading}
             />
@@ -192,7 +192,7 @@ function buildStarterGroups(menuHighlights: string[], dietaryPrompts: string[]) 
   return [
     {
       label: "Recommendations",
-      questions: ["What should I order?", ...dishPrompts].slice(0, 4),
+      questions: ["I want something comforting tonight", "Plan a date-night order", ...dishPrompts].slice(0, 4),
     },
     {
       label: "Diet and allergies",
@@ -200,7 +200,7 @@ function buildStarterGroups(menuHighlights: string[], dietaryPrompts: string[]) 
     },
     {
       label: "Ordering and reservations",
-      questions: ["Help me order for pickup", "What should I order for two people?", "Can I reserve a table?", "How does dine-in ordering work?"],
+      questions: ["Build a pickup order for two", "Guide me before I reserve", "What should I order before a movie?", "How does dine-in ordering work?"],
     },
   ];
 }

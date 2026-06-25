@@ -49,6 +49,16 @@ const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm";
 const textareaClass = `${inputClass} min-h-28`;
 const cardClass = "rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6";
+const premiumPersonalities = [
+  { name: "Modern Luxury", description: "Quiet confidence, refined spacing, cinematic photography, and direct premium ordering." },
+  { name: "Italian Heritage", description: "Warm family storytelling, fire, wine, handmade craft, and generous hospitality cues." },
+  { name: "Nordic Michelin", description: "Minimal, seasonal, natural, and precise with restrained copy and gallery-like food focus." },
+  { name: "Japanese Omakase", description: "Guided pacing, trust in the chef, quiet detail, and reservation-first menu discovery." },
+  { name: "French Fine Dining", description: "Elegant typography, ceremony, wine pairing prompts, and composed reservation flow." },
+  { name: "Modern Steakhouse", description: "Fire, sourcing, bold signatures, confident recommendations, and decisive ordering." },
+  { name: "Mediterranean", description: "Sunlit produce, relaxed table energy, fresh colors, and inviting shared dishes." },
+  { name: "Minimal Black", description: "Art-gallery restraint where typography, shadow, and food photography carry the mood." },
+];
 
 function restaurantPayload(restaurant: Restaurant) {
   const { id, owner, theme, categories, images, created_at, ...payload } = restaurant;
@@ -625,6 +635,21 @@ function DesignEditor({
               ))}
             </div>
           )}
+        </section>
+
+        <section className={cardClass}>
+          <SectionHeader icon={Sparkles} title="Premium personality direction" description="RestaurantAI themes are being shaped around restaurant identities, not generic website skins." />
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {premiumPersonalities.map((personality) => (
+              <div key={personality.name} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="font-semibold text-slate-900">{personality.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{personality.description}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 rounded-xl border border-orange-100 bg-orange-50 p-4 text-sm leading-6 text-orange-950">
+            Next safe step: connect these personalities to switchable presets for copy tone, image treatment, menu labels, spacing, and reservation mood.
+          </p>
         </section>
 
         <section className={cardClass}>

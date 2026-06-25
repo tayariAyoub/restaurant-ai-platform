@@ -95,6 +95,7 @@ export default function DashboardPage() {
     const restaurant = restaurants[0];
     const insights = restaurant ? buildOwnerInsights(ownerRestaurant, ownerOrders, ownerReservations, ownerConversations) : null;
     const healthScore = restaurant ? businessHealthScore(restaurant, insights) : 0;
+    const ownerNarratives = restaurant && insights ? buildOwnerNarratives(restaurant, insights) : [];
     const ownerCards = restaurant
       ? [
           ["Health score", `${healthScore}%`, Sparkles, healthScore >= 85 ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-800"],
@@ -137,6 +138,28 @@ export default function DashboardPage() {
             </div>
 
             {insights && (
+              <>
+              <section className="mt-6 overflow-hidden rounded-3xl border border-black/5 bg-slate-950 p-6 text-white shadow-2xl">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/40">What should I do today?</p>
+                    <h2 className="mt-2 text-3xl font-semibold">A short service briefing for the owner.</h2>
+                  </div>
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white/70">Business cockpit</span>
+                </div>
+                <div className="mt-6 grid gap-3 md:grid-cols-3">
+                  {ownerNarratives.map((item) => (
+                    <article key={item.title} className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                        <item.icon size={17} className="text-orange-300" />
+                        {item.title}
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-white/68">{item.body}</p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
               <div className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_.95fr]">
                 <section className="rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -207,11 +230,12 @@ export default function DashboardPage() {
                   <div className="mt-6 rounded-xl border border-orange-100 bg-orange-50 p-4">
                     <div className="flex items-center gap-2 font-semibold text-orange-950"><Sparkles size={17} /> Today's recommendations</div>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-orange-950">
-                      {dailyRecommendations(restaurant, insights).map((item) => <li key={item}>- {item}</li>)}
+                      {dailyRecommendations(restaurant, insights).map((item) => <li key={item}>{item}</li>)}
                     </ul>
                   </div>
                 </section>
               </div>
+              </>
             )}
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
@@ -426,12 +450,39 @@ function businessHealthScore(restaurant: RestaurantOverview, insights: OwnerInsi
 
 function dailyRecommendations(restaurant: RestaurantOverview, insights: OwnerInsights) {
   const recommendations = [];
-  if (insights.openOrders > 0) recommendations.push(`Move ${insights.openOrders} open order${insights.openOrders === 1 ? "" : "s"} through the kitchen workflow.`);
-  if (insights.unansweredMessages > 0) recommendations.push("Review unanswered AI questions and add missing knowledge.");
-  if (insights.warnings.length > 0) recommendations.push(`Fix setup gaps: ${insights.warnings.slice(0, 2).join(", ")}.`);
-  if (restaurant.new_reservations > 0) recommendations.push("Confirm or decline new reservation requests before service.");
+  if (insights.openOrders > 0) recommendations.push(`Move ${insights.openOrders} open order${insights.openOrders === 1 ? "" : "s"} through the kitchen workflow before the next rush.`);
+  if (insights.unansweredMessages > 0) recommendations.push("Customers are asking questions the AI could not answer. Add the missing facts before tonight.");
+  if (insights.warnings.length > 0) recommendations.push(`Improve trust today: ${insights.warnings.slice(0, 2).join(", ")}.`);
+  if (restaurant.new_reservations > 0) recommendations.push("Friday-style demand can hide in reservations. Confirm new table requests before service.");
   if (recommendations.length === 0) recommendations.push("Everything important looks calm. Check photos, menu availability, and today's specials before service.");
   return recommendations.slice(0, 4);
+}
+
+function buildOwnerNarratives(restaurant: RestaurantOverview, insights: OwnerInsights) {
+  const bestDish = insights.bestSellers[0];
+  return [
+    {
+      icon: ChefHat,
+      title: bestDish ? `Lead with ${bestDish.name}` : "Create a hero dish",
+      body: bestDish
+        ? `Your best dish is carrying demand with ${bestDish.quantity} sold. Feature it in photos, AI suggestions, and staff recommendations.`
+        : "No best-seller signal yet. Add strong photos and encourage the first few orders so RestaurantAI can spot demand.",
+    },
+    {
+      icon: Bot,
+      title: insights.unansweredMessages > 0 ? "Teach the AI one missing answer" : "AI looks calm",
+      body: insights.unansweredMessages > 0
+        ? "Turn one unanswered customer question into a clear menu, allergy, reservation, or policy answer today."
+        : "No unanswered AI questions are waiting. Keep knowledge fresh when specials, hours, or policies change.",
+    },
+    {
+      icon: ImageIcon,
+      title: insights.warnings.some((warning) => warning.toLowerCase().includes("photo")) ? "Photos reduce hesitation" : "Presentation is working",
+      body: insights.warnings.some((warning) => warning.toLowerCase().includes("photo"))
+        ? "Missing food photos lower trust. Add one strong dish image before sharing the public site with more customers."
+        : `${restaurant.name} has the core trust signals in place. Use today's dashboard to keep service smooth.`,
+    },
+  ];
 }
 
 type OwnerInsights = {

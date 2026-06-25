@@ -5,6 +5,7 @@ import {
   Check,
   ChefHat,
   Clock3,
+  Flame,
   Heart,
   Instagram,
   Leaf,
@@ -19,6 +20,7 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
+  Wine,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -69,6 +71,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
   const heroVisual = restaurant.hero_image || gallery[0]?.url || "";
+  const personality = restaurantPersonality(template);
+  const storyMoments = buildStoryMoments(restaurant, featuredItems, personality);
   const dietaryPrompts = buildDietaryPrompts(menuItems);
   const filteredCategories = restaurant.categories.map((category) => ({
     ...category,
@@ -265,6 +269,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           <div>
             <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Our story</p>
             <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">{restaurant.name}, made personal.</h2>
+            <p className="mt-6 max-w-md text-base leading-8 opacity-65">{personality.description}</p>
           </div>
           <div className="premium-card rounded-[2rem] p-6 sm:p-8">
             <p className="whitespace-pre-line text-lg leading-8 opacity-75">{restaurant.story || restaurant.description}</p>
@@ -276,12 +281,45 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </div>
         </section>
 
+        <section className="sensory-section px-4 py-16 sm:px-6 lg:py-24">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
+              <div className="ambient-glow overflow-hidden rounded-[2rem] border border-black/10 bg-[#171511] p-6 text-white shadow-2xl sm:p-8 lg:p-10">
+                <p className="text-xs font-bold uppercase tracking-[.3em] text-white/45">Tonight's experience</p>
+                <h2 className="mt-4 max-w-2xl text-4xl font-semibold leading-tight sm:text-6xl">{personality.momentTitle}</h2>
+                <p className="mt-5 max-w-2xl text-base leading-8 text-white/70">{personality.momentCopy}</p>
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {storyMoments.slice(0, 3).map((moment) => (
+                    <div key={moment.label} className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+                      <moment.icon size={18} className="text-white/70" />
+                      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-white/40">{moment.label}</p>
+                      <p className="mt-1 text-sm font-semibold leading-6 text-white/90">{moment.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-5">
+                {storyMoments.slice(3).map((moment) => (
+                  <article key={moment.label} className="premium-lift rounded-[1.75rem] border border-black/10 bg-white/80 p-6 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="rounded-2xl bg-black/[.04] p-3" style={{ color: primary }}><moment.icon size={20} /></span>
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] opacity-45">{moment.label}</p>
+                    </div>
+                    <p className="mt-4 text-2xl font-semibold leading-tight">{moment.value}</p>
+                    <p className="mt-3 text-sm leading-6 opacity-60">{moment.detail}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="menu" className="sensory-section bg-white/70 px-4 py-16 sm:px-6 lg:py-28">
           <div className="mx-auto max-w-6xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Fresh from the kitchen</p>
               <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">Menu and online ordering</h2>
-              <p className="mt-4 leading-7 opacity-65">Browse signature dishes, see allergens at a glance, and order for pickup, dine-in, or delivery.</p>
+              <p className="mt-4 leading-7 opacity-65">Browse dishes like small experiences: chef notes, dietary cues, pairing prompts, and direct ordering without leaving the restaurant's world.</p>
             </div>
             {restaurant.categories.length === 0 || menuItems.length === 0 ? (
               <div className="mt-12 rounded-3xl border border-dashed bg-white p-10 text-center shadow-sm">
@@ -335,6 +373,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
                         <h3 className="mt-1 text-2xl font-semibold">A few plates to begin with.</h3>
+                        <p className="mt-1 text-sm opacity-55">Ask the AI maitre d' for a pairing or a full meal built around these dishes.</p>
                       </div>
                       <Sparkles className="hidden opacity-40 sm:block" />
                     </div>
@@ -654,6 +693,9 @@ function MenuItemCard({
   buttonClass: string;
   onAdd: () => void;
 }) {
+  const labels = dishExperienceLabels(item, index);
+  const pairing = pairingSuggestion(item);
+
   return (
     <article className={`premium-lift group grid overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm sm:block ${!item.is_available ? "opacity-60" : ""}`}>
       <div className="relative">
@@ -677,6 +719,14 @@ function MenuItemCard({
           <b className="shrink-0 rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
         </div>
         <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI waiter what pairs well with this dish."}</p>
+        <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
+          {labels.map((label) => (
+            <span key={label} className="rounded-full border border-black/10 bg-black/[.03] px-2.5 py-1" style={{ color: primary }}>{label}</span>
+          ))}
+        </div>
+        <p className="mt-3 rounded-xl border border-black/5 bg-black/[.025] px-3 py-2 text-xs leading-5 opacity-70">
+          Chef note: {pairing}
+        </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: secondary }}>
           {item.is_vegan && <span className="flex items-center gap-1 rounded-full bg-black/[.04] px-2.5 py-1"><Leaf size={13} /> Vegan</span>}
           {!item.is_vegan && item.is_vegetarian && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Vegetarian</span>}
@@ -768,6 +818,128 @@ function buildDietaryPrompts(items: MenuItem[]) {
   if (items.some((item) => item.is_halal)) prompts.push("Which dishes are halal?");
   if (items.some((item) => item.allergens)) prompts.push("Help me avoid allergens");
   return prompts.length > 0 ? prompts : ["Help me choose for allergies"];
+}
+
+function restaurantPersonality(template: string) {
+  const personalities: Record<string, { name: string; description: string; momentTitle: string; momentCopy: string }> = {
+    elegant: {
+      name: "Modern Luxury",
+      description: "A quiet, high-touch identity for restaurants that want every interaction to feel composed and intentional.",
+      momentTitle: "A room designed around anticipation.",
+      momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
+    },
+    modern_luxury: {
+      name: "Modern Luxury",
+      description: "A quiet, high-touch identity for restaurants that want every interaction to feel composed and intentional.",
+      momentTitle: "A room designed around anticipation.",
+      momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
+    },
+    italian: {
+      name: "Italian Heritage",
+      description: "Warm, generous, ingredient-led storytelling for restaurants built on family, fire, wine, and memory.",
+      momentTitle: "An evening that begins with the table.",
+      momentCopy: "Comfort, aroma, and hospitality lead the experience, with dishes presented as familiar rituals rather than simple products.",
+    },
+    nordic: {
+      name: "Nordic Michelin",
+      description: "Minimal, seasonal, and atmospheric: the restaurant feels precise, natural, and deeply connected to the moment.",
+      momentTitle: "Seasonality, restraint, and a little silence.",
+      momentCopy: "The story is told through space, ingredients, and confidence. Nothing shouts, but every detail carries weight.",
+    },
+    japanese: {
+      name: "Japanese Omakase",
+      description: "Disciplined pacing, quiet detail, and trust in the chef's sequence for restaurants centered on craft.",
+      momentTitle: "Let the evening unfold one course at a time.",
+      momentCopy: "The menu feels guided, personal, and precise, with the AI maitre d' helping guests navigate preferences before they arrive.",
+    },
+    french: {
+      name: "French Fine Dining",
+      description: "Ceremonial, composed, and wine-aware with a sense of polish around booking, pacing, and service.",
+      momentTitle: "A more ceremonial kind of evening.",
+      momentCopy: "The experience gives guests confidence before arrival: what to order, how to pair, when to book, and how the room will feel.",
+    },
+    steakhouse: {
+      name: "Modern Steakhouse",
+      description: "Bold, direct, flame-led confidence for restaurants where craft, sourcing, and service create the atmosphere.",
+      momentTitle: "Fire, timing, and a confident room.",
+      momentCopy: "The experience highlights signature cuts, generous sides, and pairings that make ordering feel easy and decisive.",
+    },
+    mediterranean: {
+      name: "Mediterranean",
+      description: "Sunlit, relaxed, produce-forward hospitality for restaurants that want warmth without losing polish.",
+      momentTitle: "Bright plates, generous tables, easy decisions.",
+      momentCopy: "The guest journey feels open and inviting, with seasonal dishes, direct ordering, and reservations gathered into one elegant flow.",
+    },
+    minimal_black: {
+      name: "Minimal Black",
+      description: "Gallery-like restraint for restaurants that want the food, photography, and typography to carry the entire mood.",
+      momentTitle: "A darker room. A sharper focus.",
+      momentCopy: "The interface steps back so the food becomes the object: precise, desirable, and calm.",
+    },
+    "minimal-black": {
+      name: "Minimal Black",
+      description: "Gallery-like restraint for restaurants that want the food, photography, and typography to carry the entire mood.",
+      momentTitle: "A darker room. A sharper focus.",
+      momentCopy: "The interface steps back so the food becomes the object: precise, desirable, and calm.",
+    },
+  };
+  return personalities[template] ?? personalities.mediterranean;
+}
+
+function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], personality: ReturnType<typeof restaurantPersonality>) {
+  const firstDish = featuredItems[0]?.name || "the first plate";
+  const secondDish = featuredItems[1]?.name || "the seasonal special";
+  return [
+    {
+      icon: Sparkles,
+      label: personality.name,
+      value: "A restaurant identity ready to become a full website theme.",
+      detail: personality.description,
+    },
+    {
+      icon: ChefHat,
+      label: "Chef's note",
+      value: `${firstDish} is a natural place to begin.`,
+      detail: "The menu presentation gives guests a confident first choice instead of forcing them to scan a long list.",
+    },
+    {
+      icon: Leaf,
+      label: "Seasonal moment",
+      value: `${secondDish} can become tonight's highlight.`,
+      detail: "RestaurantAI can later let owners mark dishes as seasonal, signature, or tonight only from the menu editor.",
+    },
+    {
+      icon: Flame,
+      label: "Kitchen story",
+      value: restaurant.story ? "The restaurant already has a story worth surfacing." : "Add a kitchen note to make the room feel alive.",
+      detail: "This area is designed for wood-fired ovens, handmade pasta, omakase pacing, local produce, or any detail that makes the restaurant memorable.",
+    },
+    {
+      icon: Wine,
+      label: "Pairing cue",
+      value: "Guests are invited to ask for pairings, allergies, and occasion-based guidance.",
+      detail: "This turns the AI waiter into part of hospitality, not just a question box.",
+    },
+  ];
+}
+
+function dishExperienceLabels(item: MenuItem, index: number) {
+  const labels = [];
+  if (index === 0) labels.push("Signature");
+  if (index === 1) labels.push("Most loved");
+  if (item.is_vegan || item.is_vegetarian) labels.push("Plant friendly");
+  if (item.description?.toLowerCase().includes("season")) labels.push("Seasonal");
+  if (item.is_available && labels.length < 2) labels.push("Tonight");
+  return labels.slice(0, 3);
+}
+
+function pairingSuggestion(item: MenuItem) {
+  const description = `${item.name} ${item.description}`.toLowerCase();
+  if (description.includes("spicy") || description.includes("chili")) return "Pair with something bright, cold, or citrus-led to keep the heat elegant.";
+  if (description.includes("beef") || description.includes("steak")) return "Ask for a bold red wine or a roasted side to make this feel like the center of the table.";
+  if (description.includes("fish") || description.includes("sea")) return "A crisp white wine, fresh salad, or citrus-forward starter will keep the plate lifted.";
+  if (item.is_vegan || item.is_vegetarian) return "Pair with a fresh starter and ask the AI maitre d' for the best plant-forward sequence.";
+  return "Ask the AI maitre d' for a pairing based on your mood, appetite, and table plans.";
 }
 
 function matchesMenuFilters(item: MenuItem, query: string, filter: "all" | "vegan" | "vegetarian" | "halal") {

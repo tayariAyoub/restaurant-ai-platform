@@ -55,6 +55,36 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 **Validation:**
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 
+## V1.5 Emotional Restaurant Moments
+
+**Goal:** Move RestaurantAI beyond a beautiful website into a more memorable restaurant experience using existing data only.
+
+**Customer experience improvements:**
+- Added a new `Tonight's experience` storytelling moment to the public restaurant page.
+- Introduced data-derived story cards for chef notes, seasonal moments, kitchen story, pairing cues, and restaurant personality.
+- Added a first-pass restaurant personality architecture for Modern Luxury, Italian Heritage, Nordic Michelin, Japanese Omakase, French Fine Dining, Modern Steakhouse, Mediterranean, and Minimal Black style directions.
+- Improved menu presentation with experience labels such as signature, most loved, plant friendly, seasonal, and tonight.
+- Added chef-note pairing prompts to menu cards so dishes feel more like guided experiences than plain products.
+
+**AI maitre d' improvements:**
+- Warmed the assistant welcome and prompt language around mood, occasion, appetite, allergies, timing, pairings, pickup orders, and reservation guidance.
+- Updated starter prompts to feel more like hospitality concierge guidance.
+
+**Owner experience improvements:**
+- Added a dark premium `What should I do today?` owner briefing panel.
+- Turned owner insights into actionable recommendations around best dishes, AI gaps, missing photos, and service readiness.
+- Added a premium personality direction panel to the design editor so future theme switching is framed as restaurant identity, not only colors.
+
+**Files changed in this phase:**
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/app/admin/dashboard/page.tsx`
+- `frontend/components/admin/RestaurantEditor.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+
 ## Codex Phase 1 - Product Polish
 
 **Goal:** Make the working MVP feel demo-ready and more credible for a first restaurant sales conversation without changing APIs, auth, database schema, or ordering/chat behavior.
