@@ -21,9 +21,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://restaurant_ai:restaurant_ai_demo_password@db:5432/restaurant_ai}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:-restaurant_ai_local_demo_secret_change_before_production}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@restaurantai.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin12345}
-      DEMO_OWNER_EMAIL: ${DEMO_OWNER_EMAIL:-owner@example.com}
+      DEMO_OWNER_EMAIL: ${DEMO_OWNER_EMAIL:-owner@restaurantai.com}
       DEMO_OWNER_PASSWORD: ${DEMO_OWNER_PASSWORD:-owner12345}
     volumes:
       - uploads:/app/uploads

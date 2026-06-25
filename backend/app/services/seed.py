@@ -153,7 +153,7 @@ def seed_demo_data(db: Session) -> None:
         db.add(restaurant)
         db.flush()
     else:
-        restaurant.owner_id = restaurant.owner_id or owner.id
+        restaurant.owner_id = owner.id
         restaurant.theme_id = restaurant.theme_id or (theme.id if theme else None)
         restaurant.slug = "bella-napoli" if restaurant.slug.startswith("restaurant-") else restaurant.slug
         restaurant.story = restaurant.story or "Wood-fired food, Italian warmth, and a table for everyone."

@@ -76,8 +76,8 @@ docker compose up --build
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Super admin | `admin@example.com` | `admin12345` |
-| Restaurant owner | `owner@example.com` | `owner12345` |
+| Super admin | `admin@restaurantai.com` | `admin12345` |
+| Restaurant owner | `owner@restaurantai.com` | `owner12345` |
 
 These are demo-only credentials. Change them before using the project outside local development.
 
@@ -148,7 +148,7 @@ Test as a customer:
 Test as a restaurant owner:
 
 1. Open http://localhost:3000/admin/login
-2. Sign in with `owner@example.com` / `owner12345`.
+2. Sign in with `owner@restaurantai.com` / `owner12345`.
 3. Open the assigned restaurant.
 4. Edit information, hours, design, menu, images, chatbot knowledge, orders, and reservations.
 5. Open Kitchen Mode from the Orders page to update order status.
@@ -156,7 +156,7 @@ Test as a restaurant owner:
 Test as a super admin:
 
 1. Open http://localhost:3000/admin/login
-2. Sign in with `admin@example.com` / `admin12345`.
+2. Sign in with `admin@restaurantai.com` / `admin12345`.
 3. View all restaurants.
 4. Create a new restaurant.
 5. Create owner users.

@@ -190,11 +190,27 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - API docs: `http://localhost:8000/docs`
 
 **Demo accounts:**
-- Super admin: `admin@example.com` / `admin12345`
-- Restaurant owner: `owner@example.com` / `owner12345`
+- Super admin: `admin@restaurantai.com` / `admin12345`
+- Restaurant owner: `owner@restaurantai.com` / `owner12345`
 
 **Validation:**
 - `docker compose config` now succeeds without `.env`.
+
+## Demo Login Fix
+
+**Problem:** The login screen rejected `owner@restaurantai.com` because the demo defaults used `owner@example.com`.
+
+**Fix:**
+- Updated demo defaults to branded accounts:
+  - Super admin: `admin@restaurantai.com` / `admin12345`
+  - Restaurant owner: `owner@restaurantai.com` / `owner12345`
+- Updated the login page to show demo account buttons that fill the email and password automatically.
+- Updated seed logic so Bella Napoli is assigned to the configured demo owner, including after restarting with an existing database volume.
+
+**Validation:**
+- `docker compose config --quiet` passed.
+- `pnpm.cmd build` passed in `frontend/`.
+- `python -m py_compile app\\services\\seed.py` passed in `backend/`.
 - Backend: local `pytest` could not run because `pytest` was not installed.
 - Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
 - Docker fallback could not run because Docker Desktop engine was not running.
