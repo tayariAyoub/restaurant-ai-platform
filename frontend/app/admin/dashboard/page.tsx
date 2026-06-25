@@ -264,6 +264,7 @@ export default function DashboardPage() {
     const bScore = b.setup_percent - b.new_orders * 10 - b.unanswered_count * 8 - b.new_reservations * 4;
     return aScore - bScore;
   });
+  const readiness = buildTenantReadiness(restaurants);
 
   return (
     <AdminShell>
@@ -281,6 +282,28 @@ export default function DashboardPage() {
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         {cards.map(([label, value, Icon, color]) => <StatCard key={label} label={label} value={value} icon={Icon} color={color} />)}
       </div>
+
+      <section className="mt-8 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-semibold">Tenant readiness</h2>
+            <p className="mt-1 text-sm text-slate-500">Which restaurants are ready to sell, incomplete, inactive, or blocked by missing setup.</p>
+          </div>
+          <Link href="/admin/restaurants?status=incomplete" className="text-sm font-semibold text-orange-600">Open restaurant list</Link>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <MiniMetric label="Ready tenants" value={readiness.ready} />
+          <MiniMetric label="Incomplete" value={readiness.incomplete} />
+          <MiniMetric label="Inactive/draft" value={readiness.inactive} />
+          <MiniMetric label="Missing owner" value={readiness.missingOwner} />
+          <MiniMetric label="Needs help" value={readiness.needsHelp} />
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <ReadinessWarning label="Photos or logo" value={readiness.missingPhotos} />
+          <ReadinessWarning label="Menu or hours" value={readiness.missingMenuOrHours} />
+          <ReadinessWarning label="AI knowledge" value={readiness.missingAi} />
+        </div>
+      </section>
 
       <section className="mt-8 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -353,6 +376,15 @@ function MiniMetric({ label, value }: { label: string; value: number | string })
   );
 }
 
+function ReadinessWarning({ label, value }: { label: string; value: number }) {
+  return (
+    <div className={`rounded-xl border p-4 ${value > 0 ? "border-amber-100 bg-amber-50 text-amber-900" : "border-green-100 bg-green-50 text-green-800"}`}>
+      <p className="text-2xl font-bold">{value}</p>
+      <p className="mt-1 text-sm font-semibold">{label} warnings</p>
+    </div>
+  );
+}
+
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="mt-6 rounded-2xl border border-dashed bg-white/70 p-8 text-center">
@@ -360,6 +392,19 @@ function EmptyState({ title, description }: { title: string; description: string
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">{description}</p>
     </div>
   );
+}
+
+function buildTenantReadiness(restaurants: RestaurantOverview[]) {
+  return {
+    ready: restaurants.filter((restaurant) => restaurant.setup_percent >= 90 && restaurant.is_published).length,
+    incomplete: restaurants.filter((restaurant) => restaurant.setup_percent < 90).length,
+    inactive: restaurants.filter((restaurant) => !restaurant.is_published).length,
+    missingOwner: restaurants.filter((restaurant) => !restaurant.owner_name && !restaurant.owner_email).length,
+    needsHelp: restaurants.filter((restaurant) => restaurant.new_orders > 0 || restaurant.new_reservations > 0 || restaurant.unanswered_count > 0).length,
+    missingPhotos: restaurants.filter((restaurant) => !restaurant.hero_image && restaurant.image_count === 0).length,
+    missingMenuOrHours: restaurants.filter((restaurant) => restaurant.menu_items === 0 || !restaurant.checklist.opening_hours).length,
+    missingAi: restaurants.filter((restaurant) => !restaurant.checklist.chatbot || restaurant.unanswered_count > 0).length,
+  };
 }
 
 type OwnerInsights = {

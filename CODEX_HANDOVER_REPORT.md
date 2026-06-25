@@ -207,6 +207,46 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend was not changed in this step.
 
+## V1 Step 5 - Super Admin Tenant Readiness Overview
+
+**Goal:** Give the platform owner a clear view of which restaurant tenants are ready, incomplete, inactive, or need help.
+
+**Super admin dashboard improvements:**
+- Added a Tenant Readiness section with counts for:
+  - ready tenants
+  - incomplete tenants
+  - inactive/draft tenants
+  - restaurants missing owners
+  - restaurants needing help
+- Added warning totals for missing photos/logo, menu/opening-hours gaps, and AI knowledge gaps.
+- Added a direct link from readiness summary to the filtered restaurant list.
+
+**Restaurant list/card improvements:**
+- Upgraded restaurant overview cards with:
+  - readiness label
+  - active/inactive status
+  - owner assigned or missing indicator
+  - setup warnings for owner, photos, menu, hours, branding, and AI knowledge
+  - recent orders/reservations/AI unanswered metrics
+  - quick actions for edit, operations/orders, public site, create owner, and delete
+- Added super-admin filters for:
+  - ready and live
+  - active/live
+  - inactive/draft
+  - setup incomplete
+  - missing owner
+  - needs help
+- Restaurant list now honors `?status=` query parameters from dashboard quick links.
+
+**Files changed:**
+- `frontend/app/admin/dashboard/page.tsx`
+- `frontend/app/admin/restaurants/page.tsx`
+- `frontend/components/admin/RestaurantOverviewCard.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend was not changed in this step.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.

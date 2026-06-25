@@ -27,6 +27,8 @@ export default function RestaurantsPage() {
   };
 
   useEffect(() => {
+    const requestedStatus = new URLSearchParams(window.location.search).get("status");
+    if (requestedStatus) setStatus(requestedStatus);
     load();
     adminRequest<User>("/auth/me", getToken()).then(setMe);
   }, []);
@@ -43,7 +45,10 @@ export default function RestaurantsPage() {
       status === "all" ||
       (status === "live" && restaurant.is_published) ||
       (status === "draft" && !restaurant.is_published) ||
-      (status === "incomplete" && restaurant.setup_percent < 100);
+      (status === "ready" && restaurant.setup_percent >= 90 && restaurant.is_published) ||
+      (status === "incomplete" && restaurant.setup_percent < 90) ||
+      (status === "missing-owner" && !restaurant.owner_name && !restaurant.owner_email) ||
+      (status === "needs-help" && (restaurant.unanswered_count > 0 || restaurant.new_orders > 0 || restaurant.new_reservations > 0));
     const restaurantOwner = restaurant.owner_name || restaurant.owner_email;
     return matchesQuery && matchesStatus && (owner === "all" || restaurantOwner === owner);
   }), [restaurants, query, status, owner]);
@@ -79,9 +84,12 @@ export default function RestaurantsPage() {
         </label>
         <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-xl border px-4 py-3 text-sm">
           <option value="all">All statuses</option>
-          <option value="live">Published</option>
-          <option value="draft">Draft</option>
+          <option value="ready">Ready and live</option>
+          <option value="live">Active/live</option>
+          <option value="draft">Inactive/draft</option>
           <option value="incomplete">Setup incomplete</option>
+          <option value="missing-owner">Missing owner</option>
+          <option value="needs-help">Needs help</option>
         </select>
         {me?.role === "SUPER_ADMIN" && (
           <select value={owner} onChange={(event) => setOwner(event.target.value)} className="rounded-xl border px-4 py-3 text-sm">
