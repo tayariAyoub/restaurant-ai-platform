@@ -57,6 +57,41 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 **Validation:**
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 
+## Version 1 Audit And First Implementation Step
+
+**Product direction:** RestaurantAI is now positioned as the AI operating system for independent restaurants: premium website, AI waiter, online ordering, reservations, and owner business dashboard.
+
+**Current V1 audit:**
+- Customer side already has a premium restaurant website, menu browsing, cart/order flow, reservations, and chatbot entry point. It still needs stronger order tracking and more polished mobile customer journey details.
+- Owner side already has restaurant setup, menu/design/images/chatbot editing, orders, kitchen workflow, and reservations. The main gap was business-value visibility on the dashboard.
+- Super admin already has restaurant/user management and platform overview basics. Subscriptions should remain planned but not implemented yet.
+
+**First safe implementation step completed:**
+- Improved the restaurant owner dashboard to show a live business snapshot from existing data:
+  - today revenue
+  - today's order count
+  - active reservations
+  - AI unanswered-question gaps
+  - average order value
+  - open/ready orders
+  - unique customers seen through orders/reservations
+  - best-selling dishes
+  - reservation status overview
+  - AI customer-question snippets
+  - missing photo/logo/opening-hours/allergen/menu warnings
+- Reused existing admin APIs for restaurant details, orders, reservations, and conversations.
+- No database schema changes.
+- No new backend endpoints.
+- Super-admin dashboard behavior preserved.
+
+**Files changed:**
+- `frontend/app/admin/dashboard/page.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend syntax: `python -m py_compile app\\services\\seed.py app\\api\\admin.py` passed in `backend/`.
+- Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
