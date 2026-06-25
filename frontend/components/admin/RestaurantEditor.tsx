@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Bot,
   Camera,
   CheckCircle2,
@@ -11,9 +12,11 @@ import {
   LayoutTemplate,
   type LucideIcon,
   Leaf,
+  MessageSquare,
   Palette,
   Plus,
   Save,
+  ShieldCheck,
   Sparkles,
   Trash2,
   Upload,
@@ -1007,32 +1010,69 @@ function ChatbotEditor({
   onUploadDocument: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   const unanswered = conversations.reduce((sum, conversation) => sum + conversation.messages.filter((message) => message.is_unanswered).length, 0);
+  const menuItems = restaurant.categories.flatMap((category) => category.items);
+  const missingTasks = aiImprovementTasks(restaurant, documents, unanswered);
+  const testQuestions = [
+    "What should I order if I like something spicy?",
+    "Which dishes are vegetarian?",
+    "Do any dishes contain nuts or gluten?",
+    "When are you open this weekend?",
+    "How can I reserve a table?",
+    "Can I order for pickup?",
+  ];
+
   return (
     <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
       <div className="space-y-6 xl:sticky xl:top-24 xl:h-fit">
         <section className={cardClass}>
-          <SectionHeader icon={Bot} title="AI employee setup" description="The assistant answers from this restaurant's profile, menu, opening hours, and uploaded documents." />
+          <SectionHeader icon={Bot} title="AI employee setup" description="Train the assistant with restaurant facts, review weak answers, and keep it grounded in this restaurant only." />
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{documents.length}</b><span className="text-slate-500">Documents</span></div>
             <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{unanswered}</b><span className="text-slate-500">AI gaps</span></div>
+            <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{menuItems.length}</b><span className="text-slate-500">Menu facts</span></div>
+            <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{missingTasks.filter((task) => !task.done).length}</b><span className="text-slate-500">To improve</span></div>
           </div>
         </section>
 
         <form onSubmit={onUploadDocument} className={cardClass}>
           <h3 className="font-semibold">Add knowledge</h3>
-          <p className="mt-1 text-sm leading-6 text-slate-500">Upload PDF or TXT files for allergen details, catering policies, delivery rules, or FAQs.</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">Upload PDF or TXT files for allergen details, catering policies, delivery rules, FAQs, private dining, or seasonal menus.</p>
           <input className="mt-4 w-full rounded-xl border p-3 text-sm" name="file" type="file" accept=".pdf,.txt" required />
           <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"><FileText size={16} /> Process document</button>
         </form>
+
+        <section className={cardClass}>
+          <SectionHeader icon={ShieldCheck} title="Safety rules" description="The assistant is designed to protect restaurant trust." />
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+            <li>Answers only from this restaurant's saved knowledge.</li>
+            <li>Falls back when information is missing or uncertain.</li>
+            <li>Warns customers to confirm allergy safety with staff.</li>
+            <li>Guides ordering and reservations, but does not fake actions.</li>
+          </ul>
+        </section>
       </div>
 
       <div className="space-y-6">
         <section className={cardClass}>
-          <SectionHeader icon={CheckCircle2} title="Automatic knowledge" description="These sources are already synchronized into the assistant when you save restaurant details or menu items." />
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <KnowledgeSource title="Restaurant profile" ready={Boolean(restaurant.description && restaurant.phone && restaurant.address)} />
-            <KnowledgeSource title="Opening hours" ready={restaurant.opening_hours !== "{}"} />
-            <KnowledgeSource title="Menu items" ready={restaurant.categories.some((category) => category.items.length > 0)} />
+          <SectionHeader icon={CheckCircle2} title="What the AI knows" description="These sources are synchronized into the assistant when restaurant details or menu items are saved." />
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <KnowledgeSource title="Restaurant profile" detail="Name, story, address, phone, email" ready={Boolean(restaurant.description && restaurant.phone && restaurant.address)} />
+            <KnowledgeSource title="Opening hours" detail="Weekly schedule and closed days" ready={restaurant.opening_hours !== "{}"} />
+            <KnowledgeSource title="Menu items" detail={`${menuItems.length} dishes with prices`} ready={menuItems.length > 0} />
+            <KnowledgeSource title="Allergens" detail="Dietary and allergy notes" ready={menuItems.some((item) => item.allergens)} />
+          </div>
+        </section>
+
+        <section className={cardClass}>
+          <SectionHeader icon={AlertTriangle} title="AI improvement suggestions" description="Complete these items to make the assistant more useful and reduce fallback answers." />
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {missingTasks.map((task) => (
+              <div key={task.title} className={`rounded-2xl border p-4 ${task.done ? "border-green-100 bg-green-50 text-green-800" : "border-amber-100 bg-amber-50 text-amber-900"}`}>
+                <p className="font-semibold">{task.title}</p>
+                <p className="mt-1 text-sm leading-6 opacity-80">{task.description}</p>
+                <p className="mt-3 text-xs font-bold uppercase tracking-wider">{task.done ? "Ready" : "Needs attention"}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -1053,14 +1093,29 @@ function ChatbotEditor({
         </section>
 
         <section className={cardClass}>
-          <SectionHeader icon={Sparkles} title="Customer questions" description="Review real questions to discover missing menu, allergen, or policy information." />
+          <SectionHeader icon={MessageSquare} title="Test the AI before customers do" description="Open the public website and ask these questions after every menu or policy update." />
+          <div className="mt-5 flex flex-wrap gap-2">
+            {testQuestions.map((question) => (
+              <span key={question} className="rounded-full border bg-white px-3 py-2 text-xs font-semibold text-slate-700">{question}</span>
+            ))}
+          </div>
+          <Link href={`/restaurants/${restaurant.slug}`} target="_blank" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">
+            Test public chatbot <ExternalLink size={15} />
+          </Link>
+        </section>
+
+        <section className={cardClass}>
+          <SectionHeader icon={Sparkles} title="Customer questions and unanswered gaps" description="Use real conversations to discover missing menu, allergen, reservation, or policy information." />
           <div className="mt-5 space-y-4">
             {conversations.length === 0 ? (
               <EmptyState title="No conversations yet" description="Customer chats will appear here after visitors use the AI assistant." />
             ) : (
               conversations.map((conversation) => (
-                <article key={conversation.id} className="rounded-xl border p-4">
-                  <p className="text-xs text-slate-400">{new Date(conversation.created_at).toLocaleString()}</p>
+                <article key={conversation.id} className={`rounded-xl border p-4 ${conversation.messages.some((message) => message.is_unanswered) ? "border-amber-200 bg-amber-50/40" : ""}`}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-slate-400">{new Date(conversation.created_at).toLocaleString()}</p>
+                    {conversation.messages.some((message) => message.is_unanswered) && <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Improve knowledge</span>}
+                  </div>
                   <div className="mt-3 space-y-2">
                     {conversation.messages.map((message, index) => (
                       <p key={message.id || index} className={`text-sm leading-6 ${message.is_unanswered ? "rounded-lg bg-red-50 p-2 text-red-800" : ""}`}>
@@ -1078,11 +1133,38 @@ function ChatbotEditor({
   );
 }
 
-function KnowledgeSource({ title, ready }: { title: string; ready: boolean }) {
+function aiImprovementTasks(restaurant: Restaurant, documents: Document[], unanswered: number) {
+  const menuItems = restaurant.categories.flatMap((category) => category.items);
+  return [
+    {
+      title: "Complete restaurant profile",
+      description: "Add a clear description, phone number, address, and story so the AI can answer basic customer questions.",
+      done: Boolean(restaurant.description && restaurant.phone && restaurant.address && restaurant.story),
+    },
+    {
+      title: "Add allergen details",
+      description: "Add allergen notes to menu items or upload an allergen sheet. This is one of the highest-trust AI use cases.",
+      done: menuItems.some((item) => item.allergens) || documents.some((doc) => doc.filename.toLowerCase().includes("allergen")),
+    },
+    {
+      title: "Explain reservations and ordering",
+      description: "Upload an FAQ or policy document covering reservations, pickup, delivery, table requests, and cancellation rules.",
+      done: documents.some((doc) => /faq|policy|reservation|delivery|ordering/i.test(doc.filename)),
+    },
+    {
+      title: "Review unanswered questions",
+      description: "Customer questions marked as unanswered are your best source of new knowledge to add.",
+      done: unanswered === 0,
+    },
+  ];
+}
+
+function KnowledgeSource({ title, detail, ready }: { title: string; detail: string; ready: boolean }) {
   return (
     <div className={`rounded-xl border p-4 ${ready ? "border-green-100 bg-green-50 text-green-800" : "border-amber-100 bg-amber-50 text-amber-800"}`}>
       <p className="font-semibold">{title}</p>
-      <p className="mt-1 text-xs">{ready ? "Ready" : "Needs more data"}</p>
+      <p className="mt-1 text-xs leading-5 opacity-80">{detail}</p>
+      <p className="mt-3 text-xs font-bold uppercase tracking-wider">{ready ? "Ready" : "Needs more data"}</p>
     </div>
   );
 }

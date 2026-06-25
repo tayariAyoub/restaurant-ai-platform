@@ -86,6 +86,44 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
 - Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
+
+## Codex Phase 4 - AI Assistant Advantage
+
+**Goal:** Make the AI assistant feel like each restaurant receives a trained AI employee while preserving the existing RAG architecture and APIs.
+
+**Customer chatbot improvements:**
+- Reframed the widget as the restaurant's AI employee trained on that restaurant only.
+- Added grouped suggested prompts for recommendations, allergy/diet questions, reservations, pickup, and planning.
+- Added a visible safety note explaining restaurant-scoped answers and allergy confirmation.
+- Improved unanswered/fallback message styling so customers can tell when the assistant lacks enough knowledge.
+
+**Owner chatbot dashboard improvements:**
+- Expanded the chatbot admin view into an AI training dashboard.
+- Added AI setup metrics for documents, menu facts, AI gaps, and improvement tasks.
+- Added "what the AI knows" readiness cards for profile, hours, menu items, and allergens.
+- Added AI improvement suggestions for missing profile details, allergen knowledge, reservation/ordering policies, and unanswered customer questions.
+- Added owner test prompts and a direct public-chatbot test link.
+- Improved conversation review by highlighting unanswered conversations that should become new knowledge.
+
+**AI safety/backend improvements:**
+- Preserved restaurant-scoped RAG retrieval by `restaurant_id`.
+- Added stricter prompt instructions against using outside knowledge or other restaurant data.
+- Added local retrieval confidence gating so weak token-overlap matches fall back instead of answering from irrelevant chunks.
+- Normalized fallback detection for uncertain model responses.
+- Kept allergy and reservation safety language explicit.
+- Cleaned structured menu knowledge price text to use ASCII `EUR`.
+
+**Files changed in this phase:**
+- `backend/app/services/chat.py`
+- `backend/app/services/knowledge.py`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/components/admin/RestaurantEditor.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py` passed in `backend/`.
+- Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
+- Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
 - Backend: local `pytest` could not run because `pytest` was not installed.
 - Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
 - Docker fallback could not run because Docker Desktop engine was not running.

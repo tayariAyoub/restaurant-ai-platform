@@ -11,6 +11,29 @@ from app.services.knowledge import create_embeddings
 FALLBACK = (
     "I don't have this information. Please contact the restaurant directly."
 )
+MIN_TOKEN_OVERLAP = 2
+
+
+def question_tokens(text: str) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"\w+", text.lower())
+        if len(token) > 2 and token not in {"the", "and", "for", "you", "are", "with", "this", "that"}
+    }
+
+
+def normalize_answer(answer: str | None) -> tuple[str, bool]:
+    final = answer.strip() if answer else FALLBACK
+    fallback_markers = [
+        FALLBACK.lower(),
+        "i don't have this information",
+        "i do not have this information",
+        "not provided in the context",
+        "not available in the context",
+    ]
+    if any(marker in final.lower() for marker in fallback_markers):
+        return FALLBACK, True
+    return final, False
 
 
 def retrieve_context(db: Session, restaurant_id: int, question: str, limit: int = 6) -> list[str]:
@@ -28,16 +51,19 @@ def retrieve_context(db: Session, restaurant_id: int, question: str, limit: int 
         return [chunk.content for chunk in db.scalars(statement)]
 
     # Local development fallback: simple token overlap retrieval.
-    tokens = set(re.findall(r"\w+", question.lower()))
+    tokens = question_tokens(question)
     chunks = db.scalars(
         select(KnowledgeChunk).where(KnowledgeChunk.restaurant_id == restaurant_id)
     ).all()
-    ranked = sorted(
-        chunks,
-        key=lambda chunk: len(tokens & set(re.findall(r"\w+", chunk.content.lower()))),
-        reverse=True,
-    )
-    return [chunk.content for chunk in ranked[:limit] if chunk.content]
+    scored = [
+        (len(tokens & question_tokens(chunk.content)), chunk.content)
+        for chunk in chunks
+        if chunk.content
+    ]
+    ranked = sorted(scored, key=lambda item: item[0], reverse=True)
+    if not ranked or ranked[0][0] < MIN_TOKEN_OVERLAP:
+        return []
+    return [content for score, content in ranked[:limit] if score > 0]
 
 
 def answer_question(db: Session, restaurant_id: int, question: str) -> tuple[str, bool]:
@@ -62,13 +88,17 @@ def answer_question(db: Session, restaurant_id: int, question: str) -> tuple[str
                 "role": "system",
                 "content": (
                     "You are the restaurant's friendly customer assistant. Answer ONLY from the "
-                    "provided restaurant context. Never invent menu items, prices, policies, "
+                    "provided restaurant context for this single restaurant. Never use general "
+                    "restaurant knowledge, outside assumptions, or data from another restaurant. "
+                    "Never invent menu items, prices, policies, "
                     "allergen safety, opening hours, or reservation availability. If the answer "
                     f"is absent or uncertain, reply exactly with: {FALLBACK} Keep answers concise. "
                     "For allergy questions, remind the customer to confirm with restaurant staff. "
                     "You may suggest available menu items from context and guide the customer to "
                     "use the website's Add to order buttons and checkout, but never claim an order "
-                    "was placed or change the cart yourself."
+                    "was placed or change the cart yourself. For reservation questions, explain "
+                    "what the context says and guide the customer to the reservation form; never "
+                    "promise availability unless it is explicitly in context."
                 ),
             },
             {
@@ -77,6 +107,4 @@ def answer_question(db: Session, restaurant_id: int, question: str) -> tuple[str
             },
         ],
     )
-    answer = response.choices[0].message.content
-    final = answer.strip() if answer else FALLBACK
-    return final, final == FALLBACK
+    return normalize_answer(response.choices[0].message.content)

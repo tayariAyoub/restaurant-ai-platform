@@ -89,7 +89,7 @@ def rebuild_structured_knowledge(db: Session, restaurant_id: int) -> None:
             facts.append(
                 (
                     f"menu: {category.name}",
-                    f"{item.name} costs €{item.price:.2f}. {item.description} "
+                    f"{item.name} costs EUR {item.price:.2f}. {item.description} "
                     f"Dietary options: {dietary or 'none specified'}. "
                     f"Allergens: {item.allergens or 'not specified'}. "
                     f"Availability: {'available' if item.is_available else 'currently unavailable'}.",
