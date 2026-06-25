@@ -16,6 +16,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
 
 import request from "@/lib/api";
@@ -62,6 +63,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const cartLines = Object.values(cart);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + Number(line.item.price) * line.quantity, 0);
+  const completedEstimate = completedOrder ? estimateText(completedOrder) : "";
 
   function changeCart(item: MenuItem, change: number) {
     setCart((current) => {
@@ -379,11 +381,43 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             </div>
 
             {completedOrder ? (
-              <div className="mt-8 rounded-2xl bg-green-50 p-7 text-center">
-                <Check className="mx-auto text-green-700" size={38} />
-                <h3 className="mt-3 text-2xl font-bold">Order #{completedOrder.id} received!</h3>
-                <p className="mt-2 text-sm text-green-800">The restaurant will review your order. Total: EUR {Number(completedOrder.total).toFixed(2)}</p>
-                <button onClick={() => { setCartOpen(false); setCompletedOrder(null); }} className="mt-5 rounded-xl bg-green-800 px-5 py-3 font-bold text-white">Done</button>
+              <div className="mt-8 overflow-hidden rounded-3xl border border-green-100 bg-green-50">
+                <div className="p-6 text-center sm:p-8">
+                  <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-green-700 text-white">
+                    <Check size={30} />
+                  </span>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.22em] text-green-700">Order confirmed</p>
+                  <h3 className="mt-2 text-3xl font-bold">#{shortOrderNumber(completedOrder.public_id)}</h3>
+                  <p className="mt-2 text-sm leading-6 text-green-900">
+                    {restaurant.name} received your order. Keep this number handy if you call the restaurant.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 border-y border-green-100 bg-white/80 p-4 text-sm sm:grid-cols-3">
+                  <SuccessMetric label="Total" value={`EUR ${Number(completedOrder.total).toFixed(2)}`} />
+                  <SuccessMetric label="Method" value={orderTypeLabel(completedOrder.order_type)} />
+                  <SuccessMetric label="Estimate" value={completedEstimate} />
+                </div>
+
+                <div className="space-y-4 p-5 sm:p-6">
+                  <OrderTimeline status={completedOrder.status} orderType={completedOrder.order_type} />
+                  <div className="rounded-2xl bg-white p-4 text-sm leading-6 text-slate-600">
+                    <p className="font-semibold text-slate-900">What happens next</p>
+                    <p className="mt-1">{nextInstruction(completedOrder.order_type)}</p>
+                    {restaurant.phone && <p className="mt-3">Need help? Call {restaurant.name} at <a className="font-semibold underline" href={`tel:${restaurant.phone}`}>{restaurant.phone}</a>.</p>}
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Link
+                      href={`/restaurants/${restaurant.slug}/orders/${completedOrder.public_id}`}
+                      className="rounded-xl bg-green-800 px-5 py-3 text-center font-bold text-white"
+                    >
+                      Track order
+                    </Link>
+                    <button onClick={() => { setCartOpen(false); setCompletedOrder(null); }} className="rounded-xl border border-green-200 bg-white px-5 py-3 font-bold text-green-900">
+                      Back to menu
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : (
               <form onSubmit={submitOrder}>
@@ -453,4 +487,77 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       )}
     </div>
   );
+}
+
+function SuccessMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-green-100 bg-white p-4 text-center">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-1 font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function OrderTimeline({ status, orderType }: { status: string; orderType: RestaurantOrder["order_type"] }) {
+  const steps = orderSteps(orderType);
+  const currentIndex = Math.max(0, steps.findIndex((step) => step.statuses.includes(status)));
+  return (
+    <div className="rounded-2xl bg-white p-4">
+      <p className="font-semibold text-slate-900">Status timeline</p>
+      <div className="mt-4 space-y-3">
+        {steps.map((step, index) => {
+          const done = index <= currentIndex;
+          return (
+            <div key={step.label} className="flex gap-3">
+              <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${done ? "bg-green-700 text-white" : "bg-slate-100 text-slate-400"}`}>
+                {index + 1}
+              </span>
+              <div>
+                <p className={`font-semibold ${done ? "text-slate-950" : "text-slate-400"}`}>{step.label}</p>
+                <p className="text-sm leading-6 text-slate-500">{step.description}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function orderSteps(orderType: RestaurantOrder["order_type"]) {
+  if (orderType === "DELIVERY") {
+    return [
+      { label: "Order received", description: "The restaurant has your order.", statuses: ["NEW"] },
+      { label: "Preparing", description: "The kitchen is working on it.", statuses: ["ACCEPTED", "PREPARING"] },
+      { label: "On the way", description: "Delivery is heading to you.", statuses: ["READY", "DELIVERING"] },
+      { label: "Delivered", description: "Enjoy your meal.", statuses: ["DELIVERED", "COMPLETED"] },
+    ];
+  }
+  return [
+    { label: "Order received", description: "The restaurant has your order.", statuses: ["NEW"] },
+    { label: "Preparing", description: "The kitchen is working on it.", statuses: ["ACCEPTED", "PREPARING"] },
+    { label: orderType === "EAT_IN" ? "Ready for your table" : "Ready for pickup", description: "Staff will have it ready shortly.", statuses: ["READY"] },
+    { label: "Completed", description: "Thanks for ordering.", statuses: ["PICKED_UP", "COMPLETED"] },
+  ];
+}
+
+function estimateText(order: RestaurantOrder) {
+  if (order.estimated_minutes) return `${order.estimated_minutes} min`;
+  if (order.order_type === "DELIVERY") return "35-50 min";
+  if (order.order_type === "EAT_IN") return "15-25 min";
+  return "20-30 min";
+}
+
+function orderTypeLabel(orderType: RestaurantOrder["order_type"]) {
+  return orderType === "EAT_IN" ? "Dine in" : orderType.charAt(0) + orderType.slice(1).toLowerCase();
+}
+
+function nextInstruction(orderType: RestaurantOrder["order_type"]) {
+  if (orderType === "DELIVERY") return "Watch this tracking page for status changes. The restaurant may call if they need delivery details.";
+  if (orderType === "EAT_IN") return "Arrive at the restaurant and mention your order number to staff.";
+  return "Come to the restaurant around the estimated pickup time and mention your order number.";
+}
+
+function shortOrderNumber(publicId: string) {
+  return publicId.split("-")[0].toUpperCase();
 }

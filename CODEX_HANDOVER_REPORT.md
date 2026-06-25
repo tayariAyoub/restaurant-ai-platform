@@ -92,6 +92,50 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Backend syntax: `python -m py_compile app\\services\\seed.py app\\api\\admin.py` passed in `backend/`.
 - Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
 
+## V1 Step 2 - Customer Order Confirmation And Tracking
+
+**Goal:** Make the post-order customer experience feel professional, clear, and mobile-friendly without adding payments, full delivery maps, or schema changes.
+
+**Customer experience improved:**
+- Rebuilt the order success state after checkout with:
+  - public order number
+  - total
+  - pickup/dine-in/delivery method
+  - estimated time
+  - status timeline
+  - next-step instructions
+  - restaurant phone/help info
+  - clear `Track order` and `Back to menu` actions
+- Added a simple customer tracking page at:
+  - `/restaurants/{slug}/orders/{publicId}`
+- Tracking page includes:
+  - order number
+  - current status
+  - estimated time
+  - mobile-friendly progress timeline
+  - latest status updates
+  - ordered items
+  - customer notes
+  - restaurant contact/address help
+  - loading and error states
+
+**Backend/API work:**
+- Added a read-only public order tracking endpoint:
+  - `GET /api/restaurants/{slug}/orders/{public_id}`
+- Endpoint is scoped by restaurant slug and public order ID.
+- Reuses existing order, item, delivery, and status-history relationships.
+- No database schema changes.
+
+**Files changed:**
+- `backend/app/api/public.py`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/app/restaurants/[slug]/orders/[publicId]/page.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend syntax: `python -m py_compile app\\api\\public.py` passed in `backend/`.
+- Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
