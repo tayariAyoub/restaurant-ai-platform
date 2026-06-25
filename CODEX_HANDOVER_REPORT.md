@@ -124,6 +124,46 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py` passed in `backend/`.
 - Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
 - Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
+
+## Codex Phase 5 - Final Demo Readiness
+
+**Goal:** Remove demo rough edges and make the customer and owner/admin journeys easier to present to a real restaurant owner.
+
+**Customer journey polish:**
+- Cleaned legacy public routes (`/`, `/menu`, `/contact`) so copy, empty states, pricing, reservation text, and loading states are consistent with the premium restaurant website.
+- Passed restaurant slug/name/brand color into the public shell chatbot so legacy public routes use the same restaurant-trained assistant experience.
+- Improved dynamic restaurant loading/error states.
+- Removed visible encoding artifacts and normalized demo text.
+
+**Owner/admin journey polish:**
+- Improved login page copy and presentation.
+- Reworked restaurants list with loading skeletons, clearer filters, better empty state, delete feedback, and mobile-friendly layout.
+- Improved new restaurant onboarding copy, loading state, and form layout.
+- Improved users/owners page with helper copy, loading state, empty state, and clearer account creation feedback.
+
+**Documentation polish:**
+- Added a `How to demo RestaurantAI` section to `README.md` with a step-by-step sales/demo walkthrough covering website, AI assistant, ordering, admin dashboard, owner editor, operations, reservations, and business value.
+
+**Demo data polish:**
+- Normalized demo seed/mock text to avoid odd punctuation rendering in screenshots or presentations.
+
+**Files changed in this phase:**
+- `README.md`
+- `backend/app/services/seed.py`
+- `frontend/app/page.tsx`
+- `frontend/app/menu/page.tsx`
+- `frontend/app/contact/page.tsx`
+- `frontend/app/restaurants/[slug]/page.tsx`
+- `frontend/app/admin/login/page.tsx`
+- `frontend/app/admin/restaurants/page.tsx`
+- `frontend/app/admin/restaurants/new/page.tsx`
+- `frontend/app/admin/users/page.tsx`
+- `frontend/components/PublicShell.tsx`
+- `frontend/scripts/mock-api.mjs`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py app\\services\\seed.py app\\main.py app\\api\\admin.py app\\api\\public.py app\\api\\auth.py` passed in `backend/`.
 - Backend: local `pytest` could not run because `pytest` was not installed.
 - Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
 - Docker fallback could not run because Docker Desktop engine was not running.

@@ -12,7 +12,7 @@ const restaurant = {
   phone: "+49 30 555 0123",
   email: "ciao@bellanapoli.demo",
   opening_hours:
-    "Monday: Closed\nTuesday–Thursday: 17:00–22:30\nFriday–Saturday: 12:00–23:00\nSunday: 12:00–22:00",
+    "Monday: Closed\nTuesday-Thursday: 17:00-22:30\nFriday-Saturday: 12:00-23:00\nSunday: 12:00-22:00",
   hero_image:
     "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=1800&q=85",
   reservation_url: "",
@@ -41,7 +41,7 @@ const restaurant = {
     {
       id: 2,
       name: "Wood-fired Pizza",
-      description: "48-hour fermented dough, baked at 450°C.",
+      description: "48-hour fermented dough, baked hot in a wood-fired oven.",
       sort_order: 1,
       items: [
         {
@@ -88,7 +88,7 @@ http
     if (request.url === "/api/chat") {
       return response.end(
         JSON.stringify({
-          answer: "Our Margherita is €12.50 and vegetarian.",
+          answer: "Our Margherita is EUR 12.50 and vegetarian.",
           conversation_id: "demo",
         }),
       );
@@ -102,4 +102,3 @@ http
     return response.end(JSON.stringify({ detail: "Not found" }));
   })
   .listen(8000);
-

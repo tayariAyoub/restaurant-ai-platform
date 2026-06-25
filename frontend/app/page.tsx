@@ -24,25 +24,17 @@ export default function Home() {
           >
             <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 pt-40 lg:px-10 lg:pb-28">
               <p className="mb-5 text-sm font-semibold uppercase tracking-[0.35em] text-orange-200">
-                Neighborhood Italian · Berlin
+                Neighborhood restaurant - {restaurant.city || "Your city"}
               </p>
-              <h1 className="max-w-4xl text-6xl font-semibold leading-[0.9] sm:text-7xl lg:text-8xl">
-                Pizza, fire &amp; a little bit of Naples.
+              <h1 className="max-w-4xl text-5xl font-semibold leading-[0.92] sm:text-7xl lg:text-8xl">
+                {restaurant.tagline || "A restaurant website that feels alive."}
               </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-stone-200">
-                {restaurant.description}
-              </p>
+              <p className="mt-7 max-w-xl text-lg leading-8 text-stone-200">{restaurant.description}</p>
               <div className="mt-9 flex flex-wrap gap-4">
-                <Link
-                  href="/menu"
-                  className="flex items-center gap-2 rounded-full bg-tomato px-7 py-4 font-semibold transition hover:bg-red-700"
-                >
+                <Link href="/menu" className="flex items-center gap-2 rounded-full bg-tomato px-7 py-4 font-semibold transition hover:bg-red-700">
                   Explore our menu <ArrowRight size={18} />
                 </Link>
-                <Link
-                  href="/contact#reservation"
-                  className="rounded-full border border-white/50 bg-white/10 px-7 py-4 font-semibold backdrop-blur transition hover:bg-white hover:text-ink"
-                >
+                <Link href="/contact#reservation" className="rounded-full border border-white/50 bg-white/10 px-7 py-4 font-semibold backdrop-blur transition hover:bg-white hover:text-ink">
                   Reserve a table
                 </Link>
               </div>
@@ -54,14 +46,14 @@ export default function Home() {
               <div className="flex gap-4 py-7 md:pr-8">
                 <MapPin className="text-tomato" />
                 <div>
-                  <p className="font-semibold">{restaurant.address}</p>
+                  <p className="font-semibold">{restaurant.address || "Address coming soon"}</p>
                   <p className="text-sm text-stone-500">{restaurant.postal_code} {restaurant.city}</p>
                 </div>
               </div>
               <div className="flex gap-4 py-7 md:px-8">
                 <Clock3 className="text-tomato" />
                 <div>
-                  <p className="font-semibold">Open today</p>
+                  <p className="font-semibold">Open hours</p>
                   <p className="text-sm text-stone-500">See current opening hours</p>
                 </div>
               </div>
@@ -69,7 +61,7 @@ export default function Home() {
                 <Sparkles className="text-tomato" />
                 <div>
                   <p className="font-semibold">Need a quick answer?</p>
-                  <p className="text-sm text-stone-500">Ask our AI assistant anytime</p>
+                  <p className="text-sm text-stone-500">Ask the restaurant AI assistant anytime</p>
                 </div>
               </div>
             </div>
@@ -79,30 +71,21 @@ export default function Home() {
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.3em] text-tomato">Our story</p>
               <h2 className="mt-5 text-5xl font-semibold leading-tight sm:text-6xl">
-                Simple ingredients.<br />Serious feeling.
+                Built around hospitality.
               </h2>
             </div>
             <div className="max-w-xl text-lg leading-8 text-stone-600">
-              <p>
-                Our dough rests for 48 hours. Our tomatoes come from San Marzano.
-                Our oven runs hot, and our welcome is always warm.
-              </p>
-              <p className="mt-6">
-                We cook the food we love to eat: honest antipasti, blistered
-                Neapolitan pizza, and desserts that make staying a little longer
-                feel like the only sensible choice.
-              </p>
+              <p>{restaurant.story || restaurant.description}</p>
               <Link href="/menu" className="mt-8 inline-flex items-center gap-2 font-semibold text-tomato">
-                See what’s cooking <ArrowRight size={18} />
+                See what's cooking <ArrowRight size={18} />
               </Link>
             </div>
           </section>
 
           <section id="gallery" className="grid gap-2 px-2 pb-2 md:grid-cols-3">
-            {gallery.map((image, index) => (
-              <div key={image} className={`overflow-hidden ${index === 1 ? "md:translate-y-0" : ""}`}>
-                {/* External demo imagery can be replaced from the admin in a later release. */}
-                <img src={image} alt="Bella Napoli food and atmosphere" className="h-[420px] w-full object-cover transition duration-700 hover:scale-105" />
+            {gallery.map((image) => (
+              <div key={image} className="overflow-hidden rounded-2xl">
+                <img src={image} alt={`${restaurant.name} food and atmosphere`} className="h-[420px] w-full object-cover transition duration-700 hover:scale-105" />
               </div>
             ))}
           </section>
@@ -111,4 +94,3 @@ export default function Home() {
     </PublicShell>
   );
 }
-

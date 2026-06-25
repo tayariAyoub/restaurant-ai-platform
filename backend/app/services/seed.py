@@ -118,12 +118,12 @@ def seed_demo_data(db: Session) -> None:
     opening_hours = json.dumps(
         {
             "monday": "Closed",
-            "tuesday": "17:00–22:30",
-            "wednesday": "17:00–22:30",
-            "thursday": "17:00–22:30",
-            "friday": "12:00–23:00",
-            "saturday": "12:00–23:00",
-            "sunday": "12:00–22:00",
+            "tuesday": "17:00-22:30",
+            "wednesday": "17:00-22:30",
+            "thursday": "17:00-22:30",
+            "friday": "12:00-23:00",
+            "saturday": "12:00-23:00",
+            "sunday": "12:00-22:00",
         }
     )
     if not restaurant:
@@ -166,7 +166,7 @@ def seed_demo_data(db: Session) -> None:
         pizza = MenuCategory(
             restaurant_id=restaurant.id,
             name="Wood-fired Pizza",
-            description="48-hour fermented dough, baked at 450°C.",
+            description="48-hour fermented dough, baked hot in a wood-fired oven.",
             sort_order=1,
         )
         starters = MenuCategory(

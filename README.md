@@ -67,6 +67,48 @@ Open:
 
 The admin and demo-owner login details are the `ADMIN_*` and `DEMO_OWNER_*` values you set in your local `.env`.
 
+## How to demo RestaurantAI
+
+Use this flow when showing the product to a restaurant owner.
+
+1. Open the live restaurant website:
+   http://localhost:3000/restaurants/bella-napoli
+
+2. Show the first impression:
+   - branded hero section
+   - menu and online ordering
+   - photo gallery
+   - opening hours and reservation form
+   - AI assistant in the bottom-right corner
+
+3. Ask the AI assistant customer-style questions:
+   - "What should I order?"
+   - "Which dishes are vegetarian?"
+   - "Do any dishes contain nuts or gluten?"
+   - "When are you open?"
+   - "How can I reserve a table?"
+
+4. Place a demo order:
+   - add menu items to the cart
+   - choose pickup, dine-in, or delivery
+   - submit the order
+
+5. Open the admin dashboard:
+   http://localhost:3000/admin/login
+
+6. Show the restaurant owner workflow:
+   - Dashboard: daily orders, reservations, AI gaps, setup progress
+   - Information: edit restaurant details and opening hours
+   - Design: change template, colors, font, and preview the site
+   - Menu: add categories, dishes, prices, allergens, and availability
+   - Images: upload hero image, logo, food photos, and gallery photos
+   - AI Chatbot: upload knowledge, review what the AI knows, see missing information, test common questions
+   - Orders: use the live operations board and tablet-friendly kitchen mode
+   - Reservations: confirm, decline, complete, or reopen booking requests
+
+7. Close with the business value:
+   RestaurantAI gives a restaurant a professional website, online ordering, daily operations tools, and a restaurant-trained AI employee from one dashboard.
+
 Stop the application:
 
 ```powershell
