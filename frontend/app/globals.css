@@ -5,6 +5,11 @@
 :root {
   color: #1b1b18;
   background: #f7f3ea;
+  --rai-ink: #171511;
+  --rai-paper: #f7f3ea;
+  --rai-card: rgba(255, 255, 255, 0.82);
+  --rai-line: rgba(23, 21, 17, 0.1);
+  --rai-shadow: 0 24px 70px rgba(23, 21, 17, 0.12);
 }
 
 html {
@@ -15,7 +20,8 @@ body {
   margin: 0;
   font-family: var(--font-sans), sans-serif;
   background:
-    radial-gradient(circle at 15% 5%, rgba(200, 75, 49, 0.08), transparent 25rem),
+    radial-gradient(circle at 15% 5%, rgba(200, 75, 49, 0.07), transparent 24rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.45), transparent 34rem),
     #f7f3ea;
 }
 
@@ -55,5 +61,36 @@ textarea:focus,
 select:focus {
   border-color: #c84b31;
   box-shadow: 0 0 0 3px rgba(200, 75, 49, 0.12);
+}
+
+.premium-card {
+  border: 1px solid var(--rai-line);
+  background: var(--rai-card);
+  box-shadow: var(--rai-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.premium-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.premium-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 30px 80px rgba(23, 21, 17, 0.14);
+}
+
+.fade-up {
+  animation: fade-up 520ms ease both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 

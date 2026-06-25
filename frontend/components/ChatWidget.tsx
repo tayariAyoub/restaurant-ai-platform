@@ -67,7 +67,7 @@ export default function ChatWidget({
   return (
     <div className="fixed bottom-5 right-4 z-50 sm:right-5">
       {open && (
-        <div className="mb-4 flex h-[min(700px,82vh)] w-[min(430px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl">
+        <div className="mb-4 flex h-[min(720px,84vh)] w-[min(450px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-2xl">
           <div className="relative overflow-hidden px-5 py-5 text-white" style={{ backgroundColor: primaryColor }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,.28),transparent_16rem)]" />
             <div className="relative flex items-start justify-between gap-4">
@@ -84,6 +84,9 @@ export default function ChatWidget({
                 <X size={18} />
               </button>
             </div>
+            <p className="relative mt-4 rounded-2xl bg-white/12 p-3 text-sm leading-6 text-white/85">
+              I can help choose dishes, explain allergens, guide pickup orders, and prepare reservation questions.
+            </p>
           </div>
 
           <div className="border-b bg-white px-4 py-3 text-xs leading-5 text-stone-500">
@@ -124,12 +127,12 @@ export default function ChatWidget({
                 {starterGroups.map((group) => (
                   <div key={group.label}>
                     <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-stone-500">{group.label}</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid gap-2">
                       {group.questions.map((question) => (
                         <button
                           key={question}
                           onClick={() => send(undefined, question)}
-                          className="rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-sm hover:border-black/20"
+                          className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs font-semibold text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20"
                         >
                           {question}
                         </button>

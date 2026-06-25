@@ -1,16 +1,21 @@
 "use client";
 
 import {
+  Award,
   Check,
   ChefHat,
   Clock3,
+  Heart,
   Instagram,
   Leaf,
+  type LucideIcon,
   MapPin,
   Menu as MenuIcon,
   Minus,
   Phone,
   Plus,
+  Search,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Trash2,
@@ -33,6 +38,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const [orderType, setOrderType] = useState<"PICKUP" | "EAT_IN" | "DELIVERY">("PICKUP");
   const [orderStatus, setOrderStatus] = useState("");
   const [completedOrder, setCompletedOrder] = useState<RestaurantOrder | null>(null);
+  const [menuQuery, setMenuQuery] = useState("");
+  const [dietaryFilter, setDietaryFilter] = useState<"all" | "vegan" | "vegetarian" | "halal">("all");
 
   const theme = restaurant.theme;
   const primary = restaurant.primary_color || theme?.primary_color || "#c84b31";
@@ -62,6 +69,11 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
   const dietaryPrompts = buildDietaryPrompts(menuItems);
+  const filteredCategories = restaurant.categories.map((category) => ({
+    ...category,
+    items: category.items.filter((item) => matchesMenuFilters(item, menuQuery, dietaryFilter)),
+  }));
+  const visibleMenuItems = filteredCategories.reduce((total, category) => total + category.items.length, 0);
   const cartLines = Object.values(cart);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + Number(line.item.price) * line.quantity, 0);
@@ -153,7 +165,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             )}
             <span className="truncate">{restaurant.name}</span>
           </a>
-          <nav className="hidden items-center gap-7 rounded-full border border-white/15 bg-black/20 px-5 py-3 text-sm font-semibold shadow-2xl backdrop-blur md:flex">
+          <nav className="hidden items-center gap-7 rounded-full border border-white/15 bg-black/25 px-5 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl md:flex">
             <a href="#story">Story</a>
             <a href="#menu">Menu</a>
             <a href="#gallery">Gallery</a>
@@ -183,16 +195,16 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
 
       <main id="top">
         <section
-          className={`relative flex min-h-[92vh] items-end overflow-hidden bg-cover bg-center ${template === "japanese" ? "grayscale" : ""}`}
+          className={`relative flex min-h-[94vh] items-end overflow-hidden bg-cover bg-center ${template === "japanese" ? "grayscale" : ""}`}
           style={{
-            backgroundImage: `linear-gradient(90deg, rgba(12,10,8,.86), rgba(12,10,8,.42) 48%, rgba(12,10,8,.16)), url(${restaurant.hero_image})`,
+            backgroundImage: `linear-gradient(90deg, rgba(10,8,5,.88), rgba(10,8,5,.5) 48%, rgba(10,8,5,.16)), url(${restaurant.hero_image})`,
           }}
         >
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/45 to-transparent" />
-          <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-16 pt-40 text-white sm:px-6 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
-            <div>
-              <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[.28em] backdrop-blur" style={{ color: secondary }}>
-                <Sparkles size={14} /> {restaurant.city || "Welcome"}
+          <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/60 to-transparent" />
+          <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-12 pt-40 text-white sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:pb-16">
+            <div className="fade-up">
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[.28em] backdrop-blur" style={{ color: "#fff" }}>
+                <Sparkles size={14} /> {restaurant.city || "A table is waiting"}
               </p>
               <h1 className={`mt-6 max-w-5xl font-semibold leading-[.92] ${template === "fast-food" ? "text-5xl uppercase sm:text-7xl lg:text-8xl" : "text-5xl sm:text-7xl lg:text-8xl"}`}>
                 {restaurant.tagline || restaurant.name}
@@ -206,8 +218,13 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                   Book a table
                 </a>
               </div>
+              <div className="mt-8 grid max-w-xl grid-cols-3 divide-x divide-white/15 rounded-2xl border border-white/15 bg-black/20 text-center text-sm backdrop-blur">
+                <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Courses</span></div>
+                <div className="p-4"><b className="block text-2xl">{availableItems}</b><span className="text-white/65">Dishes</span></div>
+                <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Waiter</span></div>
+              </div>
             </div>
-            <div className="hidden rounded-3xl border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur lg:block">
+            <div className="hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl lg:block">
               <div className="grid grid-cols-3 gap-3">
                 {heroGallery.length > 0 ? (
                   heroGallery.map((image, index) => (
@@ -224,10 +241,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                   </div>
                 )}
               </div>
-              <div className="mt-4 grid grid-cols-3 divide-x divide-white/15 rounded-2xl bg-black/20 text-center text-sm">
-                <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Categories</span></div>
-                <div className="p-4"><b className="block text-2xl">{availableItems}</b><span className="text-white/65">Menu items</span></div>
-                <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Concierge</span></div>
+              <div className="mt-4 rounded-2xl bg-black/25 p-5">
+                <p className="flex items-center gap-2 text-sm font-semibold"><Award size={17} /> Chef's selection, direct ordering, and table requests in one place.</p>
               </div>
             </div>
           </div>
@@ -241,11 +256,18 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </div>
         </section>
 
-        <section id="story" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:py-28">
-          <div className="max-w-3xl">
+        <section id="story" className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
+          <div>
             <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Our story</p>
-            <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">{restaurant.name}, made personal.</h2>
-            <p className="mt-7 whitespace-pre-line text-lg leading-8 opacity-75">{restaurant.story || restaurant.description}</p>
+            <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">{restaurant.name}, made personal.</h2>
+          </div>
+          <div className="premium-card rounded-[2rem] p-6 sm:p-8">
+            <p className="whitespace-pre-line text-lg leading-8 opacity-75">{restaurant.story || restaurant.description}</p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <StorySignal icon={ChefHat} label="Kitchen" value="Made fresh" />
+              <StorySignal icon={ShieldCheck} label="Allergies" value="Ask before ordering" />
+              <StorySignal icon={Heart} label="Hospitality" value="Direct to restaurant" />
+            </div>
           </div>
         </section>
 
@@ -264,8 +286,31 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               </div>
             ) : (
               <>
-                <div className="sticky top-0 z-20 -mx-4 mt-10 border-y border-black/10 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-2 sm:mx-0 sm:rounded-full sm:border">
-                  <div className="flex gap-2 overflow-x-auto pb-1 sm:justify-center">
+                <div className="sticky top-0 z-20 -mx-4 mt-10 border-y border-black/10 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-2 sm:mx-0 sm:rounded-[1.5rem] sm:border">
+                  <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                    <label className="relative block">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-45" size={18} />
+                      <input
+                        value={menuQuery}
+                        onChange={(event) => setMenuQuery(event.target.value)}
+                        className="w-full rounded-full border border-black/10 bg-white py-3 pl-11 pr-4 text-sm shadow-sm"
+                        placeholder="Search dishes, ingredients, allergens..."
+                      />
+                    </label>
+                    <div className="flex gap-2 overflow-x-auto">
+                      {(["all", "vegan", "vegetarian", "halal"] as const).map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setDietaryFilter(filter)}
+                          className={`shrink-0 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-wider ${dietaryFilter === filter ? "text-white" : "bg-white"}`}
+                          style={dietaryFilter === filter ? { backgroundColor: primary, borderColor: primary } : undefined}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:justify-center">
                     {restaurant.categories.map((category) => (
                       <a
                         key={category.id}
@@ -276,6 +321,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       </a>
                     ))}
                   </div>
+                  {(menuQuery || dietaryFilter !== "all") && <p className="mt-3 text-center text-xs font-semibold opacity-60">{visibleMenuItems} dishes match your selection</p>}
                 </div>
 
                 {featuredItems.length > 0 && (
@@ -309,7 +355,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 )}
 
                 <div className="mt-12 space-y-14">
-                  {restaurant.categories.map((category) => (
+                  {filteredCategories.map((category) => (
                     <section id={`category-${category.id}`} key={category.id} className="scroll-mt-24">
                       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-black/15 pb-5">
                         <div>
@@ -321,7 +367,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                         </span>
                       </div>
                       {category.items.length === 0 ? (
-                        <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">No dishes in this category yet.</div>
+                        <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">No dishes match the current search or filter.</div>
                       ) : (
                         <div className={`mt-6 grid gap-4 ${restaurant.menu_style === "cards" || theme?.menu_style === "cards" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                           {category.items.map((item) => (
@@ -346,10 +392,14 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         </section>
 
         {gallery.length > 0 && (
-          <section id="gallery" className="px-3 py-3">
-            <div className={`grid gap-3 ${theme?.gallery_style === "filmstrip" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+          <section id="gallery" className="px-3 py-16 sm:px-6">
+            <div className="mx-auto mb-8 max-w-7xl">
+              <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Atmosphere</p>
+              <h2 className="mt-3 text-4xl font-semibold sm:text-5xl">A glimpse before you arrive.</h2>
+            </div>
+            <div className={`mx-auto grid max-w-7xl gap-3 ${theme?.gallery_style === "filmstrip" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
               {gallery.map((image) => (
-                <img key={image.id} src={image.url} alt={image.alt_text || restaurant.name} className="h-80 w-full rounded-2xl object-cover" />
+                <img key={image.id} src={image.url} alt={image.alt_text || restaurant.name} className="h-80 w-full rounded-[1.5rem] object-cover shadow-sm transition duration-300 hover:scale-[1.01]" />
               ))}
             </div>
           </section>
@@ -374,9 +424,10 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" className="flex items-center gap-2"><Instagram size={17} /> Instagram</a>}
             </div>
           </div>
-          <form id="reserve" onSubmit={reserve} className="rounded-3xl border border-black/10 bg-white p-6 text-slate-900 shadow-2xl sm:p-8">
-            <h2 className="text-3xl font-semibold sm:text-4xl">Request a table</h2>
-            <p className="mt-2 text-sm text-slate-500">The restaurant will confirm your request. Add dietary notes or a special occasion below.</p>
+          <form id="reserve" onSubmit={reserve} className="premium-card rounded-[2rem] p-6 text-slate-900 sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: primary }}>Reservations</p>
+            <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Request a table</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">The restaurant will confirm your request. Add dietary notes, allergies, or a special occasion below.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
               <input name="name" required placeholder="Your name" className="rounded-xl border px-4 py-3" />
               <input name="email" type="email" required placeholder="Email" className="rounded-xl border px-4 py-3" />
@@ -388,13 +439,15 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             <button className={`mt-4 w-full ${buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: primary }}>
               Send reservation request
             </button>
-            {reservationStatus && <p className="mt-3 text-center text-sm text-slate-600">{reservationStatus}</p>}
+            {reservationStatus && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-center text-sm text-slate-600">{reservationStatus}</p>}
           </form>
         </section>
       </main>
 
-      <footer className="px-6 py-10 text-center text-sm opacity-80" style={{ backgroundColor: text, color: background }}>
-        © {new Date().getFullYear()} {restaurant.name} · Powered by RestaurantAI
+      <footer className="px-6 py-12 text-center text-sm" style={{ backgroundColor: text, color: background }}>
+        <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
+        <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
+        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Powered by RestaurantAI</p>
       </footer>
 
       <ChatWidget
@@ -423,8 +476,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       )}
 
       {cartOpen && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/55 p-0 sm:items-center sm:p-5">
-          <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-3xl bg-white p-6 text-slate-900 shadow-2xl sm:rounded-3xl">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
+          <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] bg-white p-6 text-slate-900 shadow-2xl sm:rounded-[2rem]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-wider" style={{ color: primary }}>Online order</p>
@@ -474,6 +527,11 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               </div>
             ) : (
               <form onSubmit={submitOrder}>
+                <div className="mt-6 grid grid-cols-3 gap-2 text-center text-xs font-bold text-slate-500">
+                  {["Review", "Details", "Confirm"].map((step, index) => (
+                    <span key={step} className={`rounded-full px-3 py-2 ${index === 0 ? "text-white" : "bg-slate-100"}`} style={index === 0 ? { backgroundColor: primary } : undefined}>{step}</span>
+                  ))}
+                </div>
                 <div className="mt-6 space-y-3">
                   {cartLines.map((line) => (
                     <div key={line.item.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
@@ -547,6 +605,16 @@ function SuccessMetric({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-green-100 bg-white p-4 text-center">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-1 font-bold text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function StorySignal({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-black/5 bg-white/70 p-4">
+      <Icon size={18} className="opacity-55" />
+      <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] opacity-45">{label}</p>
+      <p className="mt-1 font-semibold">{value}</p>
     </div>
   );
 }
@@ -677,6 +745,17 @@ function buildDietaryPrompts(items: MenuItem[]) {
   if (items.some((item) => item.is_halal)) prompts.push("Which dishes are halal?");
   if (items.some((item) => item.allergens)) prompts.push("Help me avoid allergens");
   return prompts.length > 0 ? prompts : ["Help me choose for allergies"];
+}
+
+function matchesMenuFilters(item: MenuItem, query: string, filter: "all" | "vegan" | "vegetarian" | "halal") {
+  const haystack = `${item.name} ${item.description} ${item.allergens}`.toLowerCase();
+  const matchesQuery = !query.trim() || haystack.includes(query.trim().toLowerCase());
+  const matchesFilter =
+    filter === "all" ||
+    (filter === "vegan" && item.is_vegan) ||
+    (filter === "vegetarian" && (item.is_vegetarian || item.is_vegan)) ||
+    (filter === "halal" && item.is_halal);
+  return matchesQuery && matchesFilter;
 }
 
 function shortOrderNumber(publicId: string) {

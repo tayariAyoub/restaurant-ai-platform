@@ -94,13 +94,14 @@ export default function DashboardPage() {
   if (me.role === "RESTAURANT_OWNER") {
     const restaurant = restaurants[0];
     const insights = restaurant ? buildOwnerInsights(ownerRestaurant, ownerOrders, ownerReservations, ownerConversations) : null;
+    const healthScore = restaurant ? businessHealthScore(restaurant, insights) : 0;
     const ownerCards = restaurant
       ? [
+          ["Health score", `${healthScore}%`, Sparkles, healthScore >= 85 ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-800"],
           ["Today revenue", formatCurrency(insights?.todayRevenue ?? 0), DollarSign, "bg-emerald-50 text-emerald-700"],
           ["Today's orders", insights?.todayOrders ?? stats.new_orders, ShoppingBag, "bg-pink-50 text-pink-700"],
           ["Reservations", insights?.activeReservations ?? restaurant.new_reservations, CalendarDays, "bg-blue-50 text-blue-700"],
           ["AI gaps", insights?.unansweredMessages ?? restaurant.unanswered_count, CircleHelp, "bg-red-50 text-red-700"],
-          ["Menu items", restaurant.menu_items, Menu, "bg-orange-50 text-orange-700"],
         ] as const
       : [];
     const quickActions = [
@@ -201,6 +202,13 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     )}
+                  </div>
+
+                  <div className="mt-6 rounded-xl border border-orange-100 bg-orange-50 p-4">
+                    <div className="flex items-center gap-2 font-semibold text-orange-950"><Sparkles size={17} /> Today's recommendations</div>
+                    <ul className="mt-3 space-y-2 text-sm leading-6 text-orange-950">
+                      {dailyRecommendations(restaurant, insights).map((item) => <li key={item}>- {item}</li>)}
+                    </ul>
                   </div>
                 </section>
               </div>
@@ -405,6 +413,25 @@ function buildTenantReadiness(restaurants: RestaurantOverview[]) {
     missingMenuOrHours: restaurants.filter((restaurant) => restaurant.menu_items === 0 || !restaurant.checklist.opening_hours).length,
     missingAi: restaurants.filter((restaurant) => !restaurant.checklist.chatbot || restaurant.unanswered_count > 0).length,
   };
+}
+
+function businessHealthScore(restaurant: RestaurantOverview, insights: OwnerInsights | null) {
+  let score = restaurant.setup_percent;
+  if (!restaurant.is_published) score -= 12;
+  if (restaurant.unanswered_count > 0 || (insights?.unansweredMessages ?? 0) > 0) score -= 10;
+  if (restaurant.new_orders > 0 || (insights?.openOrders ?? 0) > 0) score -= 4;
+  if (!restaurant.owner_name && !restaurant.owner_email) score -= 8;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function dailyRecommendations(restaurant: RestaurantOverview, insights: OwnerInsights) {
+  const recommendations = [];
+  if (insights.openOrders > 0) recommendations.push(`Move ${insights.openOrders} open order${insights.openOrders === 1 ? "" : "s"} through the kitchen workflow.`);
+  if (insights.unansweredMessages > 0) recommendations.push("Review unanswered AI questions and add missing knowledge.");
+  if (insights.warnings.length > 0) recommendations.push(`Fix setup gaps: ${insights.warnings.slice(0, 2).join(", ")}.`);
+  if (restaurant.new_reservations > 0) recommendations.push("Confirm or decline new reservation requests before service.");
+  if (recommendations.length === 0) recommendations.push("Everything important looks calm. Check photos, menu availability, and today's specials before service.");
+  return recommendations.slice(0, 4);
 }
 
 type OwnerInsights = {

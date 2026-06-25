@@ -278,6 +278,60 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Backend tests: `docker compose run --rm backend pytest` passed with `8 passed, 1 warning`.
 - Local `python -m pytest` still cannot run on this machine because the active local Python is 3.14 and backend dependencies are not installed there. Use Docker or Python 3.12 as documented.
 
+## V1.5 - Premium Restaurant Experience
+
+**Mission:** Move RestaurantAI from a strong SaaS demo toward a premium restaurant platform with a coherent design language.
+
+**Design principles applied:**
+- Fine-dining restraint: stronger whitespace, atmospheric image presentation, calmer typography, and less generic card clutter.
+- Premium SaaS clarity: cleaner admin shell, consistent motion, soft glass surfaces, sharper hierarchy, and more useful business guidance.
+- Mobile-first ordering: clearer sticky cart, menu search/filtering, better category navigation, and checkout progress cues.
+- Hospitality-first AI: AI waiter now feels more like a trained front-of-house employee with richer guidance and contextual suggestion cards.
+
+**Customer website improvements:**
+- Premium hero with stronger atmosphere, refined navigation, first-viewport metrics, and a richer gallery preview.
+- Story section rebuilt into a more editorial hospitality presentation.
+- Added story signals for kitchen, allergy care, and direct restaurant hospitality.
+- Gallery section now has a dedicated atmosphere heading and refined image treatment.
+- Reservation form upgraded with premium surface styling and clearer allergy/special-occasion copy.
+- Footer simplified into a luxury brand close rather than generic copyright text.
+
+**Menu and ordering improvements:**
+- Added menu search across dish names, descriptions, and allergens.
+- Added dietary filters for all, vegan, vegetarian, and halal.
+- Category navigation now works with search/filter feedback.
+- Menu empty states now distinguish unfinished menus from filtered no-results.
+- Cart modal now has a more polished overlay and checkout progress cues.
+
+**AI waiter improvements:**
+- Chat widget has a richer staff-like welcome area.
+- Suggestion prompts are presented as premium recommendation cards.
+- AI explains it can help with dishes, allergens, pickup ordering, and reservation questions.
+
+**Owner/admin experience improvements:**
+- Admin shell refined with a quieter premium operating-system feel.
+- Owner dashboard now includes a restaurant health score.
+- Owner dashboard now includes daily recommendations based on open orders, AI gaps, reservation activity, and setup warnings.
+
+**Design system improvements:**
+- Added global premium design primitives:
+  - `premium-card`
+  - `premium-lift`
+  - `fade-up`
+- Added shared premium colors/shadows via CSS variables.
+- Improved subtle transitions and hover states without changing core logic.
+
+**Files changed:**
+- `frontend/app/globals.css`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/components/admin/AdminShell.tsx`
+- `frontend/app/admin/dashboard/page.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend was not changed.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
