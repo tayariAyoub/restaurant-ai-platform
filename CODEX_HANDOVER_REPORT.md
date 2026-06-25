@@ -28,6 +28,33 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Run `pytest` on the backend to ensure service integrity.
 - Add more comprehensive frontend tests (currently missing).
 
+## V1.5 Creative Luxury Experience Pass
+
+**Goal:** Push the public RestaurantAI customer experience beyond a standard restaurant website into a cinematic, premium brand moment while preserving all existing ordering, reservation, and AI waiter functionality.
+
+**Creative direction:**
+- Combined calm fine-dining storytelling, art-gallery food presentation, mobile-first ordering clarity, and polished SaaS interaction details into a distinct RestaurantAI design language.
+- Added subtle motion, atmospheric depth, editorial spacing, and refined fallback treatments so the site feels intentional even when a restaurant has incomplete photos.
+
+**Customer website improvements:**
+- Upgraded the public hero to use restaurant photography as a cinematic background when available, with ambient motion and stronger depth.
+- Added premium visual primitives for sensory section separators, art-frame image treatment, ambient glows, and slow drifting atmosphere.
+- Reframed menu cards as an editorial tasting experience with plate numbering, refined hover motion, and elegant image handling.
+- Improved gallery framing so restaurant photos feel closer to an exhibition than a basic image grid.
+- Updated reservation confirmation copy and styling so booking feels more exclusive and trustworthy.
+
+**AI waiter improvements:**
+- Repositioned the chatbot as an AI maitre d' with warmer, more restaurant-native copy.
+- Improved the assistant entry point so it feels like part of the dining room experience instead of a generic support widget.
+
+**Files changed in this phase:**
+- `frontend/app/globals.css`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/ChatWidget.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+
 ## Codex Phase 1 - Product Polish
 
 **Goal:** Make the working MVP feel demo-ready and more credible for a first restaurant sales conversation without changing APIs, auth, database schema, or ordering/chat behavior.

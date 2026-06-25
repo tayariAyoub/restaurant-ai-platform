@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Hi, I am the trained AI employee for ${restaurantName}. I can answer from this restaurant's menu, hours, policies, and uploaded knowledge. Ask me for recommendations, allergy guidance, reservations, or ordering help.`,
+    content: `Good evening. I am the AI maître d' for ${restaurantName}. I can guide you through the menu, explain allergy notes, help plan a pickup order, or prepare a reservation request from this restaurant's own knowledge.`,
   };
 }
 
@@ -76,8 +76,8 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} AI Employee</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Trained on this restaurant only</p>
+                  <p className="font-semibold leading-tight">{restaurantName} Maître d'</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Menu, allergies, reservations</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} aria-label="Close chat" className="rounded-full bg-white/15 p-2 hover:bg-white/25">
@@ -85,7 +85,7 @@ export default function ChatWidget({
               </button>
             </div>
             <p className="relative mt-4 rounded-2xl bg-white/12 p-3 text-sm leading-6 text-white/85">
-              I can help choose dishes, explain allergens, guide pickup orders, and prepare reservation questions.
+              Tell me your mood, allergies, timing, or table plans. I will guide you like a careful member of the dining room team.
             </p>
           </div>
 
@@ -173,7 +173,7 @@ export default function ChatWidget({
 
       <button
         onClick={() => setOpen(!open)}
-        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full text-white shadow-2xl transition hover:scale-105"
+        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)]"
         style={{ backgroundColor: primaryColor }}
         aria-label="Open AI assistant"
       >

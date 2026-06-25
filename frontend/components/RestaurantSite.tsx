@@ -68,6 +68,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const menuItems = restaurant.categories.flatMap((category) => category.items);
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
+  const heroVisual = restaurant.hero_image || gallery[0]?.url || "";
   const dietaryPrompts = buildDietaryPrompts(menuItems);
   const filteredCategories = restaurant.categories.map((category) => ({
     ...category,
@@ -143,7 +144,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         }),
       });
       form.reset();
-      setReservationStatus("Request received. The restaurant will confirm shortly.");
+      setReservationStatus("Your table request has been received. The restaurant will confirm the details shortly.");
     } catch (error) {
       setReservationStatus(error instanceof Error ? error.message : "Could not send request.");
     }
@@ -197,9 +198,12 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         <section
           className={`relative flex min-h-[94vh] items-end overflow-hidden bg-cover bg-center ${template === "japanese" ? "grayscale" : ""}`}
           style={{
-            backgroundImage: `linear-gradient(90deg, rgba(10,8,5,.88), rgba(10,8,5,.5) 48%, rgba(10,8,5,.16)), url(${restaurant.hero_image})`,
+            backgroundImage: heroVisual
+              ? `linear-gradient(90deg, rgba(10,8,5,.88), rgba(10,8,5,.5) 48%, rgba(10,8,5,.16)), url(${heroVisual})`
+              : "linear-gradient(135deg, #15120f, #3b251f 48%, #15120f)",
           }}
         >
+          <div className="absolute inset-0 slow-drift bg-[radial-gradient(circle_at_75%_18%,rgba(255,255,255,.16),transparent_18rem)]" />
           <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/60 to-transparent" />
           <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-12 pt-40 text-white sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:pb-16">
             <div className="fade-up">
@@ -224,7 +228,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Waiter</span></div>
               </div>
             </div>
-            <div className="hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl lg:block">
+            <div className="art-frame hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl lg:block">
               <div className="grid grid-cols-3 gap-3">
                 {heroGallery.length > 0 ? (
                   heroGallery.map((image, index) => (
@@ -257,7 +261,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </div>
         </section>
 
-        <section id="story" className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
+        <section id="story" className="sensory-section mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Our story</p>
             <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">{restaurant.name}, made personal.</h2>
@@ -272,7 +276,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </div>
         </section>
 
-        <section id="menu" className="bg-white/70 px-4 py-16 sm:px-6 lg:py-28">
+        <section id="menu" className="sensory-section bg-white/70 px-4 py-16 sm:px-6 lg:py-28">
           <div className="mx-auto max-w-6xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Fresh from the kitchen</p>
@@ -326,7 +330,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 </div>
 
                 {featuredItems.length > 0 && (
-                  <div className="mt-10 rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+                  <div className="ambient-glow mt-10 rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
@@ -371,10 +375,11 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                         <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">No dishes match the current search or filter.</div>
                       ) : (
                         <div className={`mt-6 grid gap-4 ${restaurant.menu_style === "cards" || theme?.menu_style === "cards" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-                          {category.items.map((item) => (
+                          {category.items.map((item, index) => (
                             <MenuItemCard
                               key={item.id}
                               item={item}
+                              index={index}
                               quantity={cart[item.id]?.quantity || 0}
                               primary={primary}
                               secondary={secondary}
@@ -393,20 +398,20 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         </section>
 
         {gallery.length > 0 && (
-          <section id="gallery" className="px-3 py-16 sm:px-6">
+          <section id="gallery" className="sensory-section px-3 py-16 sm:px-6">
             <div className="mx-auto mb-8 max-w-7xl">
               <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Atmosphere</p>
               <h2 className="mt-3 text-4xl font-semibold sm:text-5xl">A glimpse before you arrive.</h2>
             </div>
             <div className={`mx-auto grid max-w-7xl gap-3 ${theme?.gallery_style === "filmstrip" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
               {gallery.map((image) => (
-                <img key={image.id} src={image.url} alt={image.alt_text || restaurant.name} className="h-80 w-full rounded-[1.5rem] object-cover shadow-sm transition duration-300 hover:scale-[1.01]" />
+                <img key={image.id} src={image.url} alt={image.alt_text || restaurant.name} className="art-frame h-80 w-full rounded-[1.5rem] object-cover shadow-sm transition duration-300 hover:scale-[1.01]" />
               ))}
             </div>
           </section>
         )}
 
-        <section id="contact" className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
+        <section id="contact" className="sensory-section mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Visit us</p>
             <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">Come hungry.</h2>
@@ -440,7 +445,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             <button className={`mt-4 w-full ${buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: primary }}>
               Send reservation request
             </button>
-            {reservationStatus && <p className="mt-3 rounded-xl bg-slate-50 p-3 text-center text-sm text-slate-600">{reservationStatus}</p>}
+            {reservationStatus && <p className="mt-3 rounded-xl border border-green-100 bg-green-50 p-3 text-center text-sm font-semibold text-green-800">{reservationStatus}</p>}
           </form>
         </section>
       </main>
@@ -634,6 +639,7 @@ function FoodFallback({ name, compact = false }: { name: string; compact?: boole
 
 function MenuItemCard({
   item,
+  index,
   quantity,
   primary,
   secondary,
@@ -641,6 +647,7 @@ function MenuItemCard({
   onAdd,
 }: {
   item: MenuItem;
+  index: number;
   quantity: number;
   primary: string;
   secondary: string;
@@ -651,7 +658,7 @@ function MenuItemCard({
     <article className={`premium-lift group grid overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm sm:block ${!item.is_available ? "opacity-60" : ""}`}>
       <div className="relative">
         {item.image_url ? (
-          <img src={item.image_url} alt={item.name} className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-48" />
+          <img src={item.image_url} alt={item.name} className="h-44 w-full object-cover transition duration-700 group-hover:scale-105 sm:h-48" />
         ) : (
           <FoodFallback name={item.name} />
         )}
@@ -663,7 +670,10 @@ function MenuItemCard({
       </div>
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-4">
-          <h4 className="text-xl font-semibold leading-snug">{item.name}</h4>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] opacity-40">Plate {String(index + 1).padStart(2, "0")}</p>
+            <h4 className="mt-1 text-xl font-semibold leading-snug">{item.name}</h4>
+          </div>
           <b className="shrink-0 rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
         </div>
         <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI waiter what pairs well with this dish."}</p>
