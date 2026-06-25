@@ -16,7 +16,7 @@ export default function RestaurantNav({ id, active }: { id: number; active: stri
     ["design", "Design", Paintbrush],
     ["menu", "Menu", Menu],
     ["images", "Images", ImageIcon],
-    ["chatbot", "AI Chatbot", Bot],
+    ["chatbot", "AI Maître d'", Bot],
     ["reservations", "Reservations", CalendarDays],
     ["orders", "Orders", ShoppingBag],
     ["customers", "Customers", Users],

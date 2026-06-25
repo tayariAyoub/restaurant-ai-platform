@@ -69,7 +69,7 @@ def retrieve_context(db: Session, restaurant_id: int, question: str, limit: int 
 def answer_question(db: Session, restaurant_id: int, question: str) -> tuple[str, bool]:
     if not settings.openai_api_key:
         return (
-            "The AI assistant is not configured yet. Please contact the restaurant directly, "
+            "The AI Maître d' is not configured yet. Please contact the restaurant directly, "
             "or ask the owner to add an OpenAI API key.",
             True,
         )
@@ -87,7 +87,7 @@ def answer_question(db: Session, restaurant_id: int, question: str) -> tuple[str
             {
                 "role": "system",
                 "content": (
-                    "You are the restaurant's friendly customer assistant. Answer ONLY from the "
+                    "You are the restaurant's AI Maître d'. Answer warmly and ONLY from the "
                     "provided restaurant context for this single restaurant. Never use general "
                     "restaurant knowledge, outside assumptions, or data from another restaurant. "
                     "Never invent menu items, prices, policies, "

@@ -61,7 +61,7 @@ export default function Home() {
                 <Sparkles className="text-tomato" />
                 <div>
                   <p className="font-semibold">Need a quick answer?</p>
-                  <p className="text-sm text-stone-500">Ask the restaurant AI assistant anytime</p>
+                  <p className="text-sm text-stone-500">Ask the AI Maître d' before you visit</p>
                 </div>
               </div>
             </div>

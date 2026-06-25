@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. I am the AI maitre d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
+    content: `Good evening. I am the AI Maître d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
   };
 }
 
@@ -19,12 +19,14 @@ export default function ChatWidget({
   primaryColor = "#c84b31",
   menuHighlights = [],
   dietaryPrompts = [],
+  bottomOffsetClass = "bottom-5",
 }: {
   slug?: string;
   restaurantName?: string;
   primaryColor?: string;
   menuHighlights?: string[];
   dietaryPrompts?: string[];
+  bottomOffsetClass?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => [welcomeMessage(restaurantName)]);
@@ -65,7 +67,7 @@ export default function ChatWidget({
   }
 
   return (
-    <div className="fixed bottom-5 right-4 z-50 sm:right-5">
+    <div className={`fixed right-4 z-50 sm:right-5 ${bottomOffsetClass}`}>
       {open && (
         <div className="mb-4 flex h-[min(720px,84vh)] w-[min(450px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-2xl">
           <div className="relative overflow-hidden px-5 py-5 text-white" style={{ backgroundColor: primaryColor }}>
@@ -76,7 +78,7 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} Maitre d'</p>
+                  <p className="font-semibold leading-tight">{restaurantName} AI Maître d'</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
@@ -155,7 +157,7 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={loading ? "AI maitre d' is checking..." : "Tell me your mood, allergies, occasion..."}
+              placeholder={loading ? "AI Maître d' is checking..." : "Tell me your mood, allergies, occasion..."}
               className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm outline-none focus:border-stone-500"
               disabled={loading}
             />
@@ -175,7 +177,7 @@ export default function ChatWidget({
         onClick={() => setOpen(!open)}
         className="ml-auto flex h-16 w-16 items-center justify-center rounded-full text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)]"
         style={{ backgroundColor: primaryColor }}
-        aria-label="Open AI assistant"
+        aria-label="Open AI Maître d'"
       >
         {open ? <X /> : <MessageCircle />}
       </button>

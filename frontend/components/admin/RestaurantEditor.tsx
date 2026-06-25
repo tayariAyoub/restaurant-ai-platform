@@ -1050,7 +1050,7 @@ function ChatbotEditor({
     <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
       <div className="space-y-6 xl:sticky xl:top-24 xl:h-fit">
         <section className={cardClass}>
-          <SectionHeader icon={Bot} title="AI employee setup" description="Train the assistant with restaurant facts, review weak answers, and keep it grounded in this restaurant only." />
+          <SectionHeader icon={Bot} title="AI Maître d' setup" description="Train the AI Maître d' with restaurant facts, review weak answers, and keep it grounded in this restaurant only." />
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{documents.length}</b><span className="text-slate-500">Documents</span></div>
             <div className="rounded-xl bg-slate-50 p-4"><b className="block text-2xl">{unanswered}</b><span className="text-slate-500">AI gaps</span></div>
@@ -1067,7 +1067,7 @@ function ChatbotEditor({
         </form>
 
         <section className={cardClass}>
-          <SectionHeader icon={ShieldCheck} title="Safety rules" description="The assistant is designed to protect restaurant trust." />
+          <SectionHeader icon={ShieldCheck} title="Safety rules" description="The AI Maître d' is designed to protect restaurant trust." />
           <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
             <li>Answers only from this restaurant's saved knowledge.</li>
             <li>Falls back when information is missing or uncertain.</li>
@@ -1079,7 +1079,7 @@ function ChatbotEditor({
 
       <div className="space-y-6">
         <section className={cardClass}>
-          <SectionHeader icon={CheckCircle2} title="What the AI knows" description="These sources are synchronized into the assistant when restaurant details or menu items are saved." />
+          <SectionHeader icon={CheckCircle2} title="What the AI Maître d' knows" description="These sources are synchronized when restaurant details or menu items are saved." />
           <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <KnowledgeSource title="Restaurant profile" detail="Name, story, address, phone, email" ready={Boolean(restaurant.description && restaurant.phone && restaurant.address)} />
             <KnowledgeSource title="Opening hours" detail="Weekly schedule and closed days" ready={restaurant.opening_hours !== "{}"} />
@@ -1089,7 +1089,7 @@ function ChatbotEditor({
         </section>
 
         <section className={cardClass}>
-          <SectionHeader icon={AlertTriangle} title="AI improvement suggestions" description="Complete these items to make the assistant more useful and reduce fallback answers." />
+          <SectionHeader icon={AlertTriangle} title="AI Maître d' improvement suggestions" description="Complete these items to make the AI Maître d' more useful and reduce fallback answers." />
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {missingTasks.map((task) => (
               <div key={task.title} className={`rounded-2xl border p-4 ${task.done ? "border-green-100 bg-green-50 text-green-800" : "border-amber-100 bg-amber-50 text-amber-900"}`}>
@@ -1102,7 +1102,7 @@ function ChatbotEditor({
         </section>
 
         <section className={cardClass}>
-          <SectionHeader icon={FileText} title="Uploaded documents" description="Documents extend the assistant with restaurant-specific details that do not fit the menu or profile." />
+          <SectionHeader icon={FileText} title="Uploaded documents" description="Documents extend the AI Maître d' with restaurant-specific details that do not fit the menu or profile." />
           {documents.length === 0 ? (
             <EmptyState title="No documents uploaded yet" description="Add allergen sheets, FAQ files, catering menus, or reservation policies to make the AI more useful." />
           ) : (
@@ -1118,14 +1118,14 @@ function ChatbotEditor({
         </section>
 
         <section className={cardClass}>
-          <SectionHeader icon={MessageSquare} title="Test the AI before customers do" description="Open the public website and ask these questions after every menu or policy update." />
+          <SectionHeader icon={MessageSquare} title="Test the AI Maître d' before customers do" description="Open the public website and ask these questions after every menu or policy update." />
           <div className="mt-5 flex flex-wrap gap-2">
             {testQuestions.map((question) => (
               <span key={question} className="rounded-full border bg-white px-3 py-2 text-xs font-semibold text-slate-700">{question}</span>
             ))}
           </div>
           <Link href={`/restaurants/${restaurant.slug}`} target="_blank" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white">
-            Test public chatbot <ExternalLink size={15} />
+            Test AI Maître d' <ExternalLink size={15} />
           </Link>
         </section>
 
@@ -1133,7 +1133,7 @@ function ChatbotEditor({
           <SectionHeader icon={Sparkles} title="Customer questions and unanswered gaps" description="Use real conversations to discover missing menu, allergen, reservation, or policy information." />
           <div className="mt-5 space-y-4">
             {conversations.length === 0 ? (
-              <EmptyState title="No conversations yet" description="Customer chats will appear here after visitors use the AI assistant." />
+              <EmptyState title="No conversations yet" description="Customer chats will appear here after visitors use the AI Maître d'." />
             ) : (
               conversations.map((conversation) => (
                 <article key={conversation.id} className={`rounded-xl border p-4 ${conversation.messages.some((message) => message.is_unanswered) ? "border-amber-200 bg-amber-50/40" : ""}`}>
@@ -1144,7 +1144,7 @@ function ChatbotEditor({
                   <div className="mt-3 space-y-2">
                     {conversation.messages.map((message, index) => (
                       <p key={message.id || index} className={`text-sm leading-6 ${message.is_unanswered ? "rounded-lg bg-red-50 p-2 text-red-800" : ""}`}>
-                        <b className="capitalize">{message.role}:</b> {message.content}
+                        <b>{message.role === "assistant" ? "AI Maître d'" : "Customer"}:</b> {message.content}
                       </p>
                     ))}
                   </div>

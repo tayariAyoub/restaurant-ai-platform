@@ -48,7 +48,7 @@ export default function ContactPage() {
             <section className="bg-ink px-6 pb-20 pt-36 text-center text-white">
               <p className="text-sm font-bold uppercase tracking-[0.3em] text-orange-300">Come by</p>
               <h1 className="mt-4 text-5xl font-semibold sm:text-6xl">Visit and reserve</h1>
-              <p className="mx-auto mt-5 max-w-xl text-stone-400">Send a reservation request or ask the AI assistant for quick answers before you visit.</p>
+              <p className="mx-auto mt-5 max-w-xl text-stone-400">Send a reservation request or ask the AI Maître d' for thoughtful guidance before you visit.</p>
             </section>
             <section className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[.8fr_1.2fr]">
               <div>

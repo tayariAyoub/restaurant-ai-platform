@@ -26,7 +26,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    description="API for a restaurant website, admin dashboard, and grounded AI assistant.",
+    description="API for premium restaurant websites, admin operations, and a grounded AI Maître d'.",
     lifespan=lifespan,
 )
 app.add_middleware(

@@ -26,9 +26,8 @@ export default function Footer({ restaurant }: { restaurant: Restaurant }) {
         </div>
       </div>
       <div className="mx-auto mt-10 max-w-7xl border-t border-white/10 pt-6 text-xs text-stone-500">
-        © {new Date().getFullYear()} {restaurant.name}. Powered by RestaurantAI.
+        © {new Date().getFullYear()} {restaurant.name}. Reservations, ordering, and hospitality online.
       </div>
     </footer>
   );
 }
-

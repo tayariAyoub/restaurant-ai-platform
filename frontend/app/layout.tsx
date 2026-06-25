@@ -11,8 +11,8 @@ const display = Cormorant_Garamond({
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "RestaurantAI | Websites and AI assistants for restaurants",
-  description: "Manage restaurant websites, menus, reservations, designs, and AI assistants.",
+  title: "RestaurantAI | Premium restaurant operating system",
+  description: "Premium restaurant websites, ordering, reservations, and an AI Maître d' for independent restaurants.",
 };
 
 export default function RootLayout({

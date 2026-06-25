@@ -229,7 +229,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               <div className="mt-8 grid max-w-xl grid-cols-3 divide-x divide-white/15 rounded-2xl border border-white/15 bg-black/20 text-center text-sm backdrop-blur">
                 <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Courses</span></div>
                 <div className="p-4"><b className="block text-2xl">{availableItems}</b><span className="text-white/65">Dishes</span></div>
-                <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Waiter</span></div>
+                <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Maître d'</span></div>
               </div>
             </div>
             <div className="art-frame hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 shadow-2xl backdrop-blur-xl lg:block">
@@ -251,7 +251,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 )}
               </div>
               <div className="mt-4 rounded-2xl bg-black/25 p-5">
-                <p className="flex items-center gap-2 text-sm font-semibold"><Award size={17} /> Chef's selection, direct ordering, and table requests in one place.</p>
+                    <p className="flex items-center gap-2 text-sm font-semibold"><Award size={17} /> Chef's selection, direct ordering, and table requests in one calm flow.</p>
               </div>
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               <div className="mt-12 rounded-3xl border border-dashed bg-white p-10 text-center shadow-sm">
                 <ChefHat className="mx-auto opacity-35" size={42} />
                 <h3 className="mt-4 text-2xl font-semibold">Menu coming soon</h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">The restaurant is still preparing its online menu. Use the AI waiter or reservation form for help.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">The restaurant is still preparing its online menu. Ask the AI Maître d' or request a table for help.</p>
               </div>
             ) : (
               <>
@@ -373,7 +373,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
                         <h3 className="mt-1 text-2xl font-semibold">A few plates to begin with.</h3>
-                        <p className="mt-1 text-sm opacity-55">Ask the AI maitre d' for a pairing or a full meal built around these dishes.</p>
+                        <p className="mt-1 text-sm opacity-55">Ask the AI Maître d' for a pairing or a full meal built around these dishes.</p>
                       </div>
                       <Sparkles className="hidden opacity-40 sm:block" />
                     </div>
@@ -492,7 +492,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       <footer className="px-6 py-12 text-center text-sm" style={{ backgroundColor: text, color: background }}>
         <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
         <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
-        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Powered by RestaurantAI</p>
+        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Reservations, ordering, and hospitality online.</p>
       </footer>
 
       <ChatWidget
@@ -501,6 +501,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         primaryColor={primary}
         menuHighlights={featuredItems.map((item) => item.name)}
         dietaryPrompts={dietaryPrompts}
+        bottomOffsetClass={cartCount > 0 ? "bottom-24 sm:bottom-5" : "bottom-5"}
       />
 
       {cartCount > 0 && (
@@ -693,7 +694,7 @@ function MenuItemCard({
   buttonClass: string;
   onAdd: () => void;
 }) {
-  const labels = dishExperienceLabels(item, index);
+  const label = dishExperienceLabel(item, index);
   const pairing = pairingSuggestion(item);
 
   return (
@@ -716,16 +717,14 @@ function MenuItemCard({
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] opacity-40">Plate {String(index + 1).padStart(2, "0")}</p>
             <h4 className="mt-1 text-xl font-semibold leading-snug">{item.name}</h4>
           </div>
-          <b className="shrink-0 rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
+          <div className="shrink-0 text-right">
+            <b className="block rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
+            <span className="mt-2 inline-block rounded-full border border-black/10 bg-black/[.03] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: primary }}>{label}</span>
+          </div>
         </div>
-        <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI waiter what pairs well with this dish."}</p>
-        <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-[0.18em]">
-          {labels.map((label) => (
-            <span key={label} className="rounded-full border border-black/10 bg-black/[.03] px-2.5 py-1" style={{ color: primary }}>{label}</span>
-          ))}
-        </div>
+        <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI Maître d' what pairs well with this dish."}</p>
         <p className="mt-3 rounded-xl border border-black/5 bg-black/[.025] px-3 py-2 text-xs leading-5 opacity-70">
-          Chef note: {pairing}
+          {pairing}
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: secondary }}>
           {item.is_vegan && <span className="flex items-center gap-1 rounded-full bg-black/[.04] px-2.5 py-1"><Leaf size={13} /> Vegan</span>}
@@ -906,7 +905,7 @@ function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], pe
       icon: Leaf,
       label: "Seasonal moment",
       value: `${secondDish} can become tonight's highlight.`,
-      detail: "RestaurantAI can later let owners mark dishes as seasonal, signature, or tonight only from the menu editor.",
+      detail: "The highlight changes with the season, the kitchen's rhythm, and the table you are planning.",
     },
     {
       icon: Flame,
@@ -918,19 +917,17 @@ function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], pe
       icon: Wine,
       label: "Pairing cue",
       value: "Guests are invited to ask for pairings, allergies, and occasion-based guidance.",
-      detail: "This turns the AI waiter into part of hospitality, not just a question box.",
+      detail: "This makes the AI Maître d' feel like part of hospitality, not just a question box.",
     },
   ];
 }
 
-function dishExperienceLabels(item: MenuItem, index: number) {
-  const labels = [];
-  if (index === 0) labels.push("Signature");
-  if (index === 1) labels.push("Most loved");
-  if (item.is_vegan || item.is_vegetarian) labels.push("Plant friendly");
-  if (item.description?.toLowerCase().includes("season")) labels.push("Seasonal");
-  if (item.is_available && labels.length < 2) labels.push("Tonight");
-  return labels.slice(0, 3);
+function dishExperienceLabel(item: MenuItem, index: number) {
+  if (index === 0) return "Signature";
+  if (index === 1) return "Most loved";
+  if (item.description?.toLowerCase().includes("season")) return "Seasonal";
+  if (item.is_vegan || item.is_vegetarian) return "Plant friendly";
+  return "Tonight";
 }
 
 function pairingSuggestion(item: MenuItem) {
@@ -938,8 +935,8 @@ function pairingSuggestion(item: MenuItem) {
   if (description.includes("spicy") || description.includes("chili")) return "Pair with something bright, cold, or citrus-led to keep the heat elegant.";
   if (description.includes("beef") || description.includes("steak")) return "Ask for a bold red wine or a roasted side to make this feel like the center of the table.";
   if (description.includes("fish") || description.includes("sea")) return "A crisp white wine, fresh salad, or citrus-forward starter will keep the plate lifted.";
-  if (item.is_vegan || item.is_vegetarian) return "Pair with a fresh starter and ask the AI maitre d' for the best plant-forward sequence.";
-  return "Ask the AI maitre d' for a pairing based on your mood, appetite, and table plans.";
+  if (item.is_vegan || item.is_vegetarian) return "A fresh starter keeps this plant-forward choice bright and balanced.";
+  return "Ask the AI Maître d' for a pairing based on your mood, appetite, and table plans.";
 }
 
 function matchesMenuFilters(item: MenuItem, query: string, filter: "all" | "vegan" | "vegetarian" | "halal") {

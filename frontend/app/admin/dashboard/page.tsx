@@ -102,7 +102,7 @@ export default function DashboardPage() {
           ["Today revenue", formatCurrency(insights?.todayRevenue ?? 0), DollarSign, "bg-emerald-50 text-emerald-700"],
           ["Today's orders", insights?.todayOrders ?? stats.new_orders, ShoppingBag, "bg-pink-50 text-pink-700"],
           ["Reservations", insights?.activeReservations ?? restaurant.new_reservations, CalendarDays, "bg-blue-50 text-blue-700"],
-          ["AI gaps", insights?.unansweredMessages ?? restaurant.unanswered_count, CircleHelp, "bg-red-50 text-red-700"],
+          ["Improve AI answers", insights?.unansweredMessages ?? restaurant.unanswered_count, CircleHelp, "bg-red-50 text-red-700"],
         ] as const
       : [];
     const quickActions = [
@@ -111,7 +111,7 @@ export default function DashboardPage() {
       ["Edit menu", "menu", Menu],
       ["Upload a photo", "images", ImageIcon],
       ["Change website design", "design", Paintbrush],
-      ["Review AI questions", "chatbot", Bot],
+      ["Improve AI Maître d'", "chatbot", Bot],
       ["Manage reservations", "reservations", CalendarDays],
       ["View customers", "customers", Users],
     ] as const;
@@ -215,9 +215,9 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="mt-6 rounded-xl bg-slate-50 p-4">
-                    <div className="flex items-center gap-2 font-semibold"><Sparkles size={17} className="text-orange-600" /> AI customer questions</div>
+                    <div className="flex items-center gap-2 font-semibold"><Sparkles size={17} className="text-orange-600" /> AI Maître d' questions</div>
                     {insights.aiQuestions.length === 0 ? (
-                      <p className="mt-2 text-sm leading-6 text-slate-500">No unanswered customer questions right now. The AI knowledge base looks calm.</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">No unanswered customer questions right now. The AI Maître d' is ready for service.</p>
                     ) : (
                       <div className="mt-3 space-y-2">
                         {insights.aiQuestions.map((question) => (
@@ -465,12 +465,12 @@ function buildOwnerNarratives(restaurant: RestaurantOverview, insights: OwnerIns
       icon: ChefHat,
       title: bestDish ? `Lead with ${bestDish.name}` : "Create a hero dish",
       body: bestDish
-        ? `Your best dish is carrying demand with ${bestDish.quantity} sold. Feature it in photos, AI suggestions, and staff recommendations.`
+        ? `Your best dish is carrying demand with ${bestDish.quantity} sold. Feature it in photos, AI Maître d' suggestions, and staff recommendations.`
         : "No best-seller signal yet. Add strong photos and encourage the first few orders so RestaurantAI can spot demand.",
     },
     {
       icon: Bot,
-      title: insights.unansweredMessages > 0 ? "Teach the AI one missing answer" : "AI looks calm",
+      title: insights.unansweredMessages > 0 ? "Teach the AI Maître d' one missing answer" : "AI Maître d' looks ready",
       body: insights.unansweredMessages > 0
         ? "Turn one unanswered customer question into a clear menu, allergy, reservation, or policy answer today."
         : "No unanswered AI questions are waiting. Keep knowledge fresh when specials, hours, or policies change.",
@@ -575,7 +575,7 @@ function buildSetupWarnings(restaurant: Restaurant | null, unansweredMessages: n
   if (menuItems.length === 0) warnings.push("The menu is empty.");
   if (menuItems.some((item) => !item.image_url)) warnings.push("Some dishes are missing photos.");
   if (menuItems.some((item) => !item.allergens?.trim())) warnings.push("Some dishes are missing allergen information.");
-  if (unansweredMessages > 0) warnings.push("Review unanswered AI questions to improve the AI waiter.");
+  if (unansweredMessages > 0) warnings.push("Review unanswered AI questions to improve the AI Maître d'.");
   return warnings.slice(0, 5);
 }
 
@@ -594,7 +594,7 @@ function isSameLocalDay(value: string, date: Date) {
 }
 
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 }
 
 function trimSnippet(value: string) {
