@@ -60,6 +60,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const heroGallery = gallery.slice(0, 3);
   const menuItems = restaurant.categories.flatMap((category) => category.items);
   const availableItems = menuItems.filter((item) => item.is_available).length;
+  const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
+  const dietaryPrompts = buildDietaryPrompts(menuItems);
   const cartLines = Object.values(cart);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + Number(line.item.price) * line.quantity, 0);
@@ -247,61 +249,99 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </div>
         </section>
 
-        <section id="menu" className="bg-white/70 px-4 py-20 sm:px-6 lg:py-28">
+        <section id="menu" className="bg-white/70 px-4 py-16 sm:px-6 lg:py-28">
           <div className="mx-auto max-w-6xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[.3em]" style={{ color: primary }}>Fresh from the kitchen</p>
               <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-5xl">Menu and online ordering</h2>
               <p className="mt-4 leading-7 opacity-65">Browse signature dishes, see allergens at a glance, and order for pickup, dine-in, or delivery.</p>
             </div>
-            <div className="mt-14 space-y-16">
-              {restaurant.categories.map((category) => (
-                <section key={category.id}>
-                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-black/15 pb-5">
-                    <div>
-                      <h3 className="text-3xl font-semibold">{category.name}</h3>
-                      <p className="mt-1 opacity-60">{category.description}</p>
-                    </div>
-                    <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-                      {category.items.filter((item) => item.is_available).length} available
-                    </span>
-                  </div>
-                  <div className={`mt-7 grid gap-5 ${restaurant.menu_style === "cards" || theme?.menu_style === "cards" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-                    {category.items.map((item) => (
-                      <article key={item.id} className={`group overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${!item.is_available ? "opacity-55" : ""}`}>
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.name} className="h-44 w-full object-cover transition duration-500 group-hover:scale-105" />
-                        ) : (
-                          <div className="grid h-24 place-items-center bg-black/[.03] text-sm opacity-50">Add food photo</div>
-                        )}
-                        <div className="p-5">
-                          <div className="flex items-start justify-between gap-4">
-                            <h4 className="text-xl font-semibold leading-snug">{item.name}</h4>
-                            <b className="rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
-                          </div>
-                          <p className="mt-3 min-h-12 text-sm leading-6 opacity-65">{item.description}</p>
-                          <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: secondary }}>
-                            {item.is_vegan && <span className="flex items-center gap-1 rounded-full bg-black/[.04] px-2.5 py-1"><Leaf size={13} /> Vegan</span>}
-                            {!item.is_vegan && item.is_vegetarian && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Vegetarian</span>}
-                            {item.is_halal && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Halal</span>}
-                            {!item.is_available && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">Unavailable</span>}
-                          </div>
-                          {item.allergens && <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Allergens: {item.allergens}</p>}
-                          <button
-                            disabled={!item.is_available}
-                            onClick={() => changeCart(item, 1)}
-                            className={`mt-5 flex w-full items-center justify-center gap-2 ${buttonClass} py-3 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none`}
-                            style={item.is_available ? { backgroundColor: primary } : undefined}
-                          >
-                            <Plus size={16} /> {item.is_available ? "Add to order" : "Unavailable today"}
-                          </button>
-                        </div>
-                      </article>
+            {restaurant.categories.length === 0 || menuItems.length === 0 ? (
+              <div className="mt-12 rounded-3xl border border-dashed bg-white p-10 text-center shadow-sm">
+                <ChefHat className="mx-auto opacity-35" size={42} />
+                <h3 className="mt-4 text-2xl font-semibold">Menu coming soon</h3>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">The restaurant is still preparing its online menu. Use the AI waiter or reservation form for help.</p>
+              </div>
+            ) : (
+              <>
+                <div className="sticky top-0 z-20 -mx-4 mt-10 border-y border-black/10 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-2 sm:mx-0 sm:rounded-full sm:border">
+                  <div className="flex gap-2 overflow-x-auto pb-1 sm:justify-center">
+                    {restaurant.categories.map((category) => (
+                      <a
+                        key={category.id}
+                        href={`#category-${category.id}`}
+                        className="shrink-0 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-bold shadow-sm"
+                      >
+                        {category.name}
+                      </a>
                     ))}
                   </div>
-                </section>
-              ))}
-            </div>
+                </div>
+
+                {featuredItems.length > 0 && (
+                  <div className="mt-10 rounded-3xl border border-black/10 bg-white p-4 shadow-sm sm:p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Popular starting points</p>
+                        <h3 className="mt-1 text-2xl font-semibold">Ask the AI waiter or add directly</h3>
+                      </div>
+                      <Sparkles className="hidden opacity-40 sm:block" />
+                    </div>
+                    <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                      {featuredItems.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => changeCart(item, 1)}
+                          className="w-56 shrink-0 overflow-hidden rounded-2xl border bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                        >
+                          {item.image_url ? <img src={item.image_url} alt={item.name} className="h-28 w-full object-cover" /> : <div className="h-20 bg-black/[.04]" />}
+                          <span className="block p-3">
+                            <span className="block truncate font-semibold">{item.name}</span>
+                            <span className="mt-1 flex items-center justify-between text-sm opacity-65">
+                              <span>EUR {Number(item.price).toFixed(2)}</span>
+                              <Plus size={16} style={{ color: primary }} />
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-12 space-y-14">
+                  {restaurant.categories.map((category) => (
+                    <section id={`category-${category.id}`} key={category.id} className="scroll-mt-24">
+                      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-black/15 pb-5">
+                        <div>
+                          <h3 className="text-3xl font-semibold">{category.name}</h3>
+                          <p className="mt-1 opacity-60">{category.description || "Prepared fresh by the kitchen."}</p>
+                        </div>
+                        <span className="rounded-full bg-black/5 px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                          {category.items.filter((item) => item.is_available).length} available
+                        </span>
+                      </div>
+                      {category.items.length === 0 ? (
+                        <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">No dishes in this category yet.</div>
+                      ) : (
+                        <div className={`mt-6 grid gap-4 ${restaurant.menu_style === "cards" || theme?.menu_style === "cards" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                          {category.items.map((item) => (
+                            <MenuItemCard
+                              key={item.id}
+                              item={item}
+                              quantity={cart[item.id]?.quantity || 0}
+                              primary={primary}
+                              secondary={secondary}
+                              buttonClass={buttonClass}
+                              onAdd={() => changeCart(item, 1)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </section>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -357,15 +397,28 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         © {new Date().getFullYear()} {restaurant.name} · Powered by RestaurantAI
       </footer>
 
-      <ChatWidget slug={restaurant.slug} restaurantName={restaurant.name} primaryColor={primary} />
+      <ChatWidget
+        slug={restaurant.slug}
+        restaurantName={restaurant.name}
+        primaryColor={primary}
+        menuHighlights={featuredItems.map((item) => item.name)}
+        dietaryPrompts={dietaryPrompts}
+      />
 
       {cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
-          className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full px-5 py-4 text-sm font-bold text-white shadow-2xl sm:px-6 sm:text-base"
+          className="fixed inset-x-4 bottom-4 z-40 flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm font-bold text-white shadow-2xl sm:left-1/2 sm:right-auto sm:w-[min(520px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
           style={{ backgroundColor: primary }}
         >
-          <ShoppingBag size={19} /> View order · {cartCount} item{cartCount === 1 ? "" : "s"} · EUR {subtotal.toFixed(2)}
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15"><ShoppingBag size={19} /></span>
+            <span className="min-w-0">
+              <span className="block truncate">View order</span>
+              <span className="block text-xs text-white/75">{cartCount} item{cartCount === 1 ? "" : "s"}</span>
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-white/15 px-3 py-2">EUR {subtotal.toFixed(2)}</span>
         </button>
       )}
 
@@ -498,6 +551,65 @@ function SuccessMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function MenuItemCard({
+  item,
+  quantity,
+  primary,
+  secondary,
+  buttonClass,
+  onAdd,
+}: {
+  item: MenuItem;
+  quantity: number;
+  primary: string;
+  secondary: string;
+  buttonClass: string;
+  onAdd: () => void;
+}) {
+  return (
+    <article className={`group grid overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl sm:block ${!item.is_available ? "opacity-60" : ""}`}>
+      <div className="relative">
+        {item.image_url ? (
+          <img src={item.image_url} alt={item.name} className="h-44 w-full object-cover transition duration-500 group-hover:scale-105 sm:h-48" />
+        ) : (
+          <div className="grid h-28 place-items-center bg-black/[.03] text-sm opacity-50 sm:h-36">Food photo coming soon</div>
+        )}
+        {quantity > 0 && (
+          <span className="absolute right-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-bold shadow-lg" style={{ color: primary }}>
+            {quantity} in order
+          </span>
+        )}
+      </div>
+      <div className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <h4 className="text-xl font-semibold leading-snug">{item.name}</h4>
+          <b className="shrink-0 rounded-full bg-black/[.04] px-3 py-1 text-sm" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
+        </div>
+        <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI waiter what pairs well with this dish."}</p>
+        <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: secondary }}>
+          {item.is_vegan && <span className="flex items-center gap-1 rounded-full bg-black/[.04] px-2.5 py-1"><Leaf size={13} /> Vegan</span>}
+          {!item.is_vegan && item.is_vegetarian && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Vegetarian</span>}
+          {item.is_halal && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Halal</span>}
+          {!item.is_available && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">Unavailable</span>}
+        </div>
+        {item.allergens ? (
+          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Allergens: {item.allergens}</p>
+        ) : (
+          <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Ask staff about allergens before ordering.</p>
+        )}
+        <button
+          disabled={!item.is_available}
+          onClick={onAdd}
+          className={`mt-5 flex w-full items-center justify-center gap-2 ${buttonClass} py-3 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none`}
+          style={item.is_available ? { backgroundColor: primary } : undefined}
+        >
+          <Plus size={16} /> {item.is_available ? "Add to order" : "Unavailable today"}
+        </button>
+      </div>
+    </article>
+  );
+}
+
 function OrderTimeline({ status, orderType }: { status: string; orderType: RestaurantOrder["order_type"] }) {
   const steps = orderSteps(orderType);
   const currentIndex = Math.max(0, steps.findIndex((step) => step.statuses.includes(status)));
@@ -556,6 +668,15 @@ function nextInstruction(orderType: RestaurantOrder["order_type"]) {
   if (orderType === "DELIVERY") return "Watch this tracking page for status changes. The restaurant may call if they need delivery details.";
   if (orderType === "EAT_IN") return "Arrive at the restaurant and mention your order number to staff.";
   return "Come to the restaurant around the estimated pickup time and mention your order number.";
+}
+
+function buildDietaryPrompts(items: MenuItem[]) {
+  const prompts = [];
+  if (items.some((item) => item.is_vegan)) prompts.push("Show me vegan options");
+  if (items.some((item) => item.is_vegetarian)) prompts.push("What is vegetarian?");
+  if (items.some((item) => item.is_halal)) prompts.push("Which dishes are halal?");
+  if (items.some((item) => item.allergens)) prompts.push("Help me avoid allergens");
+  return prompts.length > 0 ? prompts : ["Help me choose for allergies"];
 }
 
 function shortOrderNumber(publicId: string) {

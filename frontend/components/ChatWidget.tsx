@@ -1,25 +1,10 @@
 "use client";
 
-import { Bot, Loader2, MessageCircle, Send, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Bot, Clock3, Loader2, MessageCircle, Send, ShieldCheck, ShoppingBag, Sparkles, Utensils, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import request from "@/lib/api";
 import type { Message } from "@/lib/types";
-
-const starterGroups = [
-  {
-    label: "Recommendations",
-    questions: ["What should I order?", "What is popular today?", "Suggest a full meal"],
-  },
-  {
-    label: "Diet and allergies",
-    questions: ["What is vegetarian?", "Any gluten-free options?", "What contains nuts?"],
-  },
-  {
-    label: "Planning",
-    questions: ["When are you open?", "Can I reserve a table?", "How does pickup work?"],
-  },
-];
 
 function welcomeMessage(restaurantName: string): Message {
   return {
@@ -32,10 +17,14 @@ export default function ChatWidget({
   slug,
   restaurantName = "Restaurant",
   primaryColor = "#c84b31",
+  menuHighlights = [],
+  dietaryPrompts = [],
 }: {
   slug?: string;
   restaurantName?: string;
   primaryColor?: string;
+  menuHighlights?: string[];
+  dietaryPrompts?: string[];
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => [welcomeMessage(restaurantName)]);
@@ -43,6 +32,7 @@ export default function ChatWidget({
   const [conversationId, setConversationId] = useState<string>();
   const [loading, setLoading] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
+  const starterGroups = buildStarterGroups(menuHighlights, dietaryPrompts);
 
   useEffect(() => bottom.current?.scrollIntoView({ behavior: "smooth" }), [messages, loading]);
 
@@ -77,7 +67,7 @@ export default function ChatWidget({
   return (
     <div className="fixed bottom-5 right-4 z-50 sm:right-5">
       {open && (
-        <div className="mb-4 flex h-[min(660px,82vh)] w-[min(430px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl">
+        <div className="mb-4 flex h-[min(700px,82vh)] w-[min(430px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-black/10 bg-white shadow-2xl">
           <div className="relative overflow-hidden px-5 py-5 text-white" style={{ backgroundColor: primaryColor }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,.28),transparent_16rem)]" />
             <div className="relative flex items-start justify-between gap-4">
@@ -98,6 +88,18 @@ export default function ChatWidget({
 
           <div className="border-b bg-white px-4 py-3 text-xs leading-5 text-stone-500">
             <p className="flex items-start gap-2"><ShieldCheck size={15} className="mt-0.5 text-green-700" /> I answer only from restaurant knowledge. For allergies, please confirm with staff before ordering.</p>
+          </div>
+
+          <div className="grid grid-cols-3 border-b bg-white text-center text-[11px] font-bold text-stone-500">
+            <button onClick={() => send(undefined, "Recommend a full meal for pickup")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+              <Utensils size={14} /> Meal
+            </button>
+            <button onClick={() => send(undefined, "Help me order for pickup")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+              <ShoppingBag size={14} /> Order
+            </button>
+            <button onClick={() => send(undefined, "Can I reserve a table?")} className="flex items-center justify-center gap-1 px-2 py-3 hover:bg-stone-50">
+              <Clock3 size={14} /> Reserve
+            </button>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto bg-[#f7f3ea] p-4">
@@ -150,8 +152,9 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Ask about dishes, allergies, hours, reservations..."
-              className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm"
+              placeholder={loading ? "AI waiter is checking..." : "Ask about dishes, allergies, hours, reservations..."}
+              className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm outline-none focus:border-stone-500"
+              disabled={loading}
             />
             <button
               className="rounded-full p-3 text-white shadow-lg disabled:opacity-50"
@@ -175,4 +178,26 @@ export default function ChatWidget({
       </button>
     </div>
   );
+}
+
+function buildStarterGroups(menuHighlights: string[], dietaryPrompts: string[]) {
+  const highlighted = menuHighlights.slice(0, 3);
+  const dishPrompts = highlighted.length > 0
+    ? highlighted.map((dish) => `What pairs well with ${dish}?`)
+    : ["What should I order?", "What is popular today?", "Suggest a full meal"];
+
+  return [
+    {
+      label: "Recommendations",
+      questions: ["What should I order?", ...dishPrompts].slice(0, 4),
+    },
+    {
+      label: "Diet and allergies",
+      questions: dietaryPrompts.length > 0 ? dietaryPrompts.slice(0, 4) : ["What is vegetarian?", "Any gluten-free options?", "What contains nuts?"],
+    },
+    {
+      label: "Ordering and reservations",
+      questions: ["Help me order for pickup", "What should I order for two people?", "Can I reserve a table?", "How does dine-in ordering work?"],
+    },
+  ];
 }

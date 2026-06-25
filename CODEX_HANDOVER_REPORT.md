@@ -136,6 +136,39 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Backend syntax: `python -m py_compile app\\api\\public.py` passed in `backend/`.
 - Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
 
+## V1 Step 3 - Customer Mobile Menu And AI Waiter Refinement
+
+**Goal:** Make the customer restaurant experience feel faster, clearer, and more premium on phones.
+
+**Customer mobile menu improvements:**
+- Added sticky horizontal category navigation inside the menu section.
+- Added a featured quick-add strip for popular starting points.
+- Rebuilt menu item cards into a reusable customer-facing card with:
+  - stronger food image presentation
+  - visible price treatment
+  - dietary/allergen badges
+  - unavailable state
+  - quantity-in-cart badge
+  - clearer allergen fallback copy
+  - consistent add-to-order action
+- Added menu/category empty states for restaurants that have not finished setup.
+- Improved sticky cart visibility on mobile with a wider bottom action bar, item count, and subtotal.
+
+**AI waiter improvements:**
+- Passed real menu context into the chat widget.
+- Added menu-aware recommendation prompts based on featured dishes.
+- Added diet/allergy prompts based on actual menu metadata.
+- Added quick intent buttons for meal recommendations, ordering help, and reservations.
+- Improved chat input loading/disabled state while the AI is responding.
+
+**Files changed:**
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/ChatWidget.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend was not changed in this step.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
