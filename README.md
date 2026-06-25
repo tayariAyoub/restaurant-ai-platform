@@ -37,35 +37,60 @@ Browser
   -> OpenAI API when configured
 ```
 
-## Quick start with Docker
+## How to start RestaurantAI demo
+
+This is the simplest way to start the demo on a computer with Docker Desktop installed.
 
 Requirements:
 
 - Git
 - Docker Desktop with the Docker engine running
 
-Clone and start the project:
+1. Open the project folder:
+
+```powershell
+cd restaurant-ai-platform
+```
+
+The Docker setup includes local demo values for the database and demo users. You do not need to create a `.env` file just to run the demo.
+
+Optional: if you want to edit the demo values, copy `.env.example` to `.env`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+2. Start RestaurantAI:
+
+```powershell
+docker compose up --build
+```
+
+3. Open these URLs:
+
+- Customer site: http://localhost:3000/restaurants/bella-napoli
+- Admin dashboard: http://localhost:3000/admin/login
+- API docs: http://localhost:8000/docs
+
+4. Demo login accounts:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Super admin | `admin@example.com` | `admin12345` |
+| Restaurant owner | `owner@example.com` | `owner12345` |
+
+These are demo-only credentials. Change them before using the project outside local development.
+
+## Quick start with Docker
+
+If you cloned the repository for the first time:
 
 ```powershell
 git clone https://github.com/tayariAyoub/restaurant-ai-platform.git
 cd restaurant-ai-platform
 Copy-Item .env.example .env
+docker compose up --build
 ```
-
-Open `.env` and replace every `CHANGE_ME` value. Then run:
-
-```powershell
-docker compose up --build -d
-docker compose ps
-```
-
-Open:
-
-- Website: http://localhost:3000/restaurants/bella-napoli
-- Admin login: http://localhost:3000/admin/login
-- API documentation: http://localhost:8000/docs
-
-The admin and demo-owner login details are the `ADMIN_*` and `DEMO_OWNER_*` values you set in your local `.env`.
 
 ## How to demo RestaurantAI
 
@@ -108,6 +133,34 @@ Use this flow when showing the product to a restaurant owner.
 
 7. Close with the business value:
    RestaurantAI gives a restaurant a professional website, online ordering, daily operations tools, and a restaurant-trained AI employee from one dashboard.
+
+## How to test the demo
+
+Test as a customer:
+
+1. Open http://localhost:3000/restaurants/bella-napoli
+2. Browse the menu.
+3. Ask the AI assistant a question.
+4. Add items to the cart.
+5. Submit a pickup, dine-in, or delivery order.
+6. Send a reservation request.
+
+Test as a restaurant owner:
+
+1. Open http://localhost:3000/admin/login
+2. Sign in with `owner@example.com` / `owner12345`.
+3. Open the assigned restaurant.
+4. Edit information, hours, design, menu, images, chatbot knowledge, orders, and reservations.
+5. Open Kitchen Mode from the Orders page to update order status.
+
+Test as a super admin:
+
+1. Open http://localhost:3000/admin/login
+2. Sign in with `admin@example.com` / `admin12345`.
+3. View all restaurants.
+4. Create a new restaurant.
+5. Create owner users.
+6. Manage any restaurant account.
 
 Stop the application:
 

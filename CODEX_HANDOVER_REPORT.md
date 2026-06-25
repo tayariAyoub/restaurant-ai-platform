@@ -164,6 +164,37 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 **Validation:**
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py app\\services\\seed.py app\\main.py app\\api\\admin.py app\\api\\public.py app\\api\\auth.py` passed in `backend/`.
+
+## Demo Startup Blocker Fix
+
+**Problem:** Docker Compose failed for non-programmer demo startup because `POSTGRES_PASSWORD` was missing in `.env`, and Compose also required the `.env` file to exist.
+
+**Fix:**
+- Updated `.env.example` with safe local demo defaults for:
+  - `POSTGRES_DB`
+  - `POSTGRES_USER`
+  - `POSTGRES_PASSWORD`
+  - `DATABASE_URL`
+  - `JWT_SECRET`
+  - `ADMIN_EMAIL`
+  - `ADMIN_PASSWORD`
+  - `DEMO_OWNER_EMAIL`
+  - `DEMO_OWNER_PASSWORD`
+- Updated `docker-compose.yml` so `docker compose up --build` works even when `.env` does not exist.
+- Added simple README instructions under `How to start RestaurantAI demo`.
+- Added exact demo URLs, demo login accounts, and role-based testing instructions.
+
+**Demo URLs:**
+- Customer site: `http://localhost:3000/restaurants/bella-napoli`
+- Admin dashboard: `http://localhost:3000/admin/login`
+- API docs: `http://localhost:8000/docs`
+
+**Demo accounts:**
+- Super admin: `admin@example.com` / `admin12345`
+- Restaurant owner: `owner@example.com` / `owner12345`
+
+**Validation:**
+- `docker compose config` now succeeds without `.env`.
 - Backend: local `pytest` could not run because `pytest` was not installed.
 - Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
 - Docker fallback could not run because Docker Desktop engine was not running.
