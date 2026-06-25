@@ -169,6 +169,44 @@ The frontend build was failing due to `sharp` requiring explicit build approval 
 - Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
 - Backend was not changed in this step.
 
+## V1 Step 4 - Light Customer CRM
+
+**Goal:** Help restaurant owners see customers as business assets using existing orders and reservations.
+
+**Owner CRM added:**
+- Added a new restaurant owner page:
+  - `/admin/restaurants/{id}/customers`
+- Added Customers to the restaurant admin navigation.
+- Added Customers as a quick action from the owner dashboard.
+- Customer profiles are inferred from existing order and reservation data.
+
+**Customer data shown:**
+- Customer name.
+- Phone and email when available.
+- Total orders.
+- Reservation count.
+- Total tracked spend from orders.
+- Last activity date.
+- Favorite or most ordered dishes.
+- Allergy/preference snippets inferred from order notes, item notes, and reservation messages.
+- Disabled owner notes placeholder for the next CRM phase without adding a schema migration.
+
+**CRM usability:**
+- Added customer search by name, phone, email, favorite dish, allergy, or preference.
+- Added filters for all customers, customers with orders, customers with reservations, and customers with preferences.
+- Added dashboard stats for known customers, total orders, reservations, repeat customers, and tracked spend.
+- Added loading, empty, no-results, and error states.
+
+**Files changed:**
+- `frontend/components/admin/CustomersDashboard.tsx`
+- `frontend/app/admin/restaurants/[id]/customers/page.tsx`
+- `frontend/components/admin/RestaurantNav.tsx`
+- `frontend/app/admin/dashboard/page.tsx`
+
+**Validation:**
+- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Backend was not changed in this step.
+
 ## Codex Phase 3 - Restaurant Operations
 
 **Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.

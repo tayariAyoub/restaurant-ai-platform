@@ -111,6 +111,7 @@ export default function DashboardPage() {
       ["Change website design", "design", Paintbrush],
       ["Review AI questions", "chatbot", Bot],
       ["Manage reservations", "reservations", CalendarDays],
+      ["View customers", "customers", Users],
     ] as const;
 
     return (

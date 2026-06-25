@@ -6,6 +6,7 @@ import {
   Settings,
   CalendarDays,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -18,6 +19,7 @@ export default function RestaurantNav({ id, active }: { id: number; active: stri
     ["chatbot", "AI Chatbot", Bot],
     ["reservations", "Reservations", CalendarDays],
     ["orders", "Orders", ShoppingBag],
+    ["customers", "Customers", Users],
   ] as const;
   return (
     <nav className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-black/5 bg-white/90 p-2 shadow-sm">
