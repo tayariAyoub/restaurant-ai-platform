@@ -152,24 +152,6 @@ def create_order(
             )
         )
     )
-
-
-@router.get("/restaurants/{slug}/orders/{public_id}", response_model=OrderOut)
-def order_tracking(slug: str, public_id: str, db: Session = Depends(get_db)) -> Order:
-    restaurant = get_public_restaurant(db, slug)
-    order = db.scalar(
-        select(Order)
-        .where(Order.restaurant_id == restaurant.id, Order.public_id == public_id)
-        .options(
-            selectinload(Order.items),
-            selectinload(Order.delivery_address),
-            selectinload(Order.delivery_assignment),
-            selectinload(Order.status_history),
-        )
-    )
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
     menu_by_id = {item.id: item for item in menu_items}
     if len(menu_by_id) != len(set(ids)):
         raise HTTPException(status_code=400, detail="One or more items are unavailable")
@@ -238,3 +220,21 @@ def order_tracking(slug: str, public_id: str, db: Session = Depends(get_db)) -> 
             selectinload(Order.status_history),
         )
     )
+
+
+@router.get("/restaurants/{slug}/orders/{public_id}", response_model=OrderOut)
+def order_tracking(slug: str, public_id: str, db: Session = Depends(get_db)) -> Order:
+    restaurant = get_public_restaurant(db, slug)
+    order = db.scalar(
+        select(Order)
+        .where(Order.restaurant_id == restaurant.id, Order.public_id == public_id)
+        .options(
+            selectinload(Order.items),
+            selectinload(Order.delivery_address),
+            selectinload(Order.delivery_assignment),
+            selectinload(Order.status_history),
+        )
+    )
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order

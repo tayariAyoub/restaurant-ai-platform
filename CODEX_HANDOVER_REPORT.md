@@ -3,6 +3,43 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Public Order Endpoint Repair
+
+Files changed:
+
+- `backend/app/api/public.py`
+- `backend/tests/test_tenant_safety.py`
+- `CODEX_HANDOVER_REPORT.md`
+
+Root cause:
+
+- `create_order()` started correctly but stopped after loading menu items.
+- The order creation, item creation, delivery address creation, commit, and response reload logic had been placed after `return order` inside `order_tracking()`.
+- Execution therefore stopped at the end of `create_order()` without returning an order, while the remaining implementation was unreachable after the tracking endpoint's unconditional return.
+- This was a return/logic placement issue, not a routing, dependency, authentication, or schema issue.
+
+Repair summary:
+
+- Moved the existing order creation implementation back into `create_order()`.
+- Left `order_tracking()` as a pure lookup endpoint.
+- Preserved the existing API route, request schema, response model, validation rules, public authentication behavior, order total calculation, delivery fee behavior, status history creation, and delivery address handling.
+- Added focused backend regression coverage for public order creation.
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `9 passed, 37 warnings`.
+
+Manual verification:
+
+- Direct in-memory endpoint verification created a pickup order, stored it, returned a public id, total `37.50`, one order item, and `NEW` status history.
+- Frontend manual verification used the real repaired `public.create_order()` function through a temporary local HTTP shim.
+- The customer flow loaded Bella Napoli, added Margherita, submitted an order, displayed the order success state, and the backend shim database showed `{"orders": 1}`.
+
 ## Phase 1.1 - Dynamic Restaurant SEO
 
 Files changed:

@@ -10,6 +10,7 @@ from app.api import admin, public
 from app.core.database import Base
 from app.models import (
     ContactRequest,
+    DeliveryAddress,
     KnowledgeChunk,
     MenuCategory,
     MenuItem,
@@ -21,6 +22,7 @@ from app.models import (
     User,
 )
 from app.services import chat
+from app.schemas import DeliveryAddressCreate, OrderCreate, OrderItemCreate
 
 
 @pytest.fixture()
@@ -188,6 +190,56 @@ def test_public_order_tracking_does_not_leak_across_restaurants(db: Session) -> 
     with pytest.raises(HTTPException) as error:
         public.order_tracking("tenant-one", "order-tenant-two", db=db)
     assert error.value.status_code == 404
+
+
+def test_public_order_creation_stores_order_and_returns_response(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = (
+        db.query(MenuItem)
+        .join(MenuCategory)
+        .filter(MenuCategory.restaurant_id == restaurant_one.id)
+        .first()
+    )
+    assert item is not None
+    monkeypatch.setattr(public, "geocode", lambda _: None)
+
+    order = public.create_order(
+        "tenant-one",
+        OrderCreate(
+            order_type="DELIVERY",
+            customer_name="Charlie",
+            customer_phone="333",
+            customer_email="charlie@example.com",
+            notes="Ring twice",
+            items=[OrderItemCreate(menu_item_id=item.id, quantity=2, notes="Extra sauce")],
+            delivery_address=DeliveryAddressCreate(
+                street="Three Street",
+                postal_code="10115",
+                city="Berlin",
+                instructions="Back door",
+            ),
+        ),
+        db=db,
+    )
+
+    stored = db.get(Order, order.id)
+    assert stored is not None
+    assert order.restaurant_id == restaurant_one.id
+    assert order.order_type == "DELIVERY"
+    assert order.status == "NEW"
+    assert order.customer_email == "charlie@example.com"
+    assert order.subtotal == Decimal("24.00")
+    assert order.delivery_fee == Decimal("3.50")
+    assert order.total == Decimal("27.50")
+    assert [line.item_name for line in order.items] == [item.name]
+    assert order.items[0].quantity == 2
+    assert order.items[0].notes == "Extra sauce"
+    assert order.delivery_address is not None
+    assert order.delivery_address.street == "Three Street"
+    assert [status.status for status in order.status_history] == ["NEW"]
+    assert db.query(DeliveryAddress).filter_by(order_id=order.id).one().city == "Berlin"
 
 
 def test_ai_context_retrieval_is_restaurant_scoped(db: Session, monkeypatch: pytest.MonkeyPatch) -> None:
