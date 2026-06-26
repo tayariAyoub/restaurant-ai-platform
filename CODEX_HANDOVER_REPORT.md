@@ -1,610 +1,321 @@
-# Codex Handover Report - RestaurantAI Platform
+# RestaurantAI Codex Handover Report
 
-## Frontend Build Fix
-The frontend build was failing due to `sharp` requiring explicit build approval in `pnpm`.
+Generated: 2026-06-26
+Scope: safe baseline audit only. No application behavior was changed.
 
-**Actions Taken:**
-- Installed `pnpm` globally.
-- Approved `sharp` build: `pnpm approve-builds sharp`.
-- Updated `frontend/pnpm-workspace.yaml` to include `allowBuilds: sharp: true`.
-- Successfully executed `pnpm build` in the `frontend/` directory.
+## Current Architecture Summary
 
-**Environment Details:**
-- **Frontend Path:** `/frontend`
-- **Package Manager:** `pnpm`
-- **Next.js Version:** 16.2.9
-- **React Version:** 19.2.7
+RestaurantAI is a two-service SaaS-style application with a Next.js frontend, a FastAPI backend, PostgreSQL/pgvector persistence, and Docker Compose for local full-stack execution.
 
-## Cleanup
-- Removed accidental files: `frontend/-` and `frontend/Please`.
+### Frontend
 
-## Current State
-- Frontend is building successfully.
-- Backend is a FastAPI application with PostgreSQL/pgvector.
-- Docker configuration is available for full-stack deployment.
+- Location: `frontend/`
+- Framework: Next.js 16 app router, React 19, TypeScript strict mode, Tailwind CSS.
+- Primary app folders:
+  - `frontend/app/` contains public routes, admin routes, and dynamic restaurant/order pages.
+  - `frontend/components/` contains public restaurant UI, shell/header/footer/chat, and admin dashboards/editors.
+  - `frontend/lib/` contains shared API, auth, and type helpers.
+- API access:
+  - `frontend/lib/api.ts` sends requests to same-origin `/api`.
+  - `frontend/next.config.ts` rewrites `/api/:path*` and `/uploads/:path*` to `BACKEND_INTERNAL_URL`, defaulting to `http://localhost:8000`.
+- Authentication storage:
+  - Admin bearer token is stored in browser `localStorage` under `restaurant_ai_token`.
 
-## Recommended Next Steps
-- Verify backend connectivity with the newly built frontend.
-- Run `pytest` on the backend to ensure service integrity.
-- Add more comprehensive frontend tests (currently missing).
+### Backend
 
-## V1.5 Creative Luxury Experience Pass
+- Location: `backend/`
+- Framework: FastAPI with SQLAlchemy ORM.
+- Entry point: `backend/app/main.py`.
+- Main modules:
+  - `app/api/auth.py`: login and current-user endpoint.
+  - `app/api/admin.py`: authenticated admin, restaurant, menu, upload, reservation, order, driver, and dashboard endpoints.
+  - `app/api/public.py`: public restaurant, reservation, chat, order, and order tracking endpoints.
+  - `app/core/config.py`: Pydantic settings loaded from environment or `backend/.env`.
+  - `app/core/database.py`: SQLAlchemy engine/session setup.
+  - `app/core/security.py`: bcrypt password hashing and JWT creation/decoding.
+  - `app/services/knowledge.py`: upload text extraction, chunking, embeddings, and structured knowledge rebuilding.
+  - `app/services/chat.py`: restaurant-scoped RAG retrieval and OpenAI chat responses.
+  - `app/services/seed.py`: demo themes, users, restaurant, menu, images, and knowledge seeding.
+  - `app/services/migrations.py`: idempotent SQL bridge for MVP schema changes.
 
-**Goal:** Push the public RestaurantAI customer experience beyond a standard restaurant website into a cinematic, premium brand moment while preserving all existing ordering, reservation, and AI waiter functionality.
+### Database
 
-**Creative direction:**
-- Combined calm fine-dining storytelling, art-gallery food presentation, mobile-first ordering clarity, and polished SaaS interaction details into a distinct RestaurantAI design language.
-- Added subtle motion, atmospheric depth, editorial spacing, and refined fallback treatments so the site feels intentional even when a restaurant has incomplete photos.
+- Docker database image: `pgvector/pgvector:pg16`.
+- ORM models: `backend/app/models.py`.
+- Data model includes users, themes, restaurants, images, menu categories/items, knowledge documents/chunks, conversations/messages, contact requests, orders, order items, status history, delivery addresses, drivers, and delivery assignments.
+- Vector search uses `pgvector.sqlalchemy.Vector(1536)` for knowledge embeddings.
+- Startup behavior:
+  - Creates `vector` extension.
+  - Calls `Base.metadata.create_all`.
+  - Runs an idempotent migration bridge.
+  - Seeds demo data.
+- Warning: there is no formal migration system such as Alembic yet.
 
-**Customer website improvements:**
-- Upgraded the public hero to use restaurant photography as a cinematic background when available, with ambient motion and stronger depth.
-- Added premium visual primitives for sensory section separators, art-frame image treatment, ambient glows, and slow drifting atmosphere.
-- Reframed menu cards as an editorial tasting experience with plate numbering, refined hover motion, and elegant image handling.
-- Improved gallery framing so restaurant photos feel closer to an exhibition than a basic image grid.
-- Updated reservation confirmation copy and styling so booking feels more exclusive and trustworthy.
+### Docker
 
-**AI waiter improvements:**
-- Repositioned the chatbot as an AI maitre d' with warmer, more restaurant-native copy.
-- Improved the assistant entry point so it feels like part of the dining room experience instead of a generic support widget.
+- Root: `docker-compose.yml`.
+- Services:
+  - `db`: PostgreSQL 16 with pgvector, persistent `postgres_data` volume.
+  - `backend`: builds `backend/Dockerfile`, exposes `8000`, mounts `uploads` volume.
+  - `frontend`: builds `frontend/Dockerfile`, exposes `3000`, uses Next standalone output.
+- Backend Docker image targets Python 3.12.
+- Frontend Docker image uses Node 22 Alpine.
+- Warning: `frontend/Dockerfile` uses `npm install`/`npm run build`, while the repo has `pnpm-lock.yaml` and the requested local workflow uses `pnpm`.
 
-**Files changed in this phase:**
-- `frontend/app/globals.css`
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/components/ChatWidget.tsx`
+### Authentication
 
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+- Login route: `POST /api/auth/login`.
+- Current user route: `GET /api/auth/me`.
+- Auth mechanism: JWT bearer token signed with `JWT_SECRET`.
+- Role model:
+  - `SUPER_ADMIN`
+  - `RESTAURANT_OWNER`
+- Admin authorization is enforced in backend dependencies and route helpers.
+- Frontend persists tokens in `localStorage`.
+- Production warning: localStorage bearer tokens are convenient for MVP work but weaker than hardened HTTP-only cookie/session flows.
 
-## V1.5 Emotional Restaurant Moments
+### AI Integration
 
-**Goal:** Move RestaurantAI beyond a beautiful website into a more memorable restaurant experience using existing data only.
+- OpenAI dependency: `openai==1.82.0`.
+- Chat model setting: `OPENAI_CHAT_MODEL`, default `gpt-4.1-mini`.
+- Embedding model setting: `OPENAI_EMBEDDING_MODEL`, default `text-embedding-3-small`.
+- If `OPENAI_API_KEY` is missing:
+  - Embedding creation returns `None` embeddings.
+  - Chat endpoint returns a configured fallback telling the user AI is not configured.
+  - Retrieval can fall back to token-overlap matching for local development.
+- Knowledge sources:
+  - Restaurant profile/opening hours/menu structured facts.
+  - Uploaded PDF/TXT documents.
 
-**Customer experience improvements:**
-- Added a new `Tonight's experience` storytelling moment to the public restaurant page.
-- Introduced data-derived story cards for chef notes, seasonal moments, kitchen story, pairing cues, and restaurant personality.
-- Added a first-pass restaurant personality architecture for Modern Luxury, Italian Heritage, Nordic Michelin, Japanese Omakase, French Fine Dining, Modern Steakhouse, Mediterranean, and Minimal Black style directions.
-- Improved menu presentation with experience labels such as signature, most loved, plant friendly, seasonal, and tonight.
-- Added chef-note pairing prompts to menu cards so dishes feel more like guided experiences than plain products.
+### Uploads
 
-**AI maitre d' improvements:**
-- Warmed the assistant welcome and prompt language around mood, occasion, appetite, allergies, timing, pairings, pickup orders, and reservation guidance.
-- Updated starter prompts to feel more like hospitality concierge guidance.
+- Upload directory setting: `upload_dir`, default `uploads`.
+- Static serving: backend mounts `/uploads`.
+- Frontend proxy: `/uploads/:path*` rewrites to backend.
+- Image uploads:
+  - Endpoint family: `/api/admin/restaurants/{restaurant_id}/images`.
+  - Accepted types: JPEG, PNG, WEBP, GIF.
+  - Max size: 8 MB.
+  - Stored under `uploads/{restaurant_id}/`.
+- Knowledge document uploads:
+  - Endpoint family: `/api/admin/restaurants/{restaurant_id}/documents`.
+  - Accepted content by filename: PDF and TXT.
+  - Max size: 10 MB.
+  - Stored under `uploads/{restaurant_id}/documents/`.
 
-**Owner experience improvements:**
-- Added a dark premium `What should I do today?` owner briefing panel.
-- Turned owner insights into actionable recommendations around best dishes, AI gaps, missing photos, and service readiness.
-- Added a premium personality direction panel to the design editor so future theme switching is framed as restaurant identity, not only colors.
+### Routing
 
-**Files changed in this phase:**
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/components/ChatWidget.tsx`
-- `frontend/app/admin/dashboard/page.tsx`
-- `frontend/components/admin/RestaurantEditor.tsx`
+- Public frontend routes:
+  - `/`
+  - `/menu`
+  - `/contact`
+  - `/restaurants/[slug]`
+  - `/restaurants/[slug]/orders/[publicId]`
+- Admin frontend routes:
+  - `/admin`
+  - `/admin/login`
+  - `/admin/dashboard`
+  - `/admin/users`
+  - `/admin/restaurants`
+  - `/admin/restaurants/new`
+  - `/admin/restaurants/[id]/edit`
+  - `/admin/restaurants/[id]/design`
+  - `/admin/restaurants/[id]/images`
+  - `/admin/restaurants/[id]/menu`
+  - `/admin/restaurants/[id]/chatbot`
+  - `/admin/restaurants/[id]/customers`
+  - `/admin/restaurants/[id]/orders`
+  - `/admin/restaurants/[id]/reservations`
+- Backend route prefixes:
+  - Auth routes are included under `/api/auth`.
+  - Admin routes are included under `/api/admin`.
+  - Public routes are included under `/api`.
+
+## Build Status
+
+### Frontend
+
+Commands run from `frontend/`:
+
+```powershell
+pnpm install
+pnpm build
+```
+
+Result: passed.
+
+Notes:
+
+- `pnpm install` reported `Already up to date`.
+- `pnpm build` completed successfully with Next.js 16.2.9.
+- TypeScript completed successfully during `next build`.
+- Static/dynamic route generation completed successfully.
+
+### Backend
+
+Dependency/test-environment work:
+
+- Confirmed `pytest==8.3.5` is declared in `backend/requirements.txt`.
+- Updated `psycopg[binary]` from `3.2.9` to `3.2.13` so `python -m pip install -r requirements.txt` can install on the local Python 3.14 runtime.
+- Added `backend/tests/conftest.py` to provide test-only defaults for required settings before app modules import.
+
+Command run from `backend/`:
+
+```powershell
+python -m pytest
+```
+
+Result: passed.
+
+Local environment notes:
+
+- Local `python --version` is Python 3.14.5.
+- `py -0p` only listed Python 3.14 runtimes.
+- Backend Dockerfile targets Python 3.12.
+- Full backend requirements now install successfully in the active local Python environment after the patch-level `psycopg` bump.
+- `python -m pytest` collected 8 tests and passed all 8.
+- Warnings: 37 FastAPI/Python 3.14 deprecation warnings from `asyncio.iscoroutinefunction`.
+
+Additional static check run from `backend/`:
+
+```powershell
+python -m compileall app tests
+```
+
+Result: passed. Python files compile syntactically.
+
+## Test Status
+
+- Backend tests exist:
+  - `backend/tests/test_knowledge.py`
+  - `backend/tests/test_tenant_safety.py`
+- Backend tests pass locally: `8 passed, 37 warnings`.
+- No frontend test suite is configured in `frontend/package.json`.
+
+## Environment Variables
+
+No local `.env` file was found at:
+
+- project root `.env`
+- `backend/.env`
+
+The root `.env.example` documents the expected variables:
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `OPENAI_API_KEY`
+- `OPENAI_CHAT_MODEL`
+- `OPENAI_EMBEDDING_MODEL`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `DEMO_OWNER_EMAIL`
+- `DEMO_OWNER_PASSWORD`
+- `FRONTEND_URL`
+- `BACKEND_INTERNAL_URL`
+
+Important distinction:
+
+- Docker Compose provides local defaults for required backend variables.
+- Running backend imports/tests directly outside Docker requires required settings such as `DATABASE_URL`, `JWT_SECRET`, `ADMIN_PASSWORD`, and `DEMO_OWNER_PASSWORD` to be available, unless a test harness overrides settings earlier.
+
+## Immediate Warnings And Technical Debt
+
+### High Priority
+
+1. Public order creation appears broken in `backend/app/api/public.py`.
+   - The `create_order` route begins at line 132 but does not finish creating or returning an order before the next route declaration.
+   - The order creation logic appears after a `return` inside `order_tracking`, making it unreachable.
+   - Frontend ordering calls `POST /restaurants/{slug}/orders`, so this is likely a user-facing runtime failure even though TypeScript build passes.
+
+2. Formal database migrations are missing.
+   - Startup currently mixes `Base.metadata.create_all` with an idempotent SQL bridge.
+   - This is risky for production SaaS evolution.
+
+### Medium Priority
+
+1. Frontend package manager mismatch in Docker.
+   - Local workflow and lockfile use pnpm.
+   - `frontend/Dockerfile` uses npm and copies `package*.json`, ignoring `pnpm-lock.yaml`.
+
+2. Authentication is MVP-grade.
+   - Bearer tokens are stored in `localStorage`.
+   - No refresh-token flow, password reset, rate limiting, audit logging, MFA, or session revocation was found.
+
+3. Upload storage is local filesystem/volume based.
+   - Suitable for local demo.
+   - Production SaaS should use object storage, content scanning, stricter filename/content validation, and retention policies.
+
+4. AI calls are synchronous from request handlers.
+   - OpenAI chat/embedding calls happen in request flow.
+   - Production should consider background jobs, timeouts, retries, observability, and cost controls.
+
+5. Demo/default credentials exist in Docker Compose and README.
+   - Acceptable for local demo.
+   - Must not be used in any real deployment.
+
+### Low Priority
+
+1. No TODO/FIXME comments were found by `rg`.
+
+2. Generated/cache folders exist locally:
+   - `frontend/.next`
+   - `frontend/node_modules`
+   - backend `__pycache__` folders
+   These appear to be ignored/generated workspace artifacts, not source folders.
+
+3. Conventional duplicate basenames exist:
+   - `Dockerfile` in frontend and backend.
+   - `.dockerignore` in frontend and backend.
+   - many `page.tsx` files due Next.js routing.
+   These are expected, not necessarily a problem.
+
+## Check Results
+
+- Git status before report update: clean working tree on branch `ai-production-saas-upgrade`.
+- Broken TypeScript imports: none found by `pnpm build`.
+- TypeScript errors: none found by `pnpm build`.
+- Python syntax errors: none found by `python -m compileall app tests`.
+- Backend pytest: `8 passed, 37 warnings`.
+- Python runtime test warnings: FastAPI emits Python 3.14 deprecation warnings for `asyncio.iscoroutinefunction`.
+- TODO/FIXME comments: none found.
+- Duplicate files: only conventional duplicate basenames were observed.
+- Unused folders: no clearly unused source folders identified. Generated folders are present locally.
+
+## Recommendations
+
+1. First approval item: fix the broken public order creation route and add a regression test for `POST /api/restaurants/{slug}/orders`.
+
+2. Standardize backend local testing:
+   - Use Python 3.12, matching Docker.
+   - Create a `.venv`.
+   - Install `backend/requirements.txt`.
+   - Run `python -m pytest`.
+
+3. Add Alembic before further schema work.
+
+4. Align frontend Docker build with pnpm and `pnpm-lock.yaml`.
+
+5. Introduce production auth hardening before launch:
+   - HTTP-only cookies or a stronger token strategy.
+   - rate limiting.
+   - password reset.
+   - audit logs.
+   - secret rotation path.
+
+6. Move uploads to object storage before multi-tenant production use.
+
+7. Add CI checks:
+   - frontend `pnpm install --frozen-lockfile` and `pnpm build`.
+   - backend Python 3.12 dependency install and `python -m pytest`.
+   - optional Python lint/type checks once selected.
+
+## Files Changed By This Baseline Pass
+
 - `CODEX_HANDOVER_REPORT.md`
+- `backend/requirements.txt`
+- `backend/tests/conftest.py`
 
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-
-## Codex Phase 1 - Product Polish
-
-**Goal:** Make the working MVP feel demo-ready and more credible for a first restaurant sales conversation without changing APIs, auth, database schema, or ordering/chat behavior.
-
-**Customer-facing website improvements:**
-- Reworked the restaurant page hero into a premium full-viewport restaurant landing section with stronger CTA, branded navigation, mobile menu polish, and gallery preview stats.
-- Upgraded menu presentation with card-based item layouts, image placeholders, availability states, allergen callouts, dietary badges, and clearer price treatment.
-- Improved gallery, contact, opening-hours, reservation, cart, and checkout presentation while preserving existing public API routes.
-
-**AI chatbot improvements:**
-- Rebuilt the chat widget presentation with restaurant branding, starter prompts, improved welcome copy, better loading state, stronger mobile sizing, and clearer assistant positioning.
-
-**Admin/SaaS dashboard improvements:**
-- Refined the admin shell with a more polished SaaS navigation frame, better loading state, and clearer product positioning.
-- Reworked the admin dashboard into an operating view with loading/error states, owner quick actions, prioritized attention logic, and reusable stat/empty-state components.
-- Upgraded restaurant overview cards with stronger image treatment, live/draft status, attention badges, setup progress, and operational metrics.
-- Lightly polished restaurant editor navigation to match the improved SaaS surface.
-
-**Files changed in this phase:**
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/components/ChatWidget.tsx`
-- `frontend/components/admin/AdminShell.tsx`
-- `frontend/components/admin/RestaurantOverviewCard.tsx`
-- `frontend/components/admin/RestaurantNav.tsx`
-- `frontend/app/admin/dashboard/page.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-
-## Version 1 Audit And First Implementation Step
-
-**Product direction:** RestaurantAI is now positioned as the AI operating system for independent restaurants: premium website, AI waiter, online ordering, reservations, and owner business dashboard.
-
-**Current V1 audit:**
-- Customer side already has a premium restaurant website, menu browsing, cart/order flow, reservations, and chatbot entry point. It still needs stronger order tracking and more polished mobile customer journey details.
-- Owner side already has restaurant setup, menu/design/images/chatbot editing, orders, kitchen workflow, and reservations. The main gap was business-value visibility on the dashboard.
-- Super admin already has restaurant/user management and platform overview basics. Subscriptions should remain planned but not implemented yet.
-
-**First safe implementation step completed:**
-- Improved the restaurant owner dashboard to show a live business snapshot from existing data:
-  - today revenue
-  - today's order count
-  - active reservations
-  - AI unanswered-question gaps
-  - average order value
-  - open/ready orders
-  - unique customers seen through orders/reservations
-  - best-selling dishes
-  - reservation status overview
-  - AI customer-question snippets
-  - missing photo/logo/opening-hours/allergen/menu warnings
-- Reused existing admin APIs for restaurant details, orders, reservations, and conversations.
-- No database schema changes.
-- No new backend endpoints.
-- Super-admin dashboard behavior preserved.
-
-**Files changed:**
-- `frontend/app/admin/dashboard/page.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend syntax: `python -m py_compile app\\services\\seed.py app\\api\\admin.py` passed in `backend/`.
-- Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
-
-## V1 Step 2 - Customer Order Confirmation And Tracking
-
-**Goal:** Make the post-order customer experience feel professional, clear, and mobile-friendly without adding payments, full delivery maps, or schema changes.
-
-**Customer experience improved:**
-- Rebuilt the order success state after checkout with:
-  - public order number
-  - total
-  - pickup/dine-in/delivery method
-  - estimated time
-  - status timeline
-  - next-step instructions
-  - restaurant phone/help info
-  - clear `Track order` and `Back to menu` actions
-- Added a simple customer tracking page at:
-  - `/restaurants/{slug}/orders/{publicId}`
-- Tracking page includes:
-  - order number
-  - current status
-  - estimated time
-  - mobile-friendly progress timeline
-  - latest status updates
-  - ordered items
-  - customer notes
-  - restaurant contact/address help
-  - loading and error states
-
-**Backend/API work:**
-- Added a read-only public order tracking endpoint:
-  - `GET /api/restaurants/{slug}/orders/{public_id}`
-- Endpoint is scoped by restaurant slug and public order ID.
-- Reuses existing order, item, delivery, and status-history relationships.
-- No database schema changes.
-
-**Files changed:**
-- `backend/app/api/public.py`
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/app/restaurants/[slug]/orders/[publicId]/page.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend syntax: `python -m py_compile app\\api\\public.py` passed in `backend/`.
-- Backend tests: `python -m pytest` could not run because `pytest` is not installed in the local Python 3.14 environment.
-
-## V1 Step 3 - Customer Mobile Menu And AI Waiter Refinement
-
-**Goal:** Make the customer restaurant experience feel faster, clearer, and more premium on phones.
-
-**Customer mobile menu improvements:**
-- Added sticky horizontal category navigation inside the menu section.
-- Added a featured quick-add strip for popular starting points.
-- Rebuilt menu item cards into a reusable customer-facing card with:
-  - stronger food image presentation
-  - visible price treatment
-  - dietary/allergen badges
-  - unavailable state
-  - quantity-in-cart badge
-  - clearer allergen fallback copy
-  - consistent add-to-order action
-- Added menu/category empty states for restaurants that have not finished setup.
-- Improved sticky cart visibility on mobile with a wider bottom action bar, item count, and subtotal.
-
-**AI waiter improvements:**
-- Passed real menu context into the chat widget.
-- Added menu-aware recommendation prompts based on featured dishes.
-- Added diet/allergy prompts based on actual menu metadata.
-- Added quick intent buttons for meal recommendations, ordering help, and reservations.
-- Improved chat input loading/disabled state while the AI is responding.
-
-**Files changed:**
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/components/ChatWidget.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend was not changed in this step.
-
-## V1 Step 4 - Light Customer CRM
-
-**Goal:** Help restaurant owners see customers as business assets using existing orders and reservations.
-
-**Owner CRM added:**
-- Added a new restaurant owner page:
-  - `/admin/restaurants/{id}/customers`
-- Added Customers to the restaurant admin navigation.
-- Added Customers as a quick action from the owner dashboard.
-- Customer profiles are inferred from existing order and reservation data.
-
-**Customer data shown:**
-- Customer name.
-- Phone and email when available.
-- Total orders.
-- Reservation count.
-- Total tracked spend from orders.
-- Last activity date.
-- Favorite or most ordered dishes.
-- Allergy/preference snippets inferred from order notes, item notes, and reservation messages.
-- Disabled owner notes placeholder for the next CRM phase without adding a schema migration.
-
-**CRM usability:**
-- Added customer search by name, phone, email, favorite dish, allergy, or preference.
-- Added filters for all customers, customers with orders, customers with reservations, and customers with preferences.
-- Added dashboard stats for known customers, total orders, reservations, repeat customers, and tracked spend.
-- Added loading, empty, no-results, and error states.
-
-**Files changed:**
-- `frontend/components/admin/CustomersDashboard.tsx`
-- `frontend/app/admin/restaurants/[id]/customers/page.tsx`
-- `frontend/components/admin/RestaurantNav.tsx`
-- `frontend/app/admin/dashboard/page.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend was not changed in this step.
-
-## V1 Step 5 - Super Admin Tenant Readiness Overview
-
-**Goal:** Give the platform owner a clear view of which restaurant tenants are ready, incomplete, inactive, or need help.
-
-**Super admin dashboard improvements:**
-- Added a Tenant Readiness section with counts for:
-  - ready tenants
-  - incomplete tenants
-  - inactive/draft tenants
-  - restaurants missing owners
-  - restaurants needing help
-- Added warning totals for missing photos/logo, menu/opening-hours gaps, and AI knowledge gaps.
-- Added a direct link from readiness summary to the filtered restaurant list.
-
-**Restaurant list/card improvements:**
-- Upgraded restaurant overview cards with:
-  - readiness label
-  - active/inactive status
-  - owner assigned or missing indicator
-  - setup warnings for owner, photos, menu, hours, branding, and AI knowledge
-  - recent orders/reservations/AI unanswered metrics
-  - quick actions for edit, operations/orders, public site, create owner, and delete
-- Added super-admin filters for:
-  - ready and live
-  - active/live
-  - inactive/draft
-  - setup incomplete
-  - missing owner
-  - needs help
-- Restaurant list now honors `?status=` query parameters from dashboard quick links.
-
-**Files changed:**
-- `frontend/app/admin/dashboard/page.tsx`
-- `frontend/app/admin/restaurants/page.tsx`
-- `frontend/components/admin/RestaurantOverviewCard.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend was not changed in this step.
-
-## V1 Step 6 - Backend Tenant Safety Tests
-
-**Goal:** Add focused backend/API safety coverage so RestaurantAI is safer and more professional technically.
-
-**Tests added:**
-- Restaurant owner can access only their own restaurant.
-- Super admin can access all restaurants.
-- Orders are scoped to the authenticated restaurant owner.
-- Reservations are scoped to the authenticated restaurant owner.
-- Public order tracking cannot leak another restaurant's order by public ID.
-- AI/RAG context retrieval remains restaurant-scoped.
-
-**Test setup improvements:**
-- Added `backend/pytest.ini` with `pythonpath = .` so tests can import the app consistently.
-- Updated `backend/Dockerfile` to copy `pytest.ini` and `tests/` into the backend image.
-- Updated `backend/.dockerignore` so tests are not excluded from Docker test runs.
-- Updated README test instructions to call out Python 3.12 as the supported backend runtime and document both local and Docker test commands.
-
-**Files changed:**
-- `backend/tests/test_tenant_safety.py`
-- `backend/pytest.ini`
-- `backend/Dockerfile`
-- `backend/.dockerignore`
-- `README.md`
-
-**Validation:**
-- Local syntax: `python -m py_compile tests\\test_tenant_safety.py tests\\test_knowledge.py` passed in `backend/`.
-- Docker backend build: `docker compose build backend` passed.
-- Backend tests: `docker compose run --rm backend pytest` passed with `8 passed, 1 warning`.
-- Local `python -m pytest` still cannot run on this machine because the active local Python is 3.14 and backend dependencies are not installed there. Use Docker or Python 3.12 as documented.
-
-## V1.5 - Premium Restaurant Experience
-
-**Mission:** Move RestaurantAI from a strong SaaS demo toward a premium restaurant platform with a coherent design language.
-
-**Design principles applied:**
-- Fine-dining restraint: stronger whitespace, atmospheric image presentation, calmer typography, and less generic card clutter.
-- Premium SaaS clarity: cleaner admin shell, consistent motion, soft glass surfaces, sharper hierarchy, and more useful business guidance.
-- Mobile-first ordering: clearer sticky cart, menu search/filtering, better category navigation, and checkout progress cues.
-- Hospitality-first AI: AI waiter now feels more like a trained front-of-house employee with richer guidance and contextual suggestion cards.
-
-**Customer website improvements:**
-- Premium hero with stronger atmosphere, refined navigation, first-viewport metrics, and a richer gallery preview.
-- Story section rebuilt into a more editorial hospitality presentation.
-- Added story signals for kitchen, allergy care, and direct restaurant hospitality.
-- Gallery section now has a dedicated atmosphere heading and refined image treatment.
-- Reservation form upgraded with premium surface styling and clearer allergy/special-occasion copy.
-- Footer simplified into a luxury brand close rather than generic copyright text.
-
-**Menu and ordering improvements:**
-- Added menu search across dish names, descriptions, and allergens.
-- Added dietary filters for all, vegan, vegetarian, and halal.
-- Category navigation now works with search/filter feedback.
-- Menu empty states now distinguish unfinished menus from filtered no-results.
-- Cart modal now has a more polished overlay and checkout progress cues.
-
-**AI waiter improvements:**
-- Chat widget has a richer staff-like welcome area.
-- Suggestion prompts are presented as premium recommendation cards.
-- AI explains it can help with dishes, allergens, pickup ordering, and reservation questions.
-
-**Owner/admin experience improvements:**
-- Admin shell refined with a quieter premium operating-system feel.
-- Owner dashboard now includes a restaurant health score.
-- Owner dashboard now includes daily recommendations based on open orders, AI gaps, reservation activity, and setup warnings.
-
-**Design system improvements:**
-- Added global premium design primitives:
-  - `premium-card`
-  - `premium-lift`
-  - `fade-up`
-- Added shared premium colors/shadows via CSS variables.
-- Improved subtle transitions and hover states without changing core logic.
-
-**Files changed:**
-- `frontend/app/globals.css`
-- `frontend/components/RestaurantSite.tsx`
-- `frontend/components/ChatWidget.tsx`
-- `frontend/components/admin/AdminShell.tsx`
-- `frontend/app/admin/dashboard/page.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend was not changed.
-
-## V1.5 Public Website Design Language Refinement
-
-**Goal:** Create a more original RestaurantAI public-customer design language inspired by fine dining, premium SaaS, mobile ordering, and restaurant operations without copying any single reference.
-
-**Design language direction:**
-- Calm luxury and editorial storytelling for first impression.
-- Cinematic food and atmosphere presentation.
-- Mobile-first ordering clarity.
-- Practical restaurant website structure with premium polish.
-- AI waiter presented as part of hospitality, not a generic chatbot.
-
-**Customer website refinements:**
-- Replaced customer-visible unfinished image states with an elegant editorial `Chef selection` fallback.
-- Removed cheap/internal placeholder language like `Food photo coming soon` from the menu experience.
-- Improved no-gallery fallback so it reads like an intentional dining-room preview.
-- Renamed the quick-add area to `Signature dishes` with warmer hospitality copy.
-- Added premium hover/motion treatment to signature dishes and menu item cards.
-- Preserved all existing menu, cart, checkout, reservation, and AI functionality.
-
-**Files changed:**
-- `frontend/components/RestaurantSite.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend was not changed.
-
-## Codex Phase 3 - Restaurant Operations
-
-**Goal:** Make RestaurantAI more useful inside daily restaurant operations for front counter, kitchen, delivery, and reservation staff.
-
-**Orders dashboard improvements:**
-- Rebuilt the orders page into an operations dashboard with live metrics for pending, preparing, and ready orders.
-- Added professional order cards with status pills, order type labels, customer details, timestamps, ETA, item totals, notes, delivery information, route links, timeline details, and clear action buttons.
-- Added loading, error, refreshing, and empty states.
-- Replaced preparation-time prompt workflow with fast accept buttons for 15, 25, and 35 minute estimates.
-
-**Kitchen mode:**
-- Added a tablet-friendly kitchen board with large lanes for Pending, Accepted, Preparing, and Ready.
-- Added large touch targets, simplified order item lists, priority highlighting for new orders, and fast status updates.
-
-**Delivery/driver workflow:**
-- Preserved existing driver APIs and improved delivery controls inside order cards.
-- Kept driver management with clearer empty states and operational helper copy.
-
-**Reservations workflow:**
-- Improved reservation management with status metrics, sorted priority order, clearer reservation cards, direct Confirm/Decline/Done/Reopen actions, and stronger empty states.
-
-**Files changed in this phase:**
-- `frontend/components/admin/OrdersDashboard.tsx`
-- `frontend/components/admin/RestaurantEditor.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
-- Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
-
-## Codex Phase 4 - AI Assistant Advantage
-
-**Goal:** Make the AI assistant feel like each restaurant receives a trained AI employee while preserving the existing RAG architecture and APIs.
-
-**Customer chatbot improvements:**
-- Reframed the widget as the restaurant's AI employee trained on that restaurant only.
-- Added grouped suggested prompts for recommendations, allergy/diet questions, reservations, pickup, and planning.
-- Added a visible safety note explaining restaurant-scoped answers and allergy confirmation.
-- Improved unanswered/fallback message styling so customers can tell when the assistant lacks enough knowledge.
-
-**Owner chatbot dashboard improvements:**
-- Expanded the chatbot admin view into an AI training dashboard.
-- Added AI setup metrics for documents, menu facts, AI gaps, and improvement tasks.
-- Added "what the AI knows" readiness cards for profile, hours, menu items, and allergens.
-- Added AI improvement suggestions for missing profile details, allergen knowledge, reservation/ordering policies, and unanswered customer questions.
-- Added owner test prompts and a direct public-chatbot test link.
-- Improved conversation review by highlighting unanswered conversations that should become new knowledge.
-
-**AI safety/backend improvements:**
-- Preserved restaurant-scoped RAG retrieval by `restaurant_id`.
-- Added stricter prompt instructions against using outside knowledge or other restaurant data.
-- Added local retrieval confidence gating so weak token-overlap matches fall back instead of answering from irrelevant chunks.
-- Normalized fallback detection for uncertain model responses.
-- Kept allergy and reservation safety language explicit.
-- Cleaned structured menu knowledge price text to use ASCII `EUR`.
-
-**Files changed in this phase:**
-- `backend/app/services/chat.py`
-- `backend/app/services/knowledge.py`
-- `frontend/components/ChatWidget.tsx`
-- `frontend/components/admin/RestaurantEditor.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py` passed in `backend/`.
-- Backend tests: `python -m pytest` could not run because local Python has no `pytest` installed.
-- Docker fallback: Docker CLI is installed, but Docker Desktop engine is not running, so containerized backend tests could not run.
-
-## Codex Phase 5 - Final Demo Readiness
-
-**Goal:** Remove demo rough edges and make the customer and owner/admin journeys easier to present to a real restaurant owner.
-
-**Customer journey polish:**
-- Cleaned legacy public routes (`/`, `/menu`, `/contact`) so copy, empty states, pricing, reservation text, and loading states are consistent with the premium restaurant website.
-- Passed restaurant slug/name/brand color into the public shell chatbot so legacy public routes use the same restaurant-trained assistant experience.
-- Improved dynamic restaurant loading/error states.
-- Removed visible encoding artifacts and normalized demo text.
-
-**Owner/admin journey polish:**
-- Improved login page copy and presentation.
-- Reworked restaurants list with loading skeletons, clearer filters, better empty state, delete feedback, and mobile-friendly layout.
-- Improved new restaurant onboarding copy, loading state, and form layout.
-- Improved users/owners page with helper copy, loading state, empty state, and clearer account creation feedback.
-
-**Documentation polish:**
-- Added a `How to demo RestaurantAI` section to `README.md` with a step-by-step sales/demo walkthrough covering website, AI assistant, ordering, admin dashboard, owner editor, operations, reservations, and business value.
-
-**Demo data polish:**
-- Normalized demo seed/mock text to avoid odd punctuation rendering in screenshots or presentations.
-
-**Files changed in this phase:**
-- `README.md`
-- `backend/app/services/seed.py`
-- `frontend/app/page.tsx`
-- `frontend/app/menu/page.tsx`
-- `frontend/app/contact/page.tsx`
-- `frontend/app/restaurants/[slug]/page.tsx`
-- `frontend/app/admin/login/page.tsx`
-- `frontend/app/admin/restaurants/page.tsx`
-- `frontend/app/admin/restaurants/new/page.tsx`
-- `frontend/app/admin/users/page.tsx`
-- `frontend/components/PublicShell.tsx`
-- `frontend/scripts/mock-api.mjs`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
-- Backend syntax: `python -m py_compile app\\services\\chat.py app\\services\\knowledge.py app\\services\\seed.py app\\main.py app\\api\\admin.py app\\api\\public.py app\\api\\auth.py` passed in `backend/`.
-
-## Demo Startup Blocker Fix
-
-**Problem:** Docker Compose failed for non-programmer demo startup because `POSTGRES_PASSWORD` was missing in `.env`, and Compose also required the `.env` file to exist.
-
-**Fix:**
-- Updated `.env.example` with safe local demo defaults for:
-  - `POSTGRES_DB`
-  - `POSTGRES_USER`
-  - `POSTGRES_PASSWORD`
-  - `DATABASE_URL`
-  - `JWT_SECRET`
-  - `ADMIN_EMAIL`
-  - `ADMIN_PASSWORD`
-  - `DEMO_OWNER_EMAIL`
-  - `DEMO_OWNER_PASSWORD`
-- Updated `docker-compose.yml` so `docker compose up --build` works even when `.env` does not exist.
-- Added simple README instructions under `How to start RestaurantAI demo`.
-- Added exact demo URLs, demo login accounts, and role-based testing instructions.
-
-**Demo URLs:**
-- Customer site: `http://localhost:3000/restaurants/bella-napoli`
-- Admin dashboard: `http://localhost:3000/admin/login`
-- API docs: `http://localhost:8000/docs`
-
-**Demo accounts:**
-- Super admin: `admin@restaurantai.com` / `admin12345`
-- Restaurant owner: `owner@restaurantai.com` / `owner12345`
-
-**Validation:**
-- `docker compose config` now succeeds without `.env`.
-
-## Demo Login Fix
-
-**Problem:** The login screen rejected `owner@restaurantai.com` because the demo defaults used `owner@example.com`.
-
-**Fix:**
-- Updated demo defaults to branded accounts:
-  - Super admin: `admin@restaurantai.com` / `admin12345`
-  - Restaurant owner: `owner@restaurantai.com` / `owner12345`
-- Updated the login page to show demo account buttons that fill the email and password automatically.
-- Updated seed logic so Bella Napoli is assigned to the configured demo owner, including after restarting with an existing database volume.
-
-**Validation:**
-- `docker compose config --quiet` passed.
-- `pnpm.cmd build` passed in `frontend/`.
-- `python -m py_compile app\\services\\seed.py` passed in `backend/`.
-- Backend: local `pytest` could not run because `pytest` was not installed.
-- Backend dependency install attempt failed because the only local Python available is 3.14, while pinned backend dependencies include packages that do not publish compatible wheels for that version.
-- Docker fallback could not run because Docker Desktop engine was not running.
-
-**Notes for next phase:**
-- Use Python 3.12 or Docker Desktop with the engine running for backend tests.
-- Continue with focused owner-editor polish next: menu editing UX, image/design editor workflow, and chatbot knowledge management screen.
-- Deeper frontend component extraction is still recommended after the main demo surfaces are visually stable.
-
-## Codex Phase 2 - Owner Editor Workflow
-
-**Goal:** Make the restaurant owner workflow clearer and more useful so owners can customize their website without touching code.
-
-**Restaurant information page:**
-- Rebuilt the editor into guided sections for website basics, story, contact details, publishing, social links, and opening hours.
-- Added owner guidance, a customer-facing preview card, clearer helper text, save-state panel, and mobile/tablet friendly spacing.
-
-**Design/theme page:**
-- Improved template selection and brand controls with color swatches, readable helper copy, and a sticky live style preview.
-- Kept all existing design fields and API behavior intact.
-
-**Menu editor:**
-- Added a dedicated menu builder workflow with category stats, category empty states, clearer add forms, item cards, image placeholders, allergen/dietary badges, availability status, and an inline edit form.
-- Removed reliance on browser prompt editing for menu items.
-
-**Images page:**
-- Added upload guidance, photo checklist, hero/logo preview cards, gallery count, image empty states, and cleaner image cards.
-
-**Chatbot knowledge page:**
-- Added AI setup stats, automatic knowledge readiness checks, clearer document upload guidance, uploaded-document empty states, and customer-question review layout.
-
-**Reservations page preservation:**
-- Kept the existing reservations route working and gave it matching section structure and empty state treatment.
-
-**Files changed in this phase:**
-- `frontend/components/admin/RestaurantEditor.tsx`
-
-**Validation:**
-- Frontend: `pnpm.cmd build` passed successfully in `frontend/`.
+No application source behavior was changed.
