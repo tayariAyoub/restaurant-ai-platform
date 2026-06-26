@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. I am the AI Maître d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
+    content: `Good evening. I am the AI Maitre d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
   };
 }
 
@@ -69,16 +69,16 @@ export default function ChatWidget({
   return (
     <div className={`fixed right-4 z-50 sm:right-5 ${bottomOffsetClass}`}>
       {open && (
-        <div className="mb-4 flex h-[min(720px,84vh)] w-[min(450px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[2rem] border border-black/10 bg-white shadow-2xl">
+        <div className="mb-4 flex h-[min(720px,84vh)] w-[min(460px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-[0_32px_90px_rgba(0,0,0,.24)]">
           <div className="relative overflow-hidden px-5 py-5 text-white" style={{ backgroundColor: primaryColor }}>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,.28),transparent_16rem)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,.28),transparent_16rem),linear-gradient(135deg,rgba(0,0,0,.05),rgba(0,0,0,.28))]" />
             <div className="relative flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/18 shadow-lg">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl border border-white/20 bg-white/18 shadow-lg">
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} AI Maître d'</p>
+                  <p className="font-semibold leading-tight">{restaurantName} AI Maitre d'</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
@@ -86,7 +86,7 @@ export default function ChatWidget({
                 <X size={18} />
               </button>
             </div>
-            <p className="relative mt-4 rounded-2xl bg-white/12 p-3 text-sm leading-6 text-white/85">
+            <p className="relative mt-4 rounded-2xl border border-white/15 bg-white/12 p-3 text-sm leading-6 text-white/85">
               Start with a craving, an allergy, a date-night plan, or a pickup time. I will suggest a thoughtful path through the restaurant.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={loading ? "AI Maître d' is checking..." : "Tell me your mood, allergies, occasion..."}
+              placeholder={loading ? "AI Maitre d' is checking..." : "Tell me your mood, allergies, occasion..."}
               className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm outline-none focus:border-stone-500"
               disabled={loading}
             />
@@ -175,9 +175,9 @@ export default function ChatWidget({
 
       <button
         onClick={() => setOpen(!open)}
-        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)]"
+        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105"
         style={{ backgroundColor: primaryColor }}
-        aria-label="Open AI Maître d'"
+        aria-label="Open AI Maitre d'"
       >
         {open ? <X /> : <MessageCircle />}
       </button>

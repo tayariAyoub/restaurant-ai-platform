@@ -3,6 +3,64 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Public Restaurant Website Luxury Redesign
+
+Files changed:
+
+- `frontend/app/globals.css`
+- `frontend/app/page.tsx`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/components/RestaurantSite.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Implementation summary:
+
+- Redesigned the public homepage as a cinematic restaurant entry experience using existing restaurant data and imagery.
+- Upgraded `/restaurants/[slug]` hero treatment with stronger identity, refined CTAs, luxury trust signals, and richer visual framing.
+- Improved menu presentation with editorial section headings, premium cards, richer price hierarchy, pairing notes, dietary/allergen tags, and sold-out state treatment.
+- Refined gallery, visit, reservation, and floating cart styling for a more high-end hospitality feel.
+- Reworked chatbot presentation into a more premium AI Maitre d' / concierge layer.
+- Added reusable luxury CSS helpers for shadows, dividers, button motion, shell background, and menu card surfaces.
+- Did not change backend schema, auth, payments, admin dashboard logic, or API contracts.
+
+Visual validation:
+
+- Verified the fresh built frontend on `http://localhost:3001`.
+- Desktop homepage rendered the new premium content with no horizontal overflow.
+- Desktop restaurant page rendered the upgraded hero, story, menu, gallery, contact, cart, and AI concierge surfaces with no horizontal overflow.
+- Mobile restaurant viewport `390x844` rendered the cinematic hero cleanly with readable headline, clear CTAs, visible trust signals, and no horizontal overflow.
+- Mobile menu check found no horizontal overflow and confirmed menu cards rendered.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed. Next.js compiled successfully and TypeScript passed.
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `19 passed, 59 warnings`.
+
+## French Beginner Developer Guide
+
+Files changed:
+
+- `docs/GUIDE_DEVELOPPEUR_FR.md`
+- `CODEX_HANDOVER_REPORT.md`
+
+Implementation summary:
+
+- Added a complete French beginner guide for new RestaurantAI collaborators.
+- Covered installation, local setup, VS Code usage, project architecture, Docker/local run commands, branch workflow, testing, commits, pushes, Pull Requests, review flow, basic troubleshooting, security rules, daily workflow, and FAQ.
+- Clarified that Ayoub reviews Pull Requests manually and Codex reviews them technically before merge.
+- Did not modify application code.
+
 ## Simplified Collaboration Workflow
 
 Goal:

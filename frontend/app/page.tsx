@@ -1,96 +1,147 @@
 "use client";
 
-import { ArrowRight, Clock3, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Clock3, MapPin, Sparkles, Star, Utensils, Wine } from "lucide-react";
 import Link from "next/link";
 
 import PublicShell from "@/components/PublicShell";
 
-const gallery = [
-  "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=80",
-  "https://images.unsplash.com/photo-1593560708920-61dd98c46a4e?auto=format&fit=crop&w=900&q=80",
-];
-
 export default function Home() {
   return (
     <PublicShell>
-      {(restaurant) => (
-        <main>
-          <section
-            className="noise relative flex min-h-[92vh] items-end overflow-hidden bg-cover bg-center text-white"
-            style={{
-              backgroundImage: `linear-gradient(90deg, rgba(20,18,14,.78), rgba(20,18,14,.15)), url(${restaurant.hero_image})`,
-            }}
-          >
-            <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-20 pt-40 lg:px-10 lg:pb-28">
-              <p className="mb-5 text-sm font-semibold uppercase tracking-[0.35em] text-orange-200">
-                Neighborhood restaurant - {restaurant.city || "Your city"}
-              </p>
-              <h1 className="max-w-4xl text-5xl font-semibold leading-[0.92] sm:text-7xl lg:text-8xl">
-                {restaurant.tagline || "A restaurant website that feels alive."}
-              </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-stone-200">{restaurant.description}</p>
-              <div className="mt-9 flex flex-wrap gap-4">
-                <Link href="/menu" className="flex items-center gap-2 rounded-full bg-tomato px-7 py-4 font-semibold transition hover:bg-red-700">
-                  Explore our menu <ArrowRight size={18} />
+      {(restaurant) => {
+        const gallery = restaurant.images.filter((image) => ["gallery", "food"].includes(image.image_type));
+        const heroImage = restaurant.hero_image || gallery[0]?.url || "";
+        const menuCount = restaurant.categories.reduce((total, category) => total + category.items.length, 0);
+        const featuredItems = restaurant.categories.flatMap((category) => category.items).filter((item) => item.is_available).slice(0, 3);
+
+        return (
+          <main className="luxury-shell">
+            <section
+              className="noise relative flex min-h-[100svh] items-end overflow-hidden bg-cover bg-center text-white"
+              style={{
+                backgroundImage: heroImage
+                  ? `linear-gradient(90deg, rgba(10,8,5,.92), rgba(10,8,5,.58) 44%, rgba(10,8,5,.14)), url(${heroImage})`
+                  : "linear-gradient(135deg, #171511, #3b251f 48%, #171511)",
+              }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_18%,rgba(255,255,255,.16),transparent_18rem)]" />
+              <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-12 pt-36 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end lg:pb-20">
+                <div className="fade-up">
+                  <p className="luxury-kicker inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-bold backdrop-blur">
+                    <Sparkles size={14} /> {restaurant.city || "Fine dining"} / RestaurantAI experience
+                  </p>
+                  <h1 className="mt-6 max-w-5xl text-balance text-5xl font-semibold leading-[.88] sm:text-7xl lg:text-8xl">
+                    {restaurant.tagline || `${restaurant.name}, presented beautifully online.`}
+                  </h1>
+                  <p className="mt-7 max-w-2xl text-base leading-8 text-white/82 sm:text-lg">
+                    {restaurant.description || "A refined restaurant website for reservations, menu discovery, online ordering, and AI-guided hospitality."}
+                  </p>
+                  <div className="mt-9 flex flex-wrap gap-3">
+                    <Link href={`/restaurants/${restaurant.slug}`} className="luxury-button flex items-center gap-2 rounded-full bg-white px-7 py-4 font-semibold text-slate-950 shadow-2xl">
+                      Enter the restaurant <ArrowRight size={18} />
+                    </Link>
+                    <Link href="/contact#reservation" className="luxury-button rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold backdrop-blur">
+                      Reserve a table
+                    </Link>
+                  </div>
+                  <div className="mt-8 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-sm backdrop-blur-xl">
+                    <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Menu sections</span></div>
+                    <div className="p-4"><b className="block text-2xl">{menuCount}</b><span className="text-white/65">Dishes online</span></div>
+                    <div className="p-4"><b className="block text-2xl">24/7</b><span className="text-white/65">AI guidance</span></div>
+                  </div>
+                </div>
+
+                <div className="hidden lg:block">
+                  <div className="luxury-hero-shadow rounded-[2rem] border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
+                    <div className="grid grid-cols-2 gap-3">
+                      {(gallery.length > 0 ? gallery.slice(0, 4) : [{ url: heroImage, id: 0, alt_text: restaurant.name }]).map((image, index) => (
+                        <img
+                          key={image.id || image.url}
+                          src={image.url}
+                          alt={image.alt_text || restaurant.name}
+                          className={`w-full rounded-2xl object-cover ${index === 0 ? "col-span-2 h-72" : "h-40"}`}
+                        />
+                      ))}
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-3 text-center text-xs font-semibold text-white/75">
+                      <span className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><Utensils className="mx-auto mb-2" size={16} />Menu</span>
+                      <span className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><Wine className="mx-auto mb-2" size={16} />Pairings</span>
+                      <span className="rounded-2xl border border-white/10 bg-white/10 px-3 py-3"><Star className="mx-auto mb-2" size={16} />Service</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="border-b border-black/10 bg-white/90 shadow-sm backdrop-blur">
+              <div className="mx-auto grid max-w-7xl divide-y px-4 sm:px-6 md:grid-cols-3 md:divide-x md:divide-y-0">
+                <div className="flex gap-4 py-7 md:pr-8">
+                  <MapPin className="shrink-0 text-tomato" />
+                  <div>
+                    <p className="font-semibold">{restaurant.address || "Address coming soon"}</p>
+                    <p className="text-sm text-stone-500">{restaurant.postal_code} {restaurant.city}</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 py-7 md:px-8">
+                  <Clock3 className="shrink-0 text-tomato" />
+                  <div>
+                    <p className="font-semibold">Reservations and ordering</p>
+                    <p className="text-sm text-stone-500">Handled directly by the restaurant</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 py-7 md:pl-8">
+                  <Sparkles className="shrink-0 text-tomato" />
+                  <div>
+                    <p className="font-semibold">AI Maitre d'</p>
+                    <p className="text-sm text-stone-500">Menu guidance before guests arrive</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section id="story" className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
+              <div>
+                <p className="luxury-kicker text-xs font-bold text-tomato">Restaurant story</p>
+                <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">
+                  A premium digital front door for {restaurant.name}.
+                </h2>
+              </div>
+              <div className="premium-card rounded-[2rem] p-6 sm:p-8">
+                <p className="text-lg leading-8 text-stone-600">{restaurant.story || restaurant.description}</p>
+                <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                  {featuredItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/restaurants/${restaurant.slug}#menu`}
+                      className="luxury-button rounded-2xl border border-black/10 bg-white p-4 shadow-sm hover:border-black/20"
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400">Signature</p>
+                      <p className="mt-2 font-semibold">{item.name}</p>
+                      <p className="mt-1 text-sm text-stone-500">EUR {Number(item.price).toFixed(2)}</p>
+                    </Link>
+                  ))}
+                </div>
+                <Link href={`/restaurants/${restaurant.slug}`} className="mt-8 inline-flex items-center gap-2 font-semibold text-tomato">
+                  Explore the full experience <ArrowRight size={18} />
                 </Link>
-                <Link href="/contact#reservation" className="rounded-full border border-white/50 bg-white/10 px-7 py-4 font-semibold backdrop-blur transition hover:bg-white hover:text-ink">
-                  Reserve a table
-                </Link>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section className="border-b border-black/10 bg-white">
-            <div className="mx-auto grid max-w-7xl divide-y px-6 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-10">
-              <div className="flex gap-4 py-7 md:pr-8">
-                <MapPin className="text-tomato" />
-                <div>
-                  <p className="font-semibold">{restaurant.address || "Address coming soon"}</p>
-                  <p className="text-sm text-stone-500">{restaurant.postal_code} {restaurant.city}</p>
-                </div>
-              </div>
-              <div className="flex gap-4 py-7 md:px-8">
-                <Clock3 className="text-tomato" />
-                <div>
-                  <p className="font-semibold">Open hours</p>
-                  <p className="text-sm text-stone-500">See current opening hours</p>
-                </div>
-              </div>
-              <div className="flex gap-4 py-7 md:pl-8">
-                <Sparkles className="text-tomato" />
-                <div>
-                  <p className="font-semibold">Need a quick answer?</p>
-                  <p className="text-sm text-stone-500">Ask the AI Maître d' before you visit</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section id="story" className="mx-auto grid max-w-7xl gap-14 px-6 py-24 lg:grid-cols-2 lg:px-10 lg:py-32">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-[0.3em] text-tomato">Our story</p>
-              <h2 className="mt-5 text-5xl font-semibold leading-tight sm:text-6xl">
-                Built around hospitality.
-              </h2>
-            </div>
-            <div className="max-w-xl text-lg leading-8 text-stone-600">
-              <p>{restaurant.story || restaurant.description}</p>
-              <Link href="/menu" className="mt-8 inline-flex items-center gap-2 font-semibold text-tomato">
-                See what's cooking <ArrowRight size={18} />
-              </Link>
-            </div>
-          </section>
-
-          <section id="gallery" className="grid gap-2 px-2 pb-2 md:grid-cols-3">
-            {gallery.map((image) => (
-              <div key={image} className="overflow-hidden rounded-2xl">
-                <img src={image} alt={`${restaurant.name} food and atmosphere`} className="h-[420px] w-full object-cover transition duration-700 hover:scale-105" />
-              </div>
-            ))}
-          </section>
-        </main>
-      )}
+            {gallery.length > 0 && (
+              <section id="gallery" className="grid gap-3 px-3 pb-3 md:grid-cols-3">
+                {gallery.slice(0, 3).map((image, index) => (
+                  <img
+                    key={image.id}
+                    src={image.url}
+                    alt={image.alt_text || `${restaurant.name} food and atmosphere`}
+                    className={`art-frame w-full rounded-[1.5rem] object-cover transition duration-500 hover:scale-[1.01] ${index === 0 ? "h-[460px] md:col-span-2" : "h-[360px]"}`}
+                  />
+                ))}
+              </section>
+            )}
+          </main>
+        );
+      }}
     </PublicShell>
   );
 }

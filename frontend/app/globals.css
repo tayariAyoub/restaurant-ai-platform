@@ -25,6 +25,11 @@ body {
     #f7f3ea;
 }
 
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
 h1,
 h2,
 h3,
@@ -68,6 +73,43 @@ select:focus {
   background: var(--rai-card);
   box-shadow: var(--rai-shadow);
   backdrop-filter: blur(18px);
+}
+
+.luxury-shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgba(194, 152, 93, 0.14), transparent 24rem),
+    radial-gradient(circle at 88% 12%, rgba(200, 75, 49, 0.1), transparent 25rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(247, 243, 234, 0.96) 42%, rgba(247, 243, 234, 1));
+}
+
+.luxury-hero-shadow {
+  box-shadow:
+    0 40px 110px rgba(0, 0, 0, 0.32),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.luxury-kicker {
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+
+.luxury-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(23, 21, 17, 0.18), transparent);
+}
+
+.luxury-menu-card {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 252, 245, 0.92)),
+    radial-gradient(circle at 12% 0%, rgba(194, 152, 93, 0.12), transparent 14rem);
+}
+
+.luxury-button {
+  transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.luxury-button:hover {
+  transform: translateY(-2px);
 }
 
 .premium-lift {
