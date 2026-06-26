@@ -3,6 +3,133 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Phase 1.4 - Authentication Hardening Backend Support
+
+Files changed:
+
+- `.env.example`
+- `docker-compose.yml`
+- `backend/app/api/auth.py`
+- `backend/app/core/config.py`
+- `backend/app/dependencies.py`
+- `backend/tests/test_auth_cookies.py`
+- `CODEX_HANDOVER_REPORT.md`
+
+Current authentication architecture:
+
+- Login flow: `POST /api/auth/login` validates email/password against the `User` table and returns the existing `Token` response with `access_token` and `token_type`.
+- Logout flow: frontend logout currently removes `restaurant_ai_token` from localStorage and redirects to `/admin/login`; backend now also has `POST /api/auth/logout` to clear the future auth cookie.
+- JWT creation: `backend/app/core/security.py` signs JWTs with `sub` set to the user email and `exp` based on `ACCESS_TOKEN_MINUTES`.
+- JWT validation: `backend/app/dependencies.py` decodes the JWT, loads the user by email, rejects missing/invalid tokens, and rejects disabled users.
+- Frontend auth storage: `frontend/app/admin/login/page.tsx` stores the returned JWT in localStorage under `restaurant_ai_token`; `frontend/lib/auth.ts` reads and clears it.
+- Refresh behavior: no refresh-token flow exists; users keep using the same access token until expiry or logout.
+- Protected routes: admin API routes use `get_current_user` or `require_super_admin`; public restaurant routes remain unauthenticated.
+- Admin dashboard auth: `frontend/components/admin/AdminShell.tsx` requires a localStorage token, calls `/auth/me`, and logs out on failure.
+- API dependencies: `frontend/lib/api.ts` sends admin requests with `Authorization: Bearer <token>`.
+
+Migration plan to HttpOnly cookie auth:
+
+1. Backend compatibility phase:
+   - Add optional HttpOnly auth cookie support while preserving Bearer JWTs.
+   - Keep frontend localStorage behavior unchanged.
+   - Validate cookie auth and logout server-side.
+2. Dual-read frontend phase:
+   - Update frontend requests to include credentials where needed.
+   - Keep localStorage token fallback during rollout.
+   - Add clear error handling for expired cookie sessions.
+3. Cookie-primary phase:
+   - Stop writing new tokens to localStorage.
+   - Use `/auth/me` with cookie credentials as the admin session source.
+   - Keep Bearer support temporarily for rollback and API clients.
+4. Cleanup phase:
+   - Remove localStorage token dependency from admin UI.
+   - Decide whether Bearer auth remains for external integrations.
+   - Add CSRF protection if cookie auth is used cross-site or with unsafe methods.
+
+Advantages:
+
+- HttpOnly cookies reduce token exposure from browser JavaScript.
+- Server-controlled cookie clearing gives a cleaner logout path.
+- The phased rollout avoids breaking existing admin login and API calls.
+
+Risks:
+
+- Cookie auth can introduce CSRF risk if credentials are sent automatically without CSRF controls.
+- SameSite and Secure settings must match the deployment topology.
+- Cross-origin admin deployments may need CORS credentials configuration in a later phase.
+
+Compatibility:
+
+- Existing Bearer JWT auth still works.
+- Existing login response is unchanged.
+- Frontend localStorage usage was not modified.
+- Cookie setting is disabled by default with `AUTH_COOKIE_ENABLED=false`.
+
+Rollback strategy:
+
+- Leave `AUTH_COOKIE_ENABLED=false` to keep the current Bearer-only behavior.
+- If cookie migration causes issues later, disable cookie issuance and keep using Bearer tokens.
+- The new logout endpoint only clears the auth cookie and does not invalidate Bearer tokens.
+
+Backend support implemented:
+
+- `POST /api/auth/login` can optionally set an HttpOnly cookie when `AUTH_COOKIE_ENABLED=true`.
+- Cookie name, Secure flag, SameSite value, and max age are configurable.
+- `get_current_user` continues to prefer Bearer JWTs and falls back to the auth cookie only when cookie auth is enabled.
+- `POST /api/auth/logout` clears the configured auth cookie.
+
+Environment variables added:
+
+- `AUTH_COOKIE_ENABLED=false`
+- `AUTH_COOKIE_NAME=restaurant_ai_access_token`
+- `AUTH_COOKIE_SECURE=false`
+- `AUTH_COOKIE_SAMESITE=lax`
+- `AUTH_COOKIE_MAX_AGE_SECONDS=43200`
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `19 passed, 59 warnings`.
+
+Verification:
+
+- Bearer auth still works for `/auth/me`.
+- Cookie auth works when `AUTH_COOKIE_ENABLED=true`.
+- Logout clears the configured auth cookie.
+- Existing frontend remains compatible because the login response is unchanged and cookie setting is disabled by default.
+- Bearer auth takes priority over an invalid auth cookie.
+
+Final review before commit:
+
+- `AUTH_COOKIE_ENABLED` defaults to `false` in backend settings, `.env.example`, and Docker Compose.
+- Existing Bearer token auth still works through the same `Authorization: Bearer <token>` flow.
+- Cookie auth is additive only and is read only when cookie auth is explicitly enabled.
+- The Secure cookie flag can be enabled for production with `AUTH_COOKIE_SECURE=true`.
+- SameSite is configurable with `AUTH_COOKIE_SAMESITE`.
+- Logout clears the auth cookie using the configured cookie name, path, Secure flag, HttpOnly flag, and SameSite value.
+- Tests cover token-only login, Bearer `/auth/me`, enabled cookie `/auth/me`, cookie logout clearing, and Bearer precedence over an invalid cookie.
+- No frontend files changed.
+- localStorage token storage and removal remain in place.
+
+Final review validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `19 passed, 59 warnings`.
+
+Next migration phase:
+
+- Update frontend requests to support cookie credentials while keeping Bearer fallback.
+- Add CSRF strategy before making cookie auth the primary browser authentication mechanism.
+- Do not remove localStorage token behavior until the dual-read phase has been validated.
+
 ## Phase 1.3 - Backend Rate Limiting
 
 Files changed:

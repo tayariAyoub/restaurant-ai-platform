@@ -24,6 +24,11 @@ class Settings(BaseSettings):
     rate_limit_orders_per_minute: int = 10
     rate_limit_public_per_minute: int = 100
     trust_proxy_headers: bool = False
+    auth_cookie_enabled: bool = False
+    auth_cookie_name: str = "restaurant_ai_access_token"
+    auth_cookie_secure: bool = False
+    auth_cookie_samesite: str = "lax"
+    auth_cookie_max_age_seconds: int = 43200
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
