@@ -1,18 +1,16 @@
-## What changed
+## Summary
 
-Describe the feature or fix.
+Briefly explain what changed.
 
-## How it was tested
+## Tests
 
-- [ ] Backend tests pass
-- [ ] Frontend build passes
-- [ ] Tested the affected browser flow
-- [ ] Checked tenant isolation and permissions
-
-## Deployment notes
-
-List database, environment-variable, or deployment changes. Write `None` when not applicable.
+- [ ] Frontend build passes: `cd frontend && pnpm install && pnpm build`
+- [ ] Backend tests pass: `cd backend && python -m pytest`
 
 ## Screenshots
 
-Add screenshots for visible UI changes.
+Add screenshots only if UI changed.
+
+## Notes
+
+Mention risks, environment changes, or anything the owner/Codex should review closely.

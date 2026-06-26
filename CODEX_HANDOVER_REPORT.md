@@ -3,6 +3,80 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Simplified Collaboration Workflow
+
+Goal:
+
+- Let another developer work normally on feature branches.
+- Keep `ai-production-saas-upgrade` protected as the safe working branch.
+- Require the repository owner and Codex to validate work before it becomes official.
+
+Files changed:
+
+- `.github/ISSUE_TEMPLATE/bug_report.md`
+- `.github/ISSUE_TEMPLATE/feature_task.md`
+- `.github/pull_request_template.md`
+- `.github/workflows/ci.yml`
+- `CONTRIBUTING.md`
+- `docs/GITHUB_WORKFLOW.md`
+- `CODEX_HANDOVER_REPORT.md`
+
+Git backup:
+
+- Created backup tag: `backup-before-collaboration`
+- Pushed backup tag to GitHub: `origin/backup-before-collaboration`
+- Remote verification confirmed the tag exists on GitHub.
+
+Simple workflow:
+
+- `ai-production-saas-upgrade` is the protected working branch.
+- No direct pushes to `ai-production-saas-upgrade`.
+- Collaborator creates a branch named `feature/task-name`.
+- Collaborator edits, commits, pushes, and opens a Pull Request into `ai-production-saas-upgrade`.
+- Before merge, the Pull Request must have frontend build passing, backend tests passing, a short explanation, and screenshots only if UI changed.
+- Repository owner reviews manually.
+- Codex reviews technically.
+- Merge only after owner review, Codex review, and passing checks.
+
+GitHub Actions CI:
+
+- Runs on Pull Requests.
+- Frontend: `pnpm install`, then `pnpm build`.
+- Backend: install Python requirements, then `python -m pytest`.
+
+Manual branch protection still required in GitHub UI:
+
+- Go to `Settings` -> `Branches` -> `Add branch protection rule`.
+- Set branch pattern to `ai-production-saas-upgrade`.
+- Require Pull Request before merge.
+- Require status checks to pass.
+- Block force pushes.
+- Block branch deletion.
+
+Security rules documented:
+
+- Never share `.env`.
+- Never share API keys.
+- Collaborator uses `.env.example`.
+- No secrets in commits.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm install
+pnpm build
+```
+
+Result: passed. Dependencies were already up to date and Next.js compiled successfully.
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `19 passed, 59 warnings`.
+
 ## Phase 1.4 - Authentication Hardening Backend Support
 
 Files changed:

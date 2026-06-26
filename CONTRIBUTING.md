@@ -1,68 +1,67 @@
 # Contributing to RestaurantAI
 
-## First setup
+RestaurantAI uses a simple protected-branch workflow.
+
+## Main safe branch
+
+`ai-production-saas-upgrade` is the protected working branch.
+
+- Do not push directly to `ai-production-saas-upgrade`.
+- Do not force-push protected branches.
+- Do not delete protected branches.
+
+## Developer workflow
+
+Create a branch for each task:
 
 ```powershell
-git clone https://github.com/tayariAyoub/restaurant-ai-platform.git
-cd restaurant-ai-platform
-Copy-Item .env.example .env
-docker compose up --build -d
+git switch ai-production-saas-upgrade
+git pull origin ai-production-saas-upgrade
+git switch -c feature/task-name
 ```
 
-Ask the repository owner for development credentials through a private channel. Never send secrets through Git commits, pull requests, or issue comments.
-
-## Branch workflow
-
-Update your local main branch:
-
-```powershell
-git switch main
-git pull origin main
-```
-
-Create a focused branch:
-
-```powershell
-git switch -c feature/waiter-dashboard
-```
-
-Use branch names such as:
-
-- `feature/online-payments`
-- `fix/order-status-transition`
-- `docs/deployment-guide`
-- `refactor/tenant-access`
-
-Commit and push:
+Work normally, then commit and push:
 
 ```powershell
 git status
-git add .
-git commit -m "Add waiter table management"
-git push -u origin feature/waiter-dashboard
+git add <files>
+git commit -m "Describe the task"
+git push -u origin feature/task-name
 ```
 
-Open a pull request on GitHub. Explain what changed, how it was tested, and whether environment variables or database changes are required.
+Open a Pull Request into `ai-production-saas-upgrade`.
 
-## Before requesting review
+## Before merge
+
+Every Pull Request must have:
+
+- A short explanation of the change.
+- Frontend build passing.
+- Backend tests passing.
+- Screenshots only if UI changed.
+
+Validation commands:
 
 ```powershell
-docker compose exec backend pytest
-docker compose exec frontend npm run build
+cd frontend
+pnpm install
+pnpm build
+
+cd ../backend
+python -m pytest
 ```
 
-Also verify:
+## Review
 
-- One restaurant cannot read or modify another restaurant's data.
-- Prices and permissions are validated by the backend.
-- `.env`, API keys, passwords, uploads, and generated files are not staged.
-- Existing public website, admin, ordering, reservation, and chatbot flows still work.
+- The repository owner reviews manually.
+- Codex reviews technically.
+- Merge only after both reviews and passing checks.
 
-## Collaboration rules
+## Security
 
-- Keep pull requests small enough to review.
-- Do not commit directly to `main` after collaboration begins.
-- Do not rewrite or force-push another developer's branch.
-- Document new environment variables in `.env.example` and `README.md`.
-- Add a database migration whenever a persistent model changes.
-- Prefer clear code over clever abstractions.
+- Never share `.env`.
+- Never share API keys.
+- Never commit secrets.
+- Collaborators should create their own local `.env` from `.env.example`.
+
+See [docs/GITHUB_WORKFLOW.md](docs/GITHUB_WORKFLOW.md) for GitHub branch protection and backup instructions.
