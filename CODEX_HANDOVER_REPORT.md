@@ -3,6 +3,48 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Phase 1.1 - Dynamic Restaurant SEO
+
+Files changed:
+
+- `.env.example`
+- `docker-compose.yml`
+- `frontend/app/restaurants/[slug]/page.tsx`
+- `frontend/app/restaurants/[slug]/RestaurantWebsiteClient.tsx`
+- `frontend/Dockerfile`
+- `frontend/components/RestaurantSite.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Implementation summary:
+
+- Added route-level dynamic metadata for public restaurant pages only.
+- Kept global/admin metadata under the existing RestaurantAI branding.
+- Moved the existing client-side restaurant page loading into a colocated client component so the route file can export `generateMetadata`.
+- Added safe fallback metadata for missing or unfetchable restaurants.
+- Added Restaurant JSON-LD schema using only existing restaurant fields.
+- Added `NEXT_PUBLIC_SITE_URL` as the public frontend URL used for production canonical and Open Graph URLs.
+- Removed backend/CORS-oriented `FRONTEND_URL` from SEO URL generation so production metadata does not accidentally emit localhost canonicals.
+
+SEO improvements:
+
+- Dynamic title and description based on restaurant name, city, description, theme/category context, and safe fallbacks.
+- Dynamic keywords for restaurant name, city, theme/category context, menu, reservations, ordering, and AI maitre d'.
+- Canonical URL for `/restaurants/[slug]`.
+- Open Graph title, description, URL, site name, and image.
+- Canonical and Open Graph URLs use `NEXT_PUBLIC_SITE_URL` when configured; `http://localhost:3000` is only used as a development fallback.
+- Twitter summary/large-image card metadata.
+- Robots metadata: published restaurants can be indexed; missing/unavailable restaurant metadata uses `noindex, nofollow`.
+- Restaurant schema includes name, description, URL, image, logo, phone, email, address, social links, opening hours text, menu anchor, and reservation support when present.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed. Next.js compiled successfully, TypeScript passed, and `/restaurants/[slug]` remains a dynamic route.
+
 ## Current Architecture Summary
 
 RestaurantAI is a two-service SaaS-style application with a Next.js frontend, a FastAPI backend, PostgreSQL/pgvector persistence, and Docker Compose for local full-stack execution.
@@ -214,6 +256,7 @@ The root `.env.example` documents the expected variables:
 - `DEMO_OWNER_EMAIL`
 - `DEMO_OWNER_PASSWORD`
 - `FRONTEND_URL`
+- `NEXT_PUBLIC_SITE_URL`
 - `BACKEND_INTERNAL_URL`
 
 Important distinction:

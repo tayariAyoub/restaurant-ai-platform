@@ -7,6 +7,8 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 ARG BACKEND_INTERNAL_URL=http://backend:8000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
@@ -16,6 +18,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ARG BACKEND_INTERNAL_URL=http://backend:8000
 ENV BACKEND_INTERNAL_URL=$BACKEND_INTERNAL_URL
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
