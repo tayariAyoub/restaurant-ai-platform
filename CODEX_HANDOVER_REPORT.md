@@ -45,6 +45,66 @@ pnpm build
 
 Result: passed. Next.js compiled successfully, TypeScript passed, and `/restaurants/[slug]` remains a dynamic route.
 
+## Phase 1.2 - Cart Persistence
+
+Files changed:
+
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/lib/cartStorage.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Implementation summary:
+
+- Added reusable cart localStorage helpers.
+- Persisted cart data per restaurant using a versioned key.
+- Restored cart state after client hydration only, avoiding server/client markup mismatch.
+- Stored only menu item IDs and quantities, then rebuilt cart lines from current restaurant menu data.
+- Handled corrupted JSON safely by clearing the broken storage entry.
+- Ignored old storage versions through the versioned key and payload version.
+- Cleared both React cart state and the persisted cart after a successful order.
+- Kept backend, routing, auth, tests, and visible UI behavior unchanged.
+
+Storage key format:
+
+```text
+restaurantai.cart.{restaurant-slug-or-id}.v1
+```
+
+Example:
+
+```text
+restaurantai.cart.bella-napoli.v1
+```
+
+Validation:
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed. Next.js compiled successfully and TypeScript passed.
+
+Manual validation:
+
+- Opened Bella Napoli with a temporary local mock API.
+- Added 3 menu items.
+- Refreshed the restaurant page.
+- Cart restored with the 3 selected items.
+- Submitted an order against the temporary mock API.
+- Cart became empty.
+- Refreshed again.
+- Cart stayed empty.
+
+Review verification:
+
+- Cart persistence is wired into the existing `submitOrder()` flow used by the public restaurant page.
+- The cart is cleared only after `request<RestaurantOrder>(...)` returns a successful order response.
+- If order submission fails and the request throws, the catch branch leaves both React cart state and persisted localStorage cart untouched.
+- Corrupted localStorage JSON is caught safely and the invalid storage entry is removed.
+- Hydration mismatch is avoided because localStorage is read only inside `useEffect`; the initial render keeps the cart empty until client hydration completes.
+- The real backend success path cannot be end-to-end verified yet because the known `backend/app/api/public.py` public order creation issue remains intentionally out of scope for Task 1.2.
+
 ## Current Architecture Summary
 
 RestaurantAI is a two-service SaaS-style application with a Next.js frontend, a FastAPI backend, PostgreSQL/pgvector persistence, and Docker Compose for local full-stack execution.

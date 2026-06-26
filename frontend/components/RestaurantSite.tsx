@@ -24,18 +24,20 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import request from "@/lib/api";
+import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
 import type { MenuItem, Restaurant, RestaurantOrder } from "@/lib/types";
 import ChatWidget from "./ChatWidget";
 
-type CartLine = { item: MenuItem; quantity: number };
+type CartLine = StoredCart[number];
 
 export default function RestaurantSite({ restaurant }: { restaurant: Restaurant }) {
   const [mobile, setMobile] = useState(false);
   const [reservationStatus, setReservationStatus] = useState("");
   const [cart, setCart] = useState<Record<number, CartLine>>({});
+  const [cartHydrated, setCartHydrated] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [orderType, setOrderType] = useState<"PICKUP" | "EAT_IN" | "DELIVERY">("PICKUP");
   const [orderStatus, setOrderStatus] = useState("");
@@ -67,7 +69,10 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
 
   const gallery = restaurant.images.filter((image) => ["gallery", "food"].includes(image.image_type));
   const heroGallery = gallery.slice(0, 3);
-  const menuItems = restaurant.categories.flatMap((category) => category.items);
+  const menuItems = useMemo(
+    () => restaurant.categories.flatMap((category) => category.items),
+    [restaurant.categories],
+  );
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
   const heroVisual = restaurant.hero_image || gallery[0]?.url || "";
@@ -84,6 +89,18 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const subtotal = cartLines.reduce((total, line) => total + Number(line.item.price) * line.quantity, 0);
   const completedEstimate = completedOrder ? estimateText(completedOrder) : "";
   const structuredData = buildRestaurantStructuredData(restaurant);
+  const cartScope = restaurant.slug || restaurant.id;
+
+  useEffect(() => {
+    setCartHydrated(false);
+    setCart(loadCart(cartScope, menuItems));
+    setCartHydrated(true);
+  }, [cartScope, menuItems]);
+
+  useEffect(() => {
+    if (!cartHydrated) return;
+    saveCart(cartScope, cart);
+  }, [cart, cartHydrated, cartScope]);
 
   function changeCart(item: MenuItem, change: number) {
     setCart((current) => {
@@ -129,6 +146,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       });
       setCompletedOrder(order);
       setCart({});
+      clearCart(cartScope);
       setOrderStatus("");
     } catch (error) {
       setOrderStatus(error instanceof Error ? error.message : "Could not place order.");
