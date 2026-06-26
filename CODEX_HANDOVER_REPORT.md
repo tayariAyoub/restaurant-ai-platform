@@ -3,6 +3,81 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Phase 1.3 - Backend Rate Limiting
+
+Files changed:
+
+- `.env.example`
+- `docker-compose.yml`
+- `backend/app/api/public.py`
+- `backend/app/core/config.py`
+- `backend/app/core/rate_limit.py`
+- `backend/tests/test_rate_limit.py`
+- `CODEX_HANDOVER_REPORT.md`
+
+Implementation summary:
+
+- Added IP-based rate limiting for public endpoints only.
+- Added configurable demo-friendly per-minute limits.
+- Added friendly HTTP 429 JSON responses with `Retry-After` headers.
+- Added warning logs when a rate limit is exceeded.
+- Added optional trusted proxy header support through explicit env configuration.
+- Left frontend, auth, admin APIs, database schema, and API response contracts unchanged.
+
+Protected endpoints:
+
+- Chat: `POST /api/restaurants/{slug}/chat`, `POST /api/chat`.
+- Reservations: `POST /api/restaurants/{slug}/reservations`, `POST /api/contact`.
+- Orders: `POST /api/restaurants/{slug}/orders`.
+- General public API: `GET /api/restaurant`, `GET /api/restaurants/{slug}`, `GET /api/restaurants/{slug}/orders/{public_id}`.
+
+Environment variables added:
+
+- `RATE_LIMIT_CHAT_PER_MINUTE=10`
+- `RATE_LIMIT_RESERVATIONS_PER_MINUTE=5`
+- `RATE_LIMIT_ORDERS_PER_MINUTE=10`
+- `RATE_LIMIT_PUBLIC_PER_MINUTE=100`
+- `TRUST_PROXY_HEADERS=false`
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `14 passed, 41 warnings`.
+
+Manual verification:
+
+- Normal chat, order, and reservation requests returned successful JSON.
+- Repeated reservation spam returned HTTP 429.
+- 429 body was friendly JSON:
+  - `Too many requests. Please wait a moment and try again.`
+  - `retry_after_seconds`
+- `Retry-After` header was present.
+- A rate-limit warning log was emitted.
+
+Review verification:
+
+- Rate-limit buckets are keyed by both category rule name and client IP, so limits are per endpoint category and per IP, not global for all users.
+- Chat, reservation, order, and general public endpoints use separate rule names: `public_chat`, `public_reservations`, `public_orders`, and `public_general`.
+- With `TRUST_PROXY_HEADERS=false`, spoofable `X-Forwarded-For` and `X-Real-IP` headers are ignored and the direct client host is used.
+- Trusted proxy headers remain disabled by default in application settings, `.env.example`, and Docker defaults.
+- Test isolation is protected by resetting the in-memory limiter with an autouse pytest fixture.
+- HTTP 429 responses include a friendly JSON body and a `Retry-After` header.
+- Normal requests are allowed up to the configured limit; verification confirmed one exhausted category does not block another category.
+- Docker env values are optional because `docker-compose.yml` provides demo-friendly defaults with `${VAR:-default}`.
+
+Review validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `14 passed, 41 warnings`.
+
 ## Public Order Endpoint Repair
 
 Files changed:

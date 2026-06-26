@@ -5,6 +5,13 @@ from decimal import Decimal
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
+from app.core.rate_limit import (
+    chat_rule,
+    orders_rule,
+    public_rule,
+    rate_limit,
+    reservations_rule,
+)
 from app.models import (
     ContactRequest,
     Conversation,
@@ -55,7 +62,12 @@ def get_public_restaurant(db: Session, slug: str | None = None) -> Restaurant:
     return restaurant
 
 
-@router.get("/restaurant", response_model=RestaurantOut, response_model_exclude={"owner", "owner_id"})
+@router.get(
+    "/restaurant",
+    response_model=RestaurantOut,
+    response_model_exclude={"owner", "owner_id"},
+    dependencies=[rate_limit(public_rule)],
+)
 def legacy_restaurant(db: Session = Depends(get_db)) -> Restaurant:
     return get_public_restaurant(db)
 
@@ -64,12 +76,18 @@ def legacy_restaurant(db: Session = Depends(get_db)) -> Restaurant:
     "/restaurants/{slug}",
     response_model=RestaurantOut,
     response_model_exclude={"owner", "owner_id"},
+    dependencies=[rate_limit(public_rule)],
 )
 def restaurant_details(slug: str, db: Session = Depends(get_db)) -> Restaurant:
     return get_public_restaurant(db, slug)
 
 
-@router.post("/restaurants/{slug}/reservations", response_model=ContactOut, status_code=201)
+@router.post(
+    "/restaurants/{slug}/reservations",
+    response_model=ContactOut,
+    status_code=201,
+    dependencies=[rate_limit(reservations_rule)],
+)
 def create_reservation(
     slug: str, payload: ContactCreate, db: Session = Depends(get_db)
 ) -> ContactRequest:
@@ -81,7 +99,12 @@ def create_reservation(
     return request
 
 
-@router.post("/contact", response_model=ContactOut, status_code=201)
+@router.post(
+    "/contact",
+    response_model=ContactOut,
+    status_code=201,
+    dependencies=[rate_limit(reservations_rule)],
+)
 def legacy_contact(payload: ContactCreate, db: Session = Depends(get_db)) -> ContactRequest:
     restaurant = get_public_restaurant(db)
     request = ContactRequest(restaurant_id=restaurant.id, **payload.model_dump())
@@ -117,19 +140,28 @@ def chat_for_restaurant(
     )
 
 
-@router.post("/restaurants/{slug}/chat", response_model=ChatResponse)
+@router.post(
+    "/restaurants/{slug}/chat",
+    response_model=ChatResponse,
+    dependencies=[rate_limit(chat_rule)],
+)
 def restaurant_chat(
     slug: str, payload: ChatRequest, db: Session = Depends(get_db)
 ) -> ChatResponse:
     return chat_for_restaurant(get_public_restaurant(db, slug), payload, db)
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=ChatResponse, dependencies=[rate_limit(chat_rule)])
 def legacy_chat(payload: ChatRequest, db: Session = Depends(get_db)) -> ChatResponse:
     return chat_for_restaurant(get_public_restaurant(db), payload, db)
 
 
-@router.post("/restaurants/{slug}/orders", response_model=OrderOut, status_code=201)
+@router.post(
+    "/restaurants/{slug}/orders",
+    response_model=OrderOut,
+    status_code=201,
+    dependencies=[rate_limit(orders_rule)],
+)
 def create_order(
     slug: str, payload: OrderCreate, db: Session = Depends(get_db)
 ) -> Order:
@@ -222,7 +254,11 @@ def create_order(
     )
 
 
-@router.get("/restaurants/{slug}/orders/{public_id}", response_model=OrderOut)
+@router.get(
+    "/restaurants/{slug}/orders/{public_id}",
+    response_model=OrderOut,
+    dependencies=[rate_limit(public_rule)],
+)
 def order_tracking(slug: str, public_id: str, db: Session = Depends(get_db)) -> Order:
     restaurant = get_public_restaurant(db, slug)
     order = db.scalar(
