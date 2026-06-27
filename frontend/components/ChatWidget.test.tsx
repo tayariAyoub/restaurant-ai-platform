@@ -20,7 +20,7 @@ describe("ChatWidget", () => {
 
     await user.click(screen.getByRole("button", { name: /open menu guide/i }));
 
-    expect(screen.getByText(/Bella Napoli menu guide/i)).toBeVisible();
+    expect(screen.getByText(/Bella Napoli AI Maître d'/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /send message/i })).toBeDisabled();
 
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "What should I order?");
@@ -57,6 +57,19 @@ describe("ChatWidget", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/please call the restaurant/i)).toBeVisible();
+    });
+  });
+
+  it("shows a friendlier message when chat is rate limited", async () => {
+    requestMock.mockRejectedValue(new Error("Too many requests. Please wait a moment and try again."));
+    const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
+
+    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
+    await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Help");
+    await user.click(screen.getByRole("button", { name: /send message/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/taking a short pause/i)).toBeVisible();
     });
   });
 });

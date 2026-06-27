@@ -22,15 +22,28 @@ describe("resolveRestaurantTheme", () => {
   it("returns a premium Italian identity for Italian restaurants", () => {
     const identity = resolveRestaurantTheme(themedRestaurant("italian-warm"));
 
-    expect(identity.name).toBe("Italian Warm");
+    expect(identity.name).toBe("Italian Luxury");
     expect(identity.menuStyle).toBe("cards");
     expect(identity.buttonClass).toContain("rounded-full");
     expect(identity.personality.momentTitle).toMatch(/table/i);
   });
 
-  it("supports sushi minimal and vegan natural presets", () => {
-    expect(resolveRestaurantTheme(themedRestaurant("japanese")).name).toBe("Sushi Minimal");
+  it("supports Japanese minimal, steakhouse dark, and vegan natural presets", () => {
+    expect(resolveRestaurantTheme(themedRestaurant("japanese")).name).toBe("Japanese Minimal");
+    expect(resolveRestaurantTheme(themedRestaurant("steakhouse-dark")).name).toBe("Steakhouse Dark");
     expect(resolveRestaurantTheme(themedRestaurant("vegan-natural")).name).toBe("Vegan Natural");
+  });
+
+  it("detects a steakhouse mood from restaurant content", () => {
+    const identity = resolveRestaurantTheme(
+      themedRestaurant("", {
+        name: "The Ember Grill",
+        description: "Dry-aged beef and steak from the fire.",
+      }),
+    );
+
+    expect(identity.key).toBe("steakhouse-dark");
+    expect(identity.menuCardClass).toBe("luxury-steakhouse-card");
   });
 
   it("lets restaurant-level brand overrides win over theme defaults", () => {

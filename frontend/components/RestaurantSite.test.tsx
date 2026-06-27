@@ -21,7 +21,8 @@ describe("restaurant page", () => {
   it("renders restaurant information, menu, gallery, tags, sold-out state, and chatbot trigger", async () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
 
-    expect(screen.getByRole("heading", { name: bellaNapoli.tagline })).toBeVisible();
+    expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
+    expect(screen.getByText(bellaNapoli.tagline)).toBeVisible();
     expect(screen.getByRole("heading", { name: /a menu that feels curated/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Antipasti" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Wood-fired Pizza" })).toBeVisible();
@@ -46,6 +47,7 @@ describe("restaurant page", () => {
     await user.click(addMargherita);
     await user.click(screen.getByRole("button", { name: /view order/i }));
 
+    expect(screen.getByText(/payment is handled by the restaurant/i)).toBeVisible();
     expect(screen.getAllByText("EUR 25.00").length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: /remove one margherita/i }));
@@ -131,7 +133,7 @@ describe("restaurant page", () => {
 
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
 
-    expect(screen.getByRole("heading", { name: bellaNapoli.tagline })).toBeVisible();
+    expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getByRole("button", { name: /toggle menu/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /a menu that feels curated/i })).toBeVisible();
   });

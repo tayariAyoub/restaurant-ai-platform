@@ -111,6 +111,19 @@ select:focus {
     radial-gradient(circle at 12% 0%, rgba(194, 152, 93, 0.12), transparent 14rem);
 }
 
+.luxury-steakhouse-card {
+  color: #f8efe3;
+  border-color: rgba(184, 107, 53, 0.22);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(184, 107, 53, 0.18), transparent 14rem),
+    linear-gradient(180deg, rgba(33, 22, 17, 0.98), rgba(18, 13, 10, 0.96));
+}
+
+.luxury-steakhouse-card .bg-white\/70,
+.luxury-steakhouse-card .bg-slate-50 {
+  color: #2b1b13;
+}
+
 .luxury-button {
   transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
 }

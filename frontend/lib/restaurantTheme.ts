@@ -27,6 +27,9 @@ type ThemePreset = {
   signaturePanelClass: string;
   menuCardClass: string;
   galleryClass: string;
+  heroImageClass: string;
+  imageTreatmentClass: string;
+  trustPanelClass: string;
   personality: ThemePersonality;
 };
 
@@ -42,7 +45,7 @@ export type RestaurantThemeIdentity = ThemePreset & {
 const presets: Record<string, ThemePreset> = {
   elegant: {
     key: "elegant",
-    name: "Michelin Fine Dining",
+    name: "Fine Dining Gold",
     fallbackPrimary: "#c6a15b",
     fallbackSecondary: "#2c2925",
     fallbackBackground: "#11110f",
@@ -59,8 +62,11 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-[#11110f] text-white",
     menuCardClass: "luxury-menu-card",
     galleryClass: "md:grid-cols-4",
+    heroImageClass: "saturate-[.92] contrast-110",
+    imageTreatmentClass: "saturate-[.92] contrast-110",
+    trustPanelClass: "bg-[#11110f] text-white",
     personality: {
-      name: "Michelin Fine Dining",
+      name: "Fine Dining Gold",
       guestKicker: "Quiet luxury",
       description: "A composed fine-dining mood built around soft light, precise choices, and a dining room that feels intentionally calm.",
       momentTitle: "A room designed around anticipation.",
@@ -87,6 +93,9 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-[#30271f] text-white",
     menuCardClass: "bg-white",
     galleryClass: "md:grid-cols-3",
+    heroImageClass: "saturate-110",
+    imageTreatmentClass: "saturate-110 brightness-[1.02]",
+    trustPanelClass: "bg-[#30271f] text-white",
     personality: {
       name: "Modern Cafe",
       guestKicker: "Cozy all-day table",
@@ -98,7 +107,7 @@ const presets: Record<string, ThemePreset> = {
   },
   "italian-warm": {
     key: "italian-warm",
-    name: "Italian Warm",
+    name: "Italian Luxury",
     fallbackPrimary: "#c84b31",
     fallbackSecondary: "#6b7048",
     fallbackBackground: "#f7f3ea",
@@ -115,8 +124,11 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-[#171511] text-white",
     menuCardClass: "luxury-menu-card",
     galleryClass: "md:grid-cols-3",
+    heroImageClass: "saturate-125 contrast-105",
+    imageTreatmentClass: "saturate-125 contrast-105",
+    trustPanelClass: "bg-[#171511] text-white",
     personality: {
-      name: "Italian Warm",
+      name: "Italian Luxury",
       guestKicker: "Italian warmth",
       description: "Generous, ingredient-led hospitality for restaurants built on family, fire, wine, and memory.",
       momentTitle: "An evening that begins with the table.",
@@ -126,7 +138,7 @@ const presets: Record<string, ThemePreset> = {
   },
   mediterranean: {
     key: "mediterranean",
-    name: "Italian Warm",
+    name: "Mediterranean Fresh",
     fallbackPrimary: "#c84b31",
     fallbackSecondary: "#6b7048",
     fallbackBackground: "#f7f3ea",
@@ -143,8 +155,11 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-[#171511] text-white",
     menuCardClass: "luxury-menu-card",
     galleryClass: "md:grid-cols-3",
+    heroImageClass: "saturate-115 contrast-105",
+    imageTreatmentClass: "saturate-115 contrast-105",
+    trustPanelClass: "bg-[#171511] text-white",
     personality: {
-      name: "Italian Warm",
+      name: "Mediterranean Fresh",
       guestKicker: "Sunlit table",
       description: "Sunlit, relaxed, produce-forward hospitality for restaurants that want warmth without losing polish.",
       momentTitle: "Bright plates, generous tables, easy decisions.",
@@ -154,7 +169,7 @@ const presets: Record<string, ThemePreset> = {
   },
   japanese: {
     key: "japanese",
-    name: "Sushi Minimal",
+    name: "Japanese Minimal",
     fallbackPrimary: "#111111",
     fallbackSecondary: "#b23a31",
     fallbackBackground: "#fafafa",
@@ -171,8 +186,11 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-black text-white",
     menuCardClass: "bg-white",
     galleryClass: "md:grid-cols-4",
+    heroImageClass: "grayscale contrast-125",
+    imageTreatmentClass: "grayscale-[.35] contrast-110",
+    trustPanelClass: "bg-black text-white",
     personality: {
-      name: "Sushi Minimal",
+      name: "Japanese Minimal",
       guestKicker: "Japanese minimal",
       description: "Disciplined pacing, quiet detail, and trust in the chef's sequence for restaurants centered on craft.",
       momentTitle: "Let the evening unfold one course at a time.",
@@ -199,6 +217,9 @@ const presets: Record<string, ThemePreset> = {
     signaturePanelClass: "bg-[#1f2a1b] text-white",
     menuCardClass: "bg-white",
     galleryClass: "md:grid-cols-4",
+    heroImageClass: "saturate-125 brightness-[1.04]",
+    imageTreatmentClass: "saturate-125 brightness-[1.04]",
+    trustPanelClass: "bg-[#1f2a1b] text-white",
     personality: {
       name: "Vegan Natural",
       guestKicker: "Fresh and plant-led",
@@ -208,9 +229,40 @@ const presets: Record<string, ThemePreset> = {
       signatureCopy: "Start with vivid, produce-led dishes that feel fresh, nourishing, and full of texture.",
     },
   },
+  "steakhouse-dark": {
+    key: "steakhouse-dark",
+    name: "Steakhouse Dark",
+    fallbackPrimary: "#b86b35",
+    fallbackSecondary: "#8a1f1d",
+    fallbackBackground: "#120d0a",
+    fallbackText: "#f7efe5",
+    fallbackFont: "Cormorant Garamond",
+    buttonStyle: "bold",
+    homepageStyle: "nocturne",
+    menuStyle: "refined",
+    galleryStyle: "masonry",
+    heroOverlay: "linear-gradient(90deg, rgba(10,7,5,.96), rgba(36,20,12,.74) 48%, rgba(80,34,18,.18))",
+    heroFallback: "linear-gradient(135deg, #070504, #351b10 50%, #120d0a)",
+    shellBackground:
+      "radial-gradient(circle at 12% 0%, rgba(184,107,53,.16), transparent 24rem), radial-gradient(circle at 84% 8%, rgba(138,31,29,.12), transparent 24rem), linear-gradient(180deg, rgba(18,13,10,.98), rgba(36,24,18,.92) 34%, rgba(250,245,237,1) 72%)",
+    signaturePanelClass: "bg-[#120d0a] text-white",
+    menuCardClass: "luxury-steakhouse-card",
+    galleryClass: "md:grid-cols-4",
+    heroImageClass: "saturate-[.85] contrast-125 brightness-[.9]",
+    imageTreatmentClass: "saturate-[.9] contrast-125 brightness-[.92]",
+    trustPanelClass: "bg-[#120d0a] text-white",
+    personality: {
+      name: "Steakhouse Dark",
+      guestKicker: "Fire and cellar",
+      description: "A nocturne of flame, aged beef, cellar depth, and polished service for restaurants built around richness and ritual.",
+      momentTitle: "A darker room, a hotter grill, a slower evening.",
+      momentCopy: "The experience is confident and intimate: clear cuts, bold pairings, low light, and a table that feels reserved for a proper night out.",
+      signatureCopy: "Begin with the plates that deserve a sharp knife, a warm side, and a glass with structure.",
+    },
+  },
 };
 
-export const premiumThemeKeys = ["elegant", "cafe", "italian-warm", "japanese", "vegan-natural"];
+export const premiumThemeKeys = ["elegant", "italian-warm", "japanese", "steakhouse-dark", "cafe", "vegan-natural"];
 
 export function resolveRestaurantTheme(restaurant: Restaurant): RestaurantThemeIdentity {
   const key = normalizeThemeKey(restaurant);
@@ -241,12 +293,20 @@ export function resolveRestaurantTheme(restaurant: Restaurant): RestaurantThemeI
 }
 
 function normalizeThemeKey(restaurant: Restaurant) {
-  const raw = (restaurant.theme?.key || restaurant.theme?.name || "").toLowerCase();
-  const haystack = `${raw} ${restaurant.name} ${restaurant.description} ${restaurant.story}`.toLowerCase();
+  const raw = normalizeText(restaurant.theme?.key || restaurant.theme?.name || "");
+  const haystack = normalizeText(`${raw} ${restaurant.name} ${restaurant.description} ${restaurant.story}`);
   if (raw.includes("italian") || raw.includes("mediterranean") || haystack.includes("pizza") || haystack.includes("pasta")) return "italian-warm";
   if (raw.includes("japanese") || raw.includes("sushi") || raw.includes("minimal")) return "japanese";
+  if (raw.includes("steak") || raw.includes("grill") || haystack.includes("steak") || haystack.includes("beef")) return "steakhouse-dark";
   if (raw.includes("vegan") || raw.includes("natural") || haystack.includes("vegan") || haystack.includes("plant")) return "vegan-natural";
-  if (raw.includes("cafe") || raw.includes("café") || raw.includes("coffee") || raw.includes("brunch")) return "cafe";
+  if (raw.includes("cafe") || raw.includes("coffee") || raw.includes("brunch")) return "cafe";
   if (raw.includes("elegant") || raw.includes("fine") || raw.includes("michelin")) return "elegant";
   return raw || "mediterranean";
+}
+
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }

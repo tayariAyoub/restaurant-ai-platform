@@ -3,6 +3,92 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 3 - Luxury Restaurant Website Experience
+
+Scope:
+
+- Public restaurant website experience only.
+- Existing ordering, reservations, chatbot, menu, gallery, dynamic SEO, cart persistence, and admin editability were preserved.
+- No backend schema changes were made.
+
+Audit findings:
+
+- The public restaurant page already had a premium base with dynamic SEO, JSON-LD, cart persistence, menu filters, gallery, reservation flow, order modal, and chatbot integration.
+- `frontend/components/RestaurantSite.tsx` had grown into a large all-in-one component mixing layout, theme presentation, menu UI, reservation UI, cart modal, order timeline, helper functions, and API behavior.
+- Theme presets existed, but they needed stronger visual mood separation and a dark steakhouse option.
+- Chatbot presentation worked, but customer-facing copy still felt closer to a menu guide than a premium AI Maître d' experience.
+- Ordering needed clearer payment expectation copy because online payment is not implemented.
+
+Implementation summary:
+
+- Refactored the public restaurant page into reusable luxury sections:
+  - `RestaurantHero`
+  - `TrustAndStory`
+  - `MenuShowcase`
+  - `GalleryShowcase`
+  - `ReservationPanel`
+  - `OrderCartDrawer`
+  - shared `experience` helpers
+- Kept stateful behavior in `RestaurantSite.tsx`:
+  - cart persistence
+  - order submission
+  - successful order cart clearing
+  - failed order cart preservation
+  - reservation submission
+  - JSON-LD injection
+  - chatbot wiring
+- Upgraded the hero so the restaurant name is the primary first-viewport identity.
+- Added stronger reservation/menu CTAs, trust badges, direct-with-restaurant reassurance, service-mode copy, and payment-at-restaurant/on-delivery clarity.
+- Added richer theme tokens for image treatment and trust-panel mood.
+- Added `Steakhouse Dark` to frontend theme resolution and backend seed data so it can be selected from admin theme data without a schema change.
+- Improved chatbot language to use AI Maître d' and added a friendly rate-limit message.
+- Improved frontend API error parsing for structured FastAPI `detail.message` responses.
+
+New premium theme moods:
+
+- Fine Dining Gold
+- Italian Luxury
+- Japanese Minimal
+- Steakhouse Dark
+- Modern Cafe
+- Vegan Natural
+- Mediterranean Fresh fallback
+
+Files changed:
+
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/lib/api.ts`
+- `frontend/lib/restaurantTheme.ts`
+- `frontend/lib/restaurantTheme.test.ts`
+- `frontend/app/globals.css`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/components/ChatWidget.test.tsx`
+- `backend/app/services/seed.py`
+- `frontend/components/public/restaurant/RestaurantHero.tsx`
+- `frontend/components/public/restaurant/TrustAndStory.tsx`
+- `frontend/components/public/restaurant/MenuShowcase.tsx`
+- `frontend/components/public/restaurant/GalleryShowcase.tsx`
+- `frontend/components/public/restaurant/ReservationPanel.tsx`
+- `frontend/components/public/restaurant/OrderCartDrawer.tsx`
+- `frontend/components/public/restaurant/experience.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+- `cd frontend && pnpm test`: passed, `7` test files and `25` tests.
+- `cd frontend && pnpm build`: passed, production build and TypeScript completed successfully.
+- `cd backend && python -m pytest`: passed, `32` tests with `66` warnings.
+- Encoding marker scan across frontend/backend/docs/config targets: no matches found.
+
+Remaining recommendations:
+
+- Perform browser-level visual QA on desktop and mobile before demo.
+- Add Next.js image optimization or CDN image transformation once remote image/storage strategy is finalized.
+- Online payment is still not implemented; current UI clarifies payment is handled by the restaurant.
+- Reservations remain request-based, not capacity/table-inventory bookings.
+- Admin editor and onboarding components remain large and should be decomposed in later milestones.
+
 ## Task 1.6 - Cloud Storage Preparation And Upload Safety
 
 Audit findings:

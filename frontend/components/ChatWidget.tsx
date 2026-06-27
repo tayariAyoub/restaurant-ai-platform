@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. Welcome to ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will help you find the right dish, table plan, or order.`,
+    content: `Good evening. Welcome to ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and the AI Maître d' will help you find the right dish, table plan, or order.`,
   };
 }
 
@@ -52,12 +52,15 @@ export default function ChatWidget({
       });
       setConversationId(response.conversation_id);
       setMessages((current) => [...current, { role: "assistant", content: response.answer, is_unanswered: response.unanswered }]);
-    } catch {
+    } catch (error) {
+      const rateLimited = error instanceof Error && /too many requests|rate limit/i.test(error.message);
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
-          content: "I can't connect right now. Please call the restaurant for help.",
+          content: rateLimited
+            ? "The AI Maître d' is taking a short pause because many guests are asking at once. Please wait a moment, or call the restaurant for urgent help."
+            : "I can't connect right now. Please call the restaurant for help.",
           is_unanswered: true,
         },
       ]);
@@ -78,7 +81,7 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} menu guide</p>
+                  <p className="font-semibold leading-tight">{restaurantName} AI Maître d'</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
