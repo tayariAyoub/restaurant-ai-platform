@@ -181,6 +181,17 @@ def seed_demo_data(db: Session) -> None:
                 "https://images.unsplash.com/photo-1579751626657-72bc17010498"
                 "?auto=format&fit=crop&w=1800&q=85"
             ),
+            ai_name="Bella AI Maitre d'",
+            ai_welcome_message=(
+                "Good evening. Tell me your mood, allergies, timing, or occasion, "
+                "and I will guide you through Bella Napoli's menu."
+            ),
+            ai_tone="Warm Italian hospitality, concise, confident, and careful with allergy advice.",
+            ai_allowed_topics="Menu recommendations, prices, allergens, opening hours, ordering, pickup, delivery, reservations, address, and restaurant story.",
+            ai_fallback_message="I do not have that detail yet. Please contact Bella Napoli directly.",
+            ai_escalation_message="For urgent reservations, allergy safety, or special requests, please call Bella Napoli directly.",
+            ai_language="English",
+            ai_safety_instructions="Do not invent prices, allergens, opening hours, discounts, or reservation availability.",
         )
         db.add(restaurant)
         db.flush()
@@ -189,6 +200,17 @@ def seed_demo_data(db: Session) -> None:
         restaurant.theme_id = restaurant.theme_id or (theme.id if theme else None)
         restaurant.slug = "bella-napoli" if restaurant.slug.startswith("restaurant-") else restaurant.slug
         restaurant.story = restaurant.story or "Wood-fired food, Italian warmth, and a table for everyone."
+        restaurant.ai_name = restaurant.ai_name or "Bella AI Maitre d'"
+        restaurant.ai_welcome_message = restaurant.ai_welcome_message or (
+            "Good evening. Tell me your mood, allergies, timing, or occasion, "
+            "and I will guide you through Bella Napoli's menu."
+        )
+        restaurant.ai_tone = restaurant.ai_tone or "Warm Italian hospitality, concise, confident, and careful with allergy advice."
+        restaurant.ai_allowed_topics = restaurant.ai_allowed_topics or "Menu recommendations, prices, allergens, opening hours, ordering, pickup, delivery, reservations, address, and restaurant story."
+        restaurant.ai_fallback_message = restaurant.ai_fallback_message or "I do not have that detail yet. Please contact Bella Napoli directly."
+        restaurant.ai_escalation_message = restaurant.ai_escalation_message or "For urgent reservations, allergy safety, or special requests, please call Bella Napoli directly."
+        restaurant.ai_language = restaurant.ai_language or "English"
+        restaurant.ai_safety_instructions = restaurant.ai_safety_instructions or "Do not invent prices, allergens, opening hours, discounts, or reservation availability."
         if not restaurant.opening_hours.strip().startswith("{"):
             restaurant.opening_hours = opening_hours
 

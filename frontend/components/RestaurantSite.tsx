@@ -250,6 +250,9 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         <ChatWidget
           slug={restaurant.slug}
           restaurantName={restaurant.name}
+          aiName={restaurant.ai_name || "AI Maitre d'"}
+          welcomeMessage={restaurant.ai_welcome_message}
+          escalationMessage={restaurant.ai_escalation_message}
           primaryColor={primary}
           menuHighlights={featuredItems.map((item) => item.name)}
           dietaryPrompts={dietaryPrompts}

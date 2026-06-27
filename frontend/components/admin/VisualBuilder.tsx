@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   AlertCircle,
+  Bot,
   CheckCircle2,
   Eye,
   ExternalLink,
@@ -72,6 +73,14 @@ type BuilderDraft = {
   pickup_enabled: boolean;
   dine_in_enabled: boolean;
   chatbot_enabled: boolean;
+  ai_name: string;
+  ai_welcome_message: string;
+  ai_tone: string;
+  ai_allowed_topics: string;
+  ai_fallback_message: string;
+  ai_escalation_message: string;
+  ai_language: string;
+  ai_safety_instructions: string;
   is_published: boolean;
   images: RestaurantImage[];
 };
@@ -138,6 +147,14 @@ const blankDraft: BuilderDraft = {
   pickup_enabled: true,
   dine_in_enabled: true,
   chatbot_enabled: true,
+  ai_name: "",
+  ai_welcome_message: "",
+  ai_tone: "",
+  ai_allowed_topics: "",
+  ai_fallback_message: "",
+  ai_escalation_message: "",
+  ai_language: "",
+  ai_safety_instructions: "",
   is_published: false,
   images: [],
 };
@@ -399,6 +416,15 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
                 <UtensilsCrossed size={16} /> Menu Builder
               </GuardedLink>
             )}
+            {draft.id && (
+              <GuardedLink
+                href={`/admin/builder/${draft.id}/ai`}
+                hasUnsavedChanges={hasUnsavedChanges}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold shadow-sm"
+              >
+                <Bot size={16} /> AI Settings
+              </GuardedLink>
+            )}
             {draft.slug && (
               <GuardedLink
                 href={`/restaurants/${draft.slug}`}
@@ -617,6 +643,9 @@ function BuilderLanding({
                   </Link>
                   <Link href={`/admin/builder/${restaurant.id}/menu`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
                     <UtensilsCrossed size={16} /> Menu
+                  </Link>
+                  <Link href={`/admin/builder/${restaurant.id}/ai`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
+                    <Bot size={16} /> AI
                   </Link>
                   <Link href={`/restaurants/${restaurant.slug}`} target="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
                     <Eye size={16} /> View
@@ -874,6 +903,15 @@ function BuilderForm({
           <ToggleCard label="Delivery" description="Allow customers to choose delivery when ordering." checked={draft.delivery_enabled} disabled={!draft.ordering_enabled} onChange={(delivery_enabled) => onChange({ delivery_enabled })} />
           <ToggleCard label="AI Maitre d'" description="Show the public chat widget as a premium menu guide." checked={draft.chatbot_enabled} onChange={(chatbot_enabled) => onChange({ chatbot_enabled })} />
         </div>
+        {draft.id && (
+          <GuardedLink
+            href={`/admin/builder/${draft.id}/ai`}
+            hasUnsavedChanges={false}
+            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+          >
+            <Bot size={16} /> Configure AI settings and test answers
+          </GuardedLink>
+        )}
       </div>
     );
   }
@@ -1398,6 +1436,14 @@ function draftFromRestaurant(restaurant: Restaurant): BuilderDraft {
     pickup_enabled: restaurant.pickup_enabled !== false,
     dine_in_enabled: restaurant.dine_in_enabled !== false,
     chatbot_enabled: restaurant.chatbot_enabled !== false,
+    ai_name: restaurant.ai_name || "",
+    ai_welcome_message: restaurant.ai_welcome_message || "",
+    ai_tone: restaurant.ai_tone || "",
+    ai_allowed_topics: restaurant.ai_allowed_topics || "",
+    ai_fallback_message: restaurant.ai_fallback_message || "",
+    ai_escalation_message: restaurant.ai_escalation_message || "",
+    ai_language: restaurant.ai_language || "",
+    ai_safety_instructions: restaurant.ai_safety_instructions || "",
     is_published: restaurant.is_published,
     images: restaurant.images || [],
   };
@@ -1440,6 +1486,14 @@ function payloadFromDraft(draft: BuilderDraft) {
     pickup_enabled: draft.ordering_enabled && draft.pickup_enabled,
     dine_in_enabled: draft.ordering_enabled && draft.dine_in_enabled,
     chatbot_enabled: draft.chatbot_enabled,
+    ai_name: draft.ai_name,
+    ai_welcome_message: draft.ai_welcome_message,
+    ai_tone: draft.ai_tone,
+    ai_allowed_topics: draft.ai_allowed_topics,
+    ai_fallback_message: draft.ai_fallback_message,
+    ai_escalation_message: draft.ai_escalation_message,
+    ai_language: draft.ai_language,
+    ai_safety_instructions: draft.ai_safety_instructions,
     is_published: draft.is_published,
   };
 }

@@ -141,18 +141,21 @@ def chat_for_restaurant(
         db.add(conversation)
         db.flush()
     db.add(Message(conversation_id=conversation.id, role="user", content=payload.message))
-    answer, unanswered = answer_question(db, restaurant.id, payload.message)
+    result = answer_question(db, restaurant.id, payload.message)
     db.add(
         Message(
             conversation_id=conversation.id,
             role="assistant",
-            content=answer,
-            is_unanswered=unanswered,
+            content=result.answer,
+            is_unanswered=result.unanswered,
         )
     )
     db.commit()
     return ChatResponse(
-        answer=answer, conversation_id=conversation.id, unanswered=unanswered
+        answer=result.answer,
+        conversation_id=conversation.id,
+        unanswered=result.unanswered,
+        sources=result.sources,
     )
 
 

@@ -146,6 +146,14 @@ class RestaurantBase(BaseModel):
     pickup_enabled: bool = True
     dine_in_enabled: bool = True
     chatbot_enabled: bool = True
+    ai_name: str = ""
+    ai_welcome_message: str = ""
+    ai_tone: str = ""
+    ai_allowed_topics: str = ""
+    ai_fallback_message: str = ""
+    ai_escalation_message: str = ""
+    ai_language: str = ""
+    ai_safety_instructions: str = ""
     is_published: bool = True
 
 
@@ -226,6 +234,7 @@ class ChatResponse(BaseModel):
     answer: str
     conversation_id: str
     unanswered: bool = False
+    sources: list[str] = Field(default_factory=list)
 
 
 class ContactCreate(BaseModel):

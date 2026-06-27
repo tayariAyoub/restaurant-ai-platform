@@ -22,8 +22,8 @@ from app.models import (
     RestaurantImage,
     User,
 )
-from app.services import chat
-from app.schemas import CategoryUpdate, DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
+from app.services import chat, knowledge
+from app.schemas import ChatRequest, CategoryUpdate, DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
 
 
 @pytest.fixture()
@@ -364,3 +364,75 @@ def test_ai_context_retrieval_is_restaurant_scoped(db: Session, monkeypatch: pyt
 
     assert context == ["tenant one vegan pasta special"]
     assert "tenant two vegan pasta secret" not in context
+
+
+def test_structured_ai_knowledge_includes_services_menu_and_allergens(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    category = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
+    item = db.query(MenuItem).filter_by(category_id=category.id).one()
+    restaurant_one.story = "A handmade pasta counter with a quiet dining room."
+    restaurant_one.opening_hours = '{"friday":"12:00-22:00"}'
+    restaurant_one.reservation_url = "https://booking.example/tenant-one"
+    restaurant_one.delivery_enabled = True
+    restaurant_one.pickup_enabled = True
+    item.description = "Fresh pasta with basil."
+    item.allergens = "gluten"
+    item.is_vegetarian = True
+    monkeypatch.setattr(knowledge, "create_embeddings", lambda texts: [None] * len(texts))
+
+    knowledge.rebuild_structured_knowledge(db, restaurant_one.id)
+
+    chunks = [
+        chunk.content
+        for chunk in db.query(KnowledgeChunk)
+        .filter(KnowledgeChunk.restaurant_id == restaurant_one.id)
+        .all()
+    ]
+    combined = "\n".join(chunks)
+    assert "Story and atmosphere: A handmade pasta counter" in combined
+    assert "Available customer service modes" in combined
+    assert "Delivery enabled: yes" in combined
+    assert "Price: EUR 12.00" in combined
+    assert "Allergens: gluten" in combined
+    assert "Dietary options: vegetarian" in combined
+
+
+def test_ai_fallback_uses_restaurant_specific_escalation_when_openai_is_missing(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    restaurant_one.ai_name = "Tenant AI"
+    restaurant_one.ai_escalation_message = "Call Tenant One directly."
+    db.commit()
+    monkeypatch.setattr(chat.settings, "openai_api_key", "")
+
+    result = chat.answer_question(db, restaurant_one.id, "Do you deliver tonight?")
+
+    assert result.answer == "Tenant AI is not configured yet. Call Tenant One directly."
+    assert result.unanswered is True
+    assert result.sources == []
+
+
+def test_public_chat_response_includes_ai_sources(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+
+    def fake_answer(_: Session, restaurant_id: int, question: str) -> chat.ChatAnswer:
+        assert restaurant_id == restaurant_one.id
+        assert question == "What pasta is available?"
+        return chat.ChatAnswer("Tenant One Pasta is available.", False, ["menu"])
+
+    monkeypatch.setattr(public, "answer_question", fake_answer)
+
+    response = public.restaurant_chat(
+        "tenant-one",
+        ChatRequest(message="What pasta is available?"),
+        db=db,
+    )
+
+    assert response.answer == "Tenant One Pasta is available."
+    assert response.unanswered is False
+    assert response.sources == ["menu"]

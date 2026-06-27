@@ -1990,3 +1990,51 @@ Important distinction:
 - `backend/tests/conftest.py`
 
 No application source behavior was changed.
+
+## Phase 4 - AI Everywhere
+
+### Audit Summary
+
+- Existing public chat endpoint was `POST /restaurants/{slug}/chat` with IP rate limiting and conversation storage.
+- Existing AI context came from `KnowledgeChunk` records generated from restaurant profile/opening hours/menu items plus uploaded PDF/TXT documents.
+- Existing admin chatbot tooling lived inside the older restaurant editor, but the Visual Builder did not have a dedicated AI settings/test page.
+- Restaurant records only had `chatbot_enabled`; they did not have owner-editable AI name, welcome copy, tone, allowed topics, fallback, escalation, language, or safety settings.
+- Public chatbot already had a premium UI and rate-limit handling, but it did not consume restaurant-specific AI settings or show answer sources.
+
+### Implementation
+
+- Added additive restaurant AI settings fields for:
+  - `ai_name`
+  - `ai_welcome_message`
+  - `ai_tone`
+  - `ai_allowed_topics`
+  - `ai_fallback_message`
+  - `ai_escalation_message`
+  - `ai_language`
+  - `ai_safety_instructions`
+- Added `/admin/builder/[id]/ai` as a dedicated AI Settings/Test page.
+- Added AI navigation links from Visual Builder and the builder restaurant list.
+- Added an admin AI test panel using the existing public chat endpoint with mocked frontend tests, not real OpenAI calls.
+- Added AI readiness metrics, knowledge source status, uploaded document list, and recent unanswered-question review.
+- Improved public chatbot copy, quick prompts, rate-limit messaging, loading state, and optional source display.
+- Expanded structured AI knowledge to include service modes, restaurant story, reservation URL, social/map links, menu categories, item prices, allergens, dietary flags, and availability.
+- Updated backend chat service to use restaurant-specific AI settings and return source labels in `ChatResponse.sources`.
+- Fixed the existing knowledge document upload chunk source bug by using the stored filename instead of an undefined variable.
+
+### Validation
+
+- Frontend tests: `pnpm.cmd test` -> 10 files passed, 39 tests passed.
+- Frontend build: `pnpm.cmd build` -> successful production build, including `/admin/builder/[id]/ai`.
+- Backend tests: `python -m pytest` -> 37 passed, 68 warnings.
+
+### Remaining Risks
+
+- AI test panel uses the real public chat endpoint, so test conversations are stored as normal conversations.
+- AI remains synchronous in the request path; production should add timeouts/retries/observability and eventually background processing where appropriate.
+- No Redis/vector database split yet; MVP still uses database-backed knowledge chunks and in-memory/API-driven retrieval behavior.
+- Formal Alembic migrations are still missing; the project uses the existing idempotent migration bridge.
+- Admin cannot clear unanswered questions yet because no review/resolve model exists.
+
+### Next Recommended Phase
+
+- Add an AI knowledge management workflow: mark unanswered questions as reviewed, convert an unanswered question into a saved FAQ/knowledge entry, and separate internal admin test conversations from public customer conversations.

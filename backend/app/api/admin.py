@@ -578,7 +578,7 @@ async def upload_document(
             KnowledgeChunk(
                 document_id=document.id,
                 restaurant_id=restaurant_id,
-                source=safe_name,
+                source=stored.filename,
                 content=chunk,
                 embedding=embedding,
             )

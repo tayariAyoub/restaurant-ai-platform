@@ -18,16 +18,16 @@ describe("ChatWidget", () => {
   it("opens and enables send only for a valid message", async () => {
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
+    await user.click(screen.getByRole("button", { name: /open ai maitre d/i }));
 
-    expect(screen.getByText(/Bella Napoli AI Maître d'/i)).toBeVisible();
+    expect(screen.getByText(/Bella Napoli AI Maitre d'/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /send message/i })).toBeDisabled();
 
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "What should I order?");
     expect(screen.getByRole("button", { name: /send message/i })).toBeEnabled();
   });
 
-  it("shows loading state and renders a successful response", async () => {
+  it("shows loading state, sources, and renders a successful response", async () => {
     let resolveResponse: (value: unknown) => void = () => undefined;
     requestMock.mockReturnValue(
       new Promise((resolve) => {
@@ -36,22 +36,27 @@ describe("ChatWidget", () => {
     );
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
+    await user.click(screen.getByRole("button", { name: /open ai maitre d/i }));
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Plan dinner");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
-    expect(screen.getByText(/checking menu, hours, and policies/i)).toBeVisible();
+    expect(screen.getByText(/reviewing menu, hours, and policies/i)).toBeVisible();
 
-    resolveResponse({ answer: "Start with burrata, then Margherita.", conversation_id: "chat-1" });
+    resolveResponse({
+      answer: "Start with burrata, then Margherita.",
+      conversation_id: "chat-1",
+      sources: ["menu"],
+    });
 
     expect(await screen.findByText("Start with burrata, then Margherita.")).toBeVisible();
+    expect(await screen.findByText(/sources: menu/i)).toBeVisible();
   });
 
   it("shows an error message when chat fails", async () => {
     requestMock.mockRejectedValue(new Error("Network failed"));
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
+    await user.click(screen.getByRole("button", { name: /open ai maitre d/i }));
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Help");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
@@ -64,7 +69,7 @@ describe("ChatWidget", () => {
     requestMock.mockRejectedValue(new Error("Too many requests. Please wait a moment and try again."));
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
+    await user.click(screen.getByRole("button", { name: /open ai maitre d/i }));
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Help");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 

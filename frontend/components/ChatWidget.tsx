@@ -1,21 +1,25 @@
 "use client";
 
-import { Bot, Clock3, Loader2, MessageCircle, Send, ShieldCheck, ShoppingBag, Sparkles, Utensils, X } from "lucide-react";
+import { Bot, Clock3, Loader2, MessageCircle, Send, ShieldCheck, Sparkles, Utensils, X } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import request from "@/lib/api";
-import type { Message } from "@/lib/types";
+import type { ChatResponse, Message } from "@/lib/types";
 
-function welcomeMessage(restaurantName: string): Message {
+function buildWelcomeMessage(restaurantName: string, aiName: string, customWelcome?: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. Welcome to ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and the AI Maître d' will help you find the right dish, table plan, or order.`,
+    content: customWelcome?.trim()
+      || `Good evening. Welcome to ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and ${aiName} will help you find the right dish, table plan, or order.`,
   };
 }
 
 export default function ChatWidget({
   slug,
   restaurantName = "Restaurant",
+  aiName = "AI Maitre d'",
+  welcomeMessage,
+  escalationMessage = "Please call the restaurant for help.",
   primaryColor = "#c84b31",
   menuHighlights = [],
   dietaryPrompts = [],
@@ -23,13 +27,19 @@ export default function ChatWidget({
 }: {
   slug?: string;
   restaurantName?: string;
+  aiName?: string;
+  welcomeMessage?: string;
+  fallbackMessage?: string;
+  escalationMessage?: string;
   primaryColor?: string;
   menuHighlights?: string[];
   dietaryPrompts?: string[];
   bottomOffsetClass?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>(() => [welcomeMessage(restaurantName)]);
+  const [messages, setMessages] = useState<Message[]>(() => [
+    buildWelcomeMessage(restaurantName, aiName, welcomeMessage),
+  ]);
   const [text, setText] = useState("");
   const [conversationId, setConversationId] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -46,21 +56,29 @@ export default function ChatWidget({
     setMessages((current) => [...current, { role: "user", content: message }]);
     setLoading(true);
     try {
-      const response = await request<{ answer: string; conversation_id: string; unanswered?: boolean }>(slug ? `/restaurants/${slug}/chat` : "/chat", {
+      const response = await request<ChatResponse>(slug ? `/restaurants/${slug}/chat` : "/chat", {
         method: "POST",
         body: JSON.stringify({ message, conversation_id: conversationId }),
       });
       setConversationId(response.conversation_id);
-      setMessages((current) => [...current, { role: "assistant", content: response.answer, is_unanswered: response.unanswered }]);
+      setMessages((current) => [
+        ...current,
+        {
+          role: "assistant",
+          content: response.answer,
+          is_unanswered: response.unanswered,
+          sources: response.sources,
+        },
+      ]);
     } catch (error) {
-      const rateLimited = error instanceof Error && /too many requests|rate limit/i.test(error.message);
+      const rateLimited = error instanceof Error && /too many requests|rate limit|429/i.test(error.message);
       setMessages((current) => [
         ...current,
         {
           role: "assistant",
           content: rateLimited
-            ? "The AI Maître d' is taking a short pause because many guests are asking at once. Please wait a moment, or call the restaurant for urgent help."
-            : "I can't connect right now. Please call the restaurant for help.",
+            ? `${aiName} is taking a short pause because many guests are asking at once. Please wait a moment, or call the restaurant for urgent help.`
+            : `I can't connect right now. ${escalationMessage}`,
           is_unanswered: true,
         },
       ]);
@@ -81,8 +99,8 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} AI Maître d'</p>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
+                  <p className="font-semibold leading-tight">{restaurantName} {aiName}</p>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Menu, hours, reservations</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} aria-label="Close chat" className="grid h-11 w-11 place-items-center rounded-full bg-white/15 hover:bg-white/25">
@@ -90,7 +108,7 @@ export default function ChatWidget({
               </button>
             </div>
             <p className="relative mt-4 rounded-2xl border border-white/15 bg-white/12 p-3 text-sm leading-6 text-white/85">
-              Start with a craving, an allergy, a date-night plan, or a pickup time. I will suggest a thoughtful path through the restaurant.
+              Start with a craving, an allergy, a date-night plan, or a pickup time. I will answer from this restaurant&apos;s real menu and details.
             </p>
           </div>
 
@@ -98,12 +116,15 @@ export default function ChatWidget({
             <p className="flex items-start gap-2"><ShieldCheck size={15} className="mt-0.5 text-green-700" /> I answer only from restaurant knowledge. For allergies, please confirm with staff before ordering.</p>
           </div>
 
-          <div className="grid grid-cols-3 border-b bg-white text-center text-[11px] font-bold text-stone-500">
+          <div className="grid grid-cols-4 border-b bg-white text-center text-[11px] font-bold text-stone-500">
             <button onClick={() => send(undefined, "Recommend a full meal for my mood tonight")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
               <Utensils size={14} /> Meal
             </button>
-            <button onClick={() => send(undefined, "Help me build a pickup order")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
-              <ShoppingBag size={14} /> Order
+            <button onClick={() => send(undefined, "When are you open?")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+              <Clock3 size={14} /> Hours
+            </button>
+            <button onClick={() => send(undefined, "What should I know about allergies?")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+              <ShieldCheck size={14} /> Allergy
             </button>
             <button onClick={() => send(undefined, "Can I reserve a table?")} className="flex min-h-11 items-center justify-center gap-1 px-2 py-3 hover:bg-stone-50">
               <Clock3 size={14} /> Reserve
@@ -124,6 +145,11 @@ export default function ChatWidget({
                 style={message.role === "user" ? { backgroundColor: primaryColor } : undefined}
               >
                 {message.content}
+                {message.role === "assistant" && message.sources && message.sources.length > 0 && (
+                  <p className="mt-2 text-[11px] font-bold uppercase tracking-wider opacity-50">
+                    Sources: {message.sources.join(", ")}
+                  </p>
+                )}
               </div>
             ))}
 
@@ -151,7 +177,7 @@ export default function ChatWidget({
 
             {loading && (
               <div className="flex w-fit items-center gap-2 rounded-2xl rounded-bl-md border border-black/5 bg-white px-4 py-3 text-sm text-stone-500 shadow-sm" aria-live="polite">
-                <Loader2 size={16} className="animate-spin" /> Checking menu, hours, and policies...
+                <Loader2 size={16} className="animate-spin" /> Reviewing menu, hours, and policies...
               </div>
             )}
             <div ref={bottom} />
@@ -161,7 +187,7 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={loading ? "Checking the menu..." : "Tell me your mood, allergies, occasion..."}
+              placeholder={loading ? "Checking the restaurant details..." : "Tell me your mood, allergies, occasion..."}
               className="min-h-12 min-w-0 flex-1 rounded-full border px-4 py-3 text-base outline-none focus:border-stone-500 sm:text-sm"
               disabled={loading}
             />
@@ -181,7 +207,7 @@ export default function ChatWidget({
         onClick={() => setOpen(!open)}
         className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105 sm:h-16 sm:w-16"
         style={{ backgroundColor: primaryColor }}
-        aria-label="Open menu guide"
+        aria-label="Open AI Maitre d'"
       >
         {open ? <X /> : <MessageCircle />}
       </button>
@@ -202,11 +228,13 @@ function buildStarterGroups(menuHighlights: string[], dietaryPrompts: string[]) 
     },
     {
       label: "Diet and allergies",
-      questions: dietaryPrompts.length > 0 ? dietaryPrompts.slice(0, 4) : ["What is vegetarian?", "Any gluten-free options?", "What contains nuts?"],
+      questions: dietaryPrompts.length > 0
+        ? dietaryPrompts.slice(0, 4)
+        : ["What is vegetarian?", "Any gluten-free options?", "What contains nuts?", "What should I confirm for allergies?"],
     },
     {
       label: "Ordering and reservations",
-      questions: ["Build a pickup order for two", "Guide me before I reserve", "What should I order before a movie?", "How does dine-in ordering work?"],
+      questions: ["When are you open?", "Build a pickup order for two", "Guide me before I reserve", "How does dine-in ordering work?"],
     },
   ];
 }

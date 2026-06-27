@@ -92,6 +92,14 @@ export type Restaurant = {
   pickup_enabled: boolean;
   dine_in_enabled: boolean;
   chatbot_enabled: boolean;
+  ai_name: string;
+  ai_welcome_message: string;
+  ai_tone: string;
+  ai_allowed_topics: string;
+  ai_fallback_message: string;
+  ai_escalation_message: string;
+  ai_language: string;
+  ai_safety_instructions: string;
   is_published: boolean;
   created_at: string;
   owner?: User | null;
@@ -139,7 +147,15 @@ export type Message = {
   role: "user" | "assistant";
   content: string;
   is_unanswered?: boolean;
+  sources?: string[];
   created_at?: string;
+};
+
+export type ChatResponse = {
+  answer: string;
+  conversation_id: string;
+  unanswered?: boolean;
+  sources?: string[];
 };
 
 export type Conversation = {

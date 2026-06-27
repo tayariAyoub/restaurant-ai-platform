@@ -66,16 +66,57 @@ def rebuild_structured_knowledge(db: Session, restaurant_id: int) -> None:
         )
     )
 
+    service_modes = [
+        label
+        for enabled, label in [
+            (restaurant.reservations_enabled, "reservation requests"),
+            (restaurant.ordering_enabled, "online ordering"),
+            (restaurant.delivery_enabled and restaurant.ordering_enabled, "delivery"),
+            (restaurant.pickup_enabled and restaurant.ordering_enabled, "pickup"),
+            (restaurant.dine_in_enabled and restaurant.ordering_enabled, "dine-in ordering"),
+        ]
+        if enabled
+    ]
+    social_links = [
+        link
+        for link in [
+            restaurant.google_maps_url,
+            restaurant.instagram_url,
+            restaurant.facebook_url,
+            restaurant.tiktok_url,
+        ]
+        if link
+    ]
     facts = [
         (
             "restaurant profile",
-            f"{restaurant.name}. {restaurant.tagline}. {restaurant.description} "
+            f"Restaurant: {restaurant.name}. Tagline: {restaurant.tagline or 'not specified'}. "
+            f"Description: {restaurant.description or 'not specified'}. "
+            f"Story and atmosphere: {restaurant.story or 'not specified'}. "
             f"Address: {restaurant.address}, {restaurant.postal_code} {restaurant.city}. "
-            f"Phone: {restaurant.phone}. Email: {restaurant.email}.",
+            f"Phone: {restaurant.phone or 'not specified'}. Email: {restaurant.email or 'not specified'}. "
+            f"Website reservation URL: {restaurant.reservation_url or 'not specified'}. "
+            f"Social or map links: {', '.join(social_links) if social_links else 'not specified'}.",
         ),
         ("opening hours", f"Opening hours for {restaurant.name}: {restaurant.opening_hours}"),
+        (
+            "service modes",
+            f"Available customer service modes for {restaurant.name}: "
+            f"{', '.join(service_modes) if service_modes else 'none specified'}. "
+            f"Reservations enabled: {'yes' if restaurant.reservations_enabled else 'no'}. "
+            f"Ordering enabled: {'yes' if restaurant.ordering_enabled else 'no'}. "
+            f"Delivery enabled: {'yes' if restaurant.delivery_enabled and restaurant.ordering_enabled else 'no'}. "
+            f"Pickup enabled: {'yes' if restaurant.pickup_enabled and restaurant.ordering_enabled else 'no'}. "
+            f"Dine-in ordering enabled: {'yes' if restaurant.dine_in_enabled and restaurant.ordering_enabled else 'no'}.",
+        ),
     ]
     for category in restaurant.categories:
+        facts.append(
+            (
+                f"menu category: {category.name}",
+                f"Menu category {category.name}. Description: {category.description or 'not specified'}.",
+            )
+        )
         for item in category.items:
             dietary = ", ".join(
                 label
@@ -89,7 +130,8 @@ def rebuild_structured_knowledge(db: Session, restaurant_id: int) -> None:
             facts.append(
                 (
                     f"menu: {category.name}",
-                    f"{item.name} costs EUR {item.price:.2f}. {item.description} "
+                    f"Menu item in {category.name}: {item.name}. Price: EUR {item.price:.2f}. "
+                    f"Description: {item.description or 'not specified'}. "
                     f"Dietary options: {dietary or 'none specified'}. "
                     f"Allergens: {item.allergens or 'not specified'}. "
                     f"Availability: {'available' if item.is_available else 'currently unavailable'}.",
