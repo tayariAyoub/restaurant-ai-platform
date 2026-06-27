@@ -357,6 +357,44 @@ Visual verification recommendation:
 - Confirm the live preview changes palette, typography, hero mood, CTA shape, menu style labels, and gallery style labels.
 - Open `/restaurants/bella-napoli` and verify the public website still feels premium and reflects the selected theme/overrides.
 
+## Admin Dashboard React Key Fix
+
+Issue:
+
+- React reported duplicate child keys in `frontend/app/admin/dashboard/page.tsx`.
+- Root cause: `insights.aiQuestions.map` used `key={question}`, but duplicate unanswered question text can exist.
+
+Fix:
+
+- Updated `insights.aiQuestions.map` to use a composite key: `${question}-${index}`.
+- Reviewed other `map()` calls in the admin dashboard.
+- Also updated duplicate-prone string/name keys for:
+  - best-seller rows
+  - daily recommendation rows
+  - setup warning rows
+- No app behavior was changed.
+
+Files changed:
+
+- `frontend/app/admin/dashboard/page.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 6 test files passed, 21 tests passed.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
 ## Phase 1.5 - Frontend Testing Foundation
 
 Files changed:

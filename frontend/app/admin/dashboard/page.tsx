@@ -185,7 +185,7 @@ export default function DashboardPage() {
                     ) : (
                       <div className="mt-3 space-y-3">
                         {insights.bestSellers.map((item, index) => (
-                          <div key={item.name} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 px-4 py-3">
+                          <div key={`${item.name}-${index}`} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 px-4 py-3">
                             <div className="flex min-w-0 items-center gap-3">
                               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-orange-50 text-sm font-bold text-orange-700">{index + 1}</span>
                               <div className="min-w-0">
@@ -220,8 +220,8 @@ export default function DashboardPage() {
                       <p className="mt-2 text-sm leading-6 text-slate-500">No unanswered customer questions right now. The AI Maître d' is ready for service.</p>
                     ) : (
                       <div className="mt-3 space-y-2">
-                        {insights.aiQuestions.map((question) => (
-                          <p key={question} className="rounded-lg bg-white p-3 text-sm leading-6 text-slate-600 shadow-sm">{question}</p>
+                        {insights.aiQuestions.map((question, index) => (
+                          <p key={`${question}-${index}`} className="rounded-lg bg-white p-3 text-sm leading-6 text-slate-600 shadow-sm">{question}</p>
                         ))}
                       </div>
                     )}
@@ -230,7 +230,7 @@ export default function DashboardPage() {
                   <div className="mt-6 rounded-xl border border-orange-100 bg-orange-50 p-4">
                     <div className="flex items-center gap-2 font-semibold text-orange-950"><Sparkles size={17} /> Today's recommendations</div>
                     <ul className="mt-3 space-y-2 text-sm leading-6 text-orange-950">
-                      {dailyRecommendations(restaurant, insights).map((item) => <li key={item}>{item}</li>)}
+                      {dailyRecommendations(restaurant, insights).map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}
                     </ul>
                   </div>
                 </section>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                       <p className="mt-2 text-sm text-amber-800">No obvious setup gaps. This restaurant is ready for a polished owner demo.</p>
                     ) : (
                       <ul className="mt-3 space-y-2 text-sm text-amber-900">
-                        {insights.warnings.map((warning) => <li key={warning}>- {warning}</li>)}
+                        {insights.warnings.map((warning, index) => <li key={`${warning}-${index}`}>- {warning}</li>)}
                       </ul>
                     )}
                   </div>
