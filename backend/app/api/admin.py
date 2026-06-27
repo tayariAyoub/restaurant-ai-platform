@@ -283,14 +283,18 @@ def create_restaurant(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    if user.role != "SUPER_ADMIN":
-        raise HTTPException(status_code=403, detail="Only the super admin can create restaurants")
     slug = normalize_slug(payload.slug or payload.name)
     if db.scalar(select(Restaurant).where(Restaurant.slug == slug)):
         raise HTTPException(status_code=409, detail="Website slug already exists")
-    if payload.owner_id and not db.get(User, payload.owner_id):
+    data = payload.model_dump(exclude={"slug"})
+    if user.role == "SUPER_ADMIN":
+        if payload.owner_id and not db.get(User, payload.owner_id):
+            raise HTTPException(status_code=404, detail="Owner not found")
+    else:
+        data["owner_id"] = user.id
+    if data.get("owner_id") and not db.get(User, data["owner_id"]):
         raise HTTPException(status_code=404, detail="Owner not found")
-    restaurant = Restaurant(**payload.model_dump(exclude={"slug"}), slug=slug)
+    restaurant = Restaurant(**data, slug=slug)
     db.add(restaurant)
     db.commit()
     return get_restaurant_for_user(db, restaurant.id, user)

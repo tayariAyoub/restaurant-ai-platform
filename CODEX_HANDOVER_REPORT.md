@@ -3,6 +3,74 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Restaurant Owner Onboarding Wizard
+
+Audit findings:
+
+- Restaurant creation previously lived at `/admin/restaurants/new` as a short technical form.
+- After creation, owners had to move through separate admin screens for information, design, images, menu, opening hours, and chatbot knowledge.
+- Theme selection, image uploads, menu/category creation, and document upload already existed and could be reused.
+- The confusing part was sequencing: a non-technical restaurant owner had to understand the dashboard structure before reaching a publishable site.
+- Existing AI/chatbot configuration is knowledge-driven rather than a dedicated settings model, so the wizard should avoid exposing technical AI settings.
+
+Implementation summary:
+
+- Replaced the old short new-restaurant form with an eight-step onboarding wizard at `/admin/restaurants/new`.
+- Wizard steps:
+  1. Welcome
+  2. Restaurant information
+  3. Brand and theme with logo/hero uploads
+  4. Opening hours
+  5. Starter menu with categories, dishes, prices, dietary tags, and allergens
+  6. Menu guide / AI assistant preferences
+  7. Review
+  8. Publish and success links
+- Added local draft autosave with `restaurantai.onboarding.v1`.
+- Reused existing admin APIs for:
+  - restaurant creation
+  - theme selection
+  - image upload
+  - category creation
+  - menu item creation
+  - knowledge document upload
+- On publish, the wizard creates a normal restaurant record, uploads launch images, creates starter menu content, and uploads assistant launch notes as a text knowledge document.
+- Added live brand preview during the brand step.
+- Added a success state with public website preview and dashboard links.
+- Added a minimal backend permission improvement so restaurant owners can create restaurants assigned to themselves, while super admins can still assign owners.
+
+Files changed:
+
+- `frontend/app/admin/restaurants/new/page.tsx`
+- `frontend/app/admin/restaurants/new/page.test.tsx`
+- `backend/app/api/admin.py`
+- `backend/tests/test_tenant_safety.py`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm.cmd test
+pnpm.cmd build
+
+cd backend
+python -m pytest
+```
+
+Results:
+
+- Frontend tests: `7 passed`, `23 tests`.
+- Frontend build: passed.
+- Backend tests: `26 passed, 66 warnings`.
+
+Remaining recommendations:
+
+- Add a real persisted AI assistant settings model later if owners need configurable language/reservation/order behavior beyond knowledge notes.
+- Add drag-and-drop dish ordering and menu CSV import after the MVP proves useful.
+- Add image cropping and basic quality guidance for logo/hero uploads.
+- Add a browser-based visual QA pass for the full wizard on mobile and tablet.
+- Consider an owner-specific first-login redirect into the wizard when an owner has no restaurant yet.
+
 ## Authentication Security Audit
 
 Audit findings:

@@ -22,7 +22,7 @@ from app.models import (
     User,
 )
 from app.services import chat
-from app.schemas import DeliveryAddressCreate, OrderCreate, OrderItemCreate
+from app.schemas import DeliveryAddressCreate, OrderCreate, OrderItemCreate, RestaurantCreate
 
 
 @pytest.fixture()
@@ -157,6 +157,43 @@ def test_super_admin_can_access_all_restaurants(db: Session) -> None:
 
     assert admin.get_restaurant_for_user(db, restaurant_one.id, super_admin).id == restaurant_one.id
     assert admin.get_restaurant_for_user(db, restaurant_two.id, super_admin).id == restaurant_two.id
+
+
+def test_restaurant_owner_can_create_restaurant_only_for_self(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+
+    created = admin.create_restaurant(
+        RestaurantCreate(
+            name="Owner One New",
+            slug="owner-one-new",
+            email="new-owner-one@example.com",
+            city="Berlin",
+            owner_id=owner_two.id,
+        ),
+        db=db,
+        user=owner_one,
+    )
+
+    assert created.owner_id == owner_one.id
+    assert created.slug == "owner-one-new"
+
+
+def test_super_admin_can_assign_new_restaurant_owner(db: Session) -> None:
+    owner_one, _, super_admin = users(db)
+
+    created = admin.create_restaurant(
+        RestaurantCreate(
+            name="Assigned Restaurant",
+            slug="assigned-restaurant",
+            email="assigned@example.com",
+            city="Berlin",
+            owner_id=owner_one.id,
+        ),
+        db=db,
+        user=super_admin,
+    )
+
+    assert created.owner_id == owner_one.id
 
 
 def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:
