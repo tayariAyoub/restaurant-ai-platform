@@ -183,6 +183,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `POSTGRES_DB` | PostgreSQL database name |
 | `POSTGRES_USER` | PostgreSQL user |
 | `POSTGRES_PASSWORD` | Local/production database password |
+| `APP_ENV` | Runtime environment; set to `production` for stricter startup validation |
 | `DATABASE_URL` | SQLAlchemy PostgreSQL connection URL |
 | `JWT_SECRET` | Long random secret used to sign access tokens |
 | `OPENAI_API_KEY` | Optional OpenAI key for embeddings and chat |
@@ -193,6 +194,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `DEMO_OWNER_EMAIL` | Demo restaurant-owner email |
 | `DEMO_OWNER_PASSWORD` | Demo restaurant-owner password |
 | `FRONTEND_URL` | Allowed frontend origin |
+| `NEXT_PUBLIC_SITE_URL` | Public frontend URL used for canonical SEO metadata |
 | `BACKEND_INTERNAL_URL` | Backend URL used by the Next.js proxy |
 | `STORAGE_PROVIDER` | Upload storage backend; use `local` for development |
 | `RATE_LIMIT_CHAT_PER_MINUTE` | Public chat messages allowed per minute per IP; defaults to `10` for demos |
@@ -200,6 +202,10 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `RATE_LIMIT_ORDERS_PER_MINUTE` | Public order submissions allowed per minute per IP |
 | `RATE_LIMIT_PUBLIC_PER_MINUTE` | General public API requests allowed per minute per IP |
 | `TRUST_PROXY_HEADERS` | Set to `true` only behind a trusted reverse proxy that controls forwarded IP headers |
+| `AUTH_COOKIE_ENABLED` | Enables additive HttpOnly cookie auth support while Bearer auth remains supported |
+| `AUTH_COOKIE_SECURE` | Set to `true` in production when cookie auth is enabled |
+| `AUTH_COOKIE_SAMESITE` | Cookie SameSite mode |
+| `AUTH_COOKIE_MAX_AGE_SECONDS` | Cookie lifetime in seconds |
 
 Generate a strong JWT secret in PowerShell:
 
@@ -225,9 +231,9 @@ Frontend, in a second terminal:
 
 ```powershell
 cd frontend
-npm install
+pnpm.cmd install
 $env:BACKEND_INTERNAL_URL="http://localhost:8000"
-npm run dev
+pnpm.cmd dev
 ```
 
 ## Tests and checks
@@ -258,7 +264,7 @@ cd backend
 python -m py_compile app\api\admin.py app\api\public.py app\services\chat.py app\services\knowledge.py
 
 cd ..\frontend
-pnpm build
+pnpm.cmd build
 ```
 
 Note: Python 3.14 is newer than the backend target and may not have compatible wheels for all pinned dependencies yet. Use Python 3.12 or Docker for backend tests.
@@ -291,7 +297,9 @@ docker-compose.yml  local full-stack environment
 
 ## Team workflow
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before making changes. Work in short feature branches and merge reviewed pull requests into `main`.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before making changes. Work in short feature branches and merge reviewed pull requests into `ai-production-saas-upgrade`.
+
+For setup, Docker, environment validation, OpenAI configuration, CI, and common production errors, read [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
 
 ## License
 

@@ -18,6 +18,7 @@ services:
   backend:
     build: ./backend
     environment:
+      APP_ENV: ${APP_ENV:-development}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://restaurant_ai:restaurant_ai_demo_password@db:5432/restaurant_ai}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:-restaurant_ai_local_demo_secret_change_before_production}

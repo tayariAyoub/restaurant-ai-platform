@@ -44,8 +44,9 @@ Validation commands:
 
 ```powershell
 cd frontend
-pnpm install
-pnpm build
+pnpm.cmd install
+pnpm.cmd test
+pnpm.cmd build
 
 cd ../backend
 python -m pytest

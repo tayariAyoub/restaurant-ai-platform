@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api import admin, auth, public
-from app.core.config import settings
+from app.core.config import collect_configuration_issues, settings
 from app.core.database import Base, SessionLocal, engine
 from app.services.migrations import upgrade_existing_database
 from app.services.seed import seed_demo_data
@@ -15,19 +15,22 @@ from app.services.seed import seed_demo_data
 logger = logging.getLogger("restaurantai.config")
 
 
-def log_openai_configuration() -> None:
+def validate_environment_configuration() -> None:
+    report = collect_configuration_issues(settings)
+    for warning in report.warnings:
+        logger.warning(warning)
+    for error in report.errors:
+        logger.error(error)
+    if report.errors:
+        raise RuntimeError("Invalid backend environment configuration. Check required environment variables.")
+
     if settings.openai_api_key and settings.openai_api_key.strip():
         logger.info("OpenAI API key detected; AI chat and embeddings are enabled.")
-    else:
-        logger.warning(
-            "OPENAI_API_KEY is not configured. Public AI chat will show a temporary "
-            "unavailability message; admin AI tests will show setup guidance."
-        )
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    log_openai_configuration()
+    validate_environment_configuration()
     with engine.begin() as connection:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     Base.metadata.create_all(bind=engine)

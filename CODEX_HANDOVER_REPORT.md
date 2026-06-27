@@ -2073,3 +2073,63 @@ No application source behavior was changed.
 ### Next Recommended Phase
 
 - Add a lightweight knowledge quality dashboard: show stale FAQ entries, detect missing menu allergens/hours/policies, and recommend concrete owner actions before each service.
+
+## Phase 1.1 - Production Foundation
+
+### Audit Summary
+
+- GitHub had issue/PR templates, but no `.github/workflows` CI workflow.
+- The frontend project uses `pnpm-lock.yaml`, but `frontend/Dockerfile` still installed and built with npm.
+- Backend tests already used `pytest`, and Docker already used Python 3.12.
+- `.env.example` included the key runtime values, but it was not grouped by production readiness responsibility and did not include `APP_ENV`.
+- Backend OpenAI handling was already safe for public customers; missing OpenAI remained optional and logged as a warning.
+
+### Implementation
+
+- Added GitHub Actions CI for Pull Requests and protected branch pushes:
+  - frontend `pnpm install --frozen-lockfile`
+  - frontend `pnpm test`
+  - frontend `pnpm build`
+  - backend Python 3.12 dependency install
+  - backend `python -m pytest`
+- Updated the frontend Dockerfile to use pnpm 11.7.0 and `pnpm-lock.yaml` consistently.
+- Added `packageManager: pnpm@11.7.0` to the frontend package metadata.
+- Added backend environment validation helpers:
+  - required backend values are checked by variable name
+  - local/demo secrets warn outside production
+  - unsafe demo secrets/passwords fail when `APP_ENV=production`
+  - unsupported storage providers fail clearly
+  - missing OpenAI key remains optional and logs a clear warning
+  - cookie auth requires `AUTH_COOKIE_SECURE=true` when enabled in production
+- Added backend tests for the new environment validation behavior.
+- Added `docs/PRODUCTION_READINESS.md` with local setup, Docker setup, required env vars, OpenAI setup, CI checks, and common errors.
+- Updated README, contributing docs, GitHub workflow docs, PR template, `.env.example`, and Docker Compose to match the new foundation.
+
+### Files Changed
+
+- `.env.example`
+- `.github/pull_request_template.md`
+- `.github/workflows/ci.yml`
+- `CONTRIBUTING.md`
+- `README.md`
+- `backend/app/core/config.py`
+- `backend/app/main.py`
+- `backend/tests/test_config_validation.py`
+- `docker-compose.yml`
+- `docs/GITHUB_WORKFLOW.md`
+- `docs/PRODUCTION_READINESS.md`
+- `frontend/Dockerfile`
+- `frontend/package.json`
+
+### Validation
+
+- Frontend tests: `cd frontend && pnpm.cmd test` -> 10 test files passed, 40 tests passed.
+- Frontend build: `cd frontend && pnpm.cmd build` -> successful production build.
+- Backend tests: `cd backend && python -m pytest` -> 46 passed, 75 warnings.
+- Docker build: `docker compose build` -> backend and frontend images built successfully; frontend Docker build used pnpm.
+
+### Remaining Risks
+
+- GitHub Actions has been added locally but still needs to run on GitHub after push/PR to confirm hosted runner behavior.
+- Local backend tests were run with Python 3.14.5; CI is configured for Python 3.12 to match the Dockerfile.
+- Production still needs real deployment secrets, HTTPS URLs, persistent backups, object storage beyond local uploads, and a managed database migration tool.

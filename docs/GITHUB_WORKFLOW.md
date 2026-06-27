@@ -34,12 +34,15 @@ Validation commands:
 
 ```powershell
 cd frontend
-pnpm install
-pnpm build
+pnpm.cmd install
+pnpm.cmd test
+pnpm.cmd build
 
 cd ../backend
 python -m pytest
 ```
+
+GitHub Actions runs the same frontend and backend checks automatically on Pull Requests.
 
 ## Review
 
