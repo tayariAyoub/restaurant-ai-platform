@@ -11,8 +11,8 @@ from app.services.knowledge import rebuild_structured_knowledge
 THEMES = [
     {
         "key": "elegant",
-        "name": "Elegant Fine Dining",
-        "description": "Black, gold, editorial typography and luxury spacing.",
+        "name": "Michelin Fine Dining",
+        "description": "Black, gold, editorial typography, cinematic hero treatment, and luxury spacing.",
         "primary_color": "#c6a15b",
         "secondary_color": "#2c2925",
         "background_color": "#11110f",
@@ -26,7 +26,7 @@ THEMES = [
     {
         "key": "cafe",
         "name": "Modern Café",
-        "description": "Warm beige, cozy cards and friendly modern details.",
+        "description": "Warm neutral tones, friendly cards, and polished all-day hospitality.",
         "primary_color": "#8b5e3c",
         "secondary_color": "#d9c3a5",
         "background_color": "#f4ecdf",
@@ -38,23 +38,23 @@ THEMES = [
         "gallery_style": "grid",
     },
     {
-        "key": "fast-food",
-        "name": "Pizza & Fast Food",
-        "description": "Energetic red-orange colors with bold menu calls to action.",
-        "primary_color": "#e5482d",
-        "secondary_color": "#ffb000",
-        "background_color": "#fff7e8",
-        "text_color": "#201914",
-        "font_family": "Inter",
-        "button_style": "bold",
-        "homepage_style": "menu-first",
+        "key": "italian-warm",
+        "name": "Italian Warm",
+        "description": "Terracotta, olive, generous storytelling, and a menu built around fire and family.",
+        "primary_color": "#c84b31",
+        "secondary_color": "#6b7048",
+        "background_color": "#f7f3ea",
+        "text_color": "#1b1b18",
+        "font_family": "Cormorant Garamond",
+        "button_style": "pill",
+        "homepage_style": "story",
         "menu_style": "cards",
-        "gallery_style": "wide",
+        "gallery_style": "grid",
     },
     {
         "key": "japanese",
-        "name": "Minimal Japanese / Asian",
-        "description": "Monochrome, precise spacing and calm premium typography.",
+        "name": "Sushi Minimal",
+        "description": "Monochrome, precise spacing, quiet detail, and calm premium typography.",
         "primary_color": "#111111",
         "secondary_color": "#c53d31",
         "background_color": "#fafafa",
@@ -64,6 +64,20 @@ THEMES = [
         "homepage_style": "minimal",
         "menu_style": "minimal",
         "gallery_style": "filmstrip",
+    },
+    {
+        "key": "vegan-natural",
+        "name": "Vegan Natural",
+        "description": "Natural greens, seasonal produce, ingredient clarity, and gentle premium warmth.",
+        "primary_color": "#496b3a",
+        "secondary_color": "#b98f4b",
+        "background_color": "#f3f0e4",
+        "text_color": "#1f2a1b",
+        "font_family": "Inter",
+        "button_style": "soft",
+        "homepage_style": "seasonal",
+        "menu_style": "cards",
+        "gallery_style": "masonry",
     },
     {
         "key": "mediterranean",
@@ -84,8 +98,12 @@ THEMES = [
 
 def seed_demo_data(db: Session) -> None:
     for data in THEMES:
-        if not db.scalar(select(Theme).where(Theme.key == data["key"])):
+        theme = db.scalar(select(Theme).where(Theme.key == data["key"]))
+        if not theme:
             db.add(Theme(**data))
+        else:
+            for field, value in data.items():
+                setattr(theme, field, value)
     db.flush()
 
     admin = db.scalar(select(User).where(User.email == settings.admin_email))

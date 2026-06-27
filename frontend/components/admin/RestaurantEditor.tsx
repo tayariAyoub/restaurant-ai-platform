@@ -28,6 +28,7 @@ import { FormEvent, type InputHTMLAttributes, type ReactNode, useCallback, useEf
 
 import { adminRequest } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { resolveRestaurantTheme } from "@/lib/restaurantTheme";
 import type {
   ContactRequest,
   Conversation,
@@ -49,15 +50,13 @@ const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm";
 const textareaClass = `${inputClass} min-h-28`;
 const cardClass = "rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6";
-const premiumPersonalities = [
-  { name: "Modern Luxury", description: "Quiet confidence, refined spacing, cinematic photography, and direct premium ordering." },
-  { name: "Italian Heritage", description: "Warm family storytelling, fire, wine, handmade craft, and generous hospitality cues." },
-  { name: "Nordic Michelin", description: "Minimal, seasonal, natural, and precise with restrained copy and gallery-like food focus." },
-  { name: "Japanese Omakase", description: "Guided pacing, trust in the chef, quiet detail, and reservation-first menu discovery." },
-  { name: "French Fine Dining", description: "Elegant typography, ceremony, wine pairing prompts, and composed reservation flow." },
-  { name: "Modern Steakhouse", description: "Fire, sourcing, bold signatures, confident recommendations, and decisive ordering." },
-  { name: "Mediterranean", description: "Sunlit produce, relaxed table energy, fresh colors, and inviting shared dishes." },
-  { name: "Minimal Black", description: "Art-gallery restraint where typography, shadow, and food photography carry the mood." },
+const themeControlNotes = [
+  { name: "Palette", description: "Main, accent, background, and text colors shape the whole public site." },
+  { name: "Typography", description: "Choose editorial serif, modern sans, or classic restaurant type." },
+  { name: "Hero mood", description: "Themes influence the cinematic overlay, first impression, and storytelling tone." },
+  { name: "Menu cards", description: "Menu layouts adapt for refined, card-based, minimal, or list-first browsing." },
+  { name: "Gallery", description: "Image grids can feel editorial, calm, or social depending on the restaurant." },
+  { name: "CTA style", description: "Buttons can feel soft, rounded, square, or bold without code changes." },
 ];
 
 function restaurantPayload(restaurant: Restaurant) {
@@ -631,6 +630,11 @@ function DesignEditor({
                   </div>
                   <p className="mt-3 font-semibold">{theme.name}</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">{theme.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2 py-1">{theme.homepage_style}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-1">{theme.menu_style}</span>
+                    <span className="rounded-full bg-slate-100 px-2 py-1">{theme.gallery_style}</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -638,17 +642,17 @@ function DesignEditor({
         </section>
 
         <section className={cardClass}>
-          <SectionHeader icon={Sparkles} title="Premium personality direction" description="RestaurantAI themes are being shaped around restaurant identities, not generic website skins." />
+          <SectionHeader icon={Sparkles} title="What the theme controls" description="Each theme changes the public website mood without asking the owner to touch code." />
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {premiumPersonalities.map((personality) => (
-              <div key={personality.name} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                <p className="font-semibold text-slate-900">{personality.name}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{personality.description}</p>
+            {themeControlNotes.map((note) => (
+              <div key={note.name} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <p className="font-semibold text-slate-900">{note.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{note.description}</p>
               </div>
             ))}
           </div>
-          <p className="mt-4 rounded-xl border border-orange-100 bg-orange-50 p-4 text-sm leading-6 text-orange-950">
-            Next safe step: connect these personalities to switchable presets for copy tone, image treatment, menu labels, spacing, and reservation mood.
+          <p className="mt-4 rounded-xl border border-green-100 bg-green-50 p-4 text-sm leading-6 text-green-950">
+            The live website now uses one reusable theme identity, so the previewed choices stay consistent across hero, menu, gallery, cart, and calls to action.
           </p>
         </section>
 
@@ -680,17 +684,17 @@ function DesignEditor({
                 </div>
               </label>
             ))}
-            <SelectField label="Font" name="font_family" value={restaurant.font_family} onChange={(value) => onRestaurantChange({ ...restaurant, font_family: value })} options={["Cormorant Garamond", "Inter", "Georgia", "Arial"]} />
+            <SelectField label="Typography feel" name="font_family" value={restaurant.font_family} onChange={(value) => onRestaurantChange({ ...restaurant, font_family: value })} options={["Cormorant Garamond", "Inter", "Georgia", "Arial"]} />
             <SelectField label="Buttons" name="button_style" value={restaurant.button_style} onChange={(value) => onRestaurantChange({ ...restaurant, button_style: value })} options={["pill", "soft", "square", "bold"]} />
-            <SelectField label="Menu style" name="menu_style" value={restaurant.menu_style} onChange={(value) => onRestaurantChange({ ...restaurant, menu_style: value })} options={["list", "cards"]} />
-            <SelectField label="Gallery style" name="gallery_style" value={restaurant.gallery_style} onChange={(value) => onRestaurantChange({ ...restaurant, gallery_style: value })} options={["grid", "filmstrip"]} />
-            <input type="hidden" name="homepage_style" value={restaurant.homepage_style || ""} />
+            <SelectField label="Hero style" name="homepage_style" value={restaurant.homepage_style} onChange={(value) => onRestaurantChange({ ...restaurant, homepage_style: value })} options={["editorial", "story", "minimal", "seasonal", "cards"]} />
+            <SelectField label="Menu style" name="menu_style" value={restaurant.menu_style} onChange={(value) => onRestaurantChange({ ...restaurant, menu_style: value })} options={["refined", "cards", "minimal", "list"]} />
+            <SelectField label="Gallery style" name="gallery_style" value={restaurant.gallery_style} onChange={(value) => onRestaurantChange({ ...restaurant, gallery_style: value })} options={["masonry", "grid", "filmstrip", "wide"]} />
           </div>
         </section>
       </div>
 
       <div className="space-y-6 xl:sticky xl:top-24 xl:h-fit">
-        <DesignPreview restaurant={restaurant} primary={primary} secondary={secondary} background={background} text={text} heroImage={heroImage} />
+        <DesignPreview restaurant={restaurant} heroImage={heroImage} />
         <HelperCard title="Design tip">
           <p>Use one confident main color, readable text, and real food photos. The fastest way to make the site feel expensive is a strong hero image plus a simple palette.</p>
         </HelperCard>
@@ -726,38 +730,37 @@ function SelectField({
 
 function DesignPreview({
   restaurant,
-  primary,
-  secondary,
-  background,
-  text,
   heroImage,
 }: {
   restaurant: Restaurant;
-  primary: string;
-  secondary: string;
-  background: string;
-  text: string;
   heroImage: string;
 }) {
+  const identity = resolveRestaurantTheme(restaurant);
+
   return (
     <section className="overflow-hidden rounded-2xl border bg-white shadow-xl">
       <div className="border-b px-5 py-4">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Live style preview</p>
       </div>
-      <div style={{ background, color: text, fontFamily: restaurant.font_family || undefined }}>
+      <div style={{ background: identity.shellBackground, color: identity.text, fontFamily: identity.fontFamily }}>
         <div
           className="relative min-h-[460px] bg-cover bg-center"
-          style={{ backgroundImage: `linear-gradient(90deg, ${text}dd, transparent), url(${heroImage})` }}
+          style={{ backgroundImage: heroImage ? `${identity.heroOverlay}, url(${heroImage})` : identity.heroFallback }}
         >
           <div className="p-6 text-white">
             <div className="flex justify-between gap-4 text-sm"><b>{restaurant.name}</b><span>Menu - Gallery - Contact</span></div>
             <div className="mt-24 max-w-sm">
-              <p className="text-xs font-bold uppercase tracking-[.25em]" style={{ color: secondary }}>{restaurant.city || "Your city"}</p>
+              <p className="text-xs font-bold uppercase tracking-[.25em]" style={{ color: identity.secondary }}>{identity.name} / {restaurant.city || "Your city"}</p>
               <h3 className="mt-3 text-5xl font-semibold leading-none">{restaurant.tagline || restaurant.name}</h3>
               <p className="mt-4 text-sm leading-6 text-white/80">{restaurant.description || "Add a description to preview the hero section."}</p>
-              <button type="button" className={`mt-6 px-6 py-3 font-semibold text-white ${restaurant.button_style === "square" ? "" : restaurant.button_style === "soft" ? "rounded-xl" : "rounded-full"}`} style={{ background: primary }}>
+              <button type="button" className={`mt-6 px-6 py-3 font-semibold text-white ${identity.buttonClass}`} style={{ background: identity.primary }}>
                 View menu
               </button>
+              <div className="mt-6 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-white/75">
+                <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1">{identity.menuStyle} menu</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1">{identity.galleryStyle} gallery</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1">{identity.buttonStyle} CTA</span>
+              </div>
             </div>
           </div>
         </div>

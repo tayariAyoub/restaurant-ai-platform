@@ -272,6 +272,91 @@ Remaining recommendations:
 - Consider a dedicated mobile category rail with active-section highlighting in a later task.
 - Consider a true native-app-style bottom navigation only if analytics show guests use many sections per visit.
 
+## Premium Restaurant Customization
+
+Audit findings:
+
+- The backend already had `Theme` rows with palette, typography, button, homepage, menu, and gallery style fields.
+- Restaurants already had per-restaurant override fields for colors, font, button style, homepage style, menu style, and gallery style.
+- The admin design screen already allowed owners to pick a theme and adjust core brand controls.
+- The public restaurant page used theme values, but logic was scattered:
+  - colors and font were resolved inline.
+  - personality/story tone lived in a local component map.
+  - menu/gallery variants were only partially connected.
+  - admin preview used its own simpler visual logic.
+- The seed catalog contained useful foundations but did not cleanly match the requested premium set.
+
+Improvements made:
+
+- Added `frontend/lib/restaurantTheme.ts` as the reusable public theme architecture.
+- The resolver now centralizes:
+  - color palette
+  - typography feel
+  - button/CTA style
+  - hero overlay and fallback
+  - shell background
+  - menu card treatment
+  - gallery layout
+  - restaurant personality/story copy
+- Premium identities now supported:
+  - Michelin Fine Dining
+  - Modern Cafe
+  - Italian Warm
+  - Sushi Minimal
+  - Vegan Natural
+- Updated `frontend/components/RestaurantSite.tsx` to consume the resolved theme identity instead of scattered local checks.
+- Updated the admin design editor:
+  - theme cards now show style chips for hero/menu/gallery behavior.
+  - manual controls expose typography, button, hero, menu, and gallery style choices.
+  - design education now explains what each theme controls.
+  - live preview now uses the same theme resolver as the public site.
+- Updated backend seed themes without changing schema:
+  - refreshed Michelin Fine Dining copy.
+  - replaced the old fast-food seed with Italian Warm.
+  - renamed Japanese preset to Sushi Minimal.
+  - added Vegan Natural.
+  - existing theme rows are refreshed on seed startup.
+- Added frontend tests for theme resolution and restaurant-level overrides.
+
+Files changed:
+
+- `backend/app/services/seed.py`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/admin/RestaurantEditor.tsx`
+- `frontend/lib/restaurantTheme.ts`
+- `frontend/lib/restaurantTheme.test.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 6 test files passed, 21 tests passed.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: 20 tests passed, 60 warnings.
+
+Visual verification recommendation:
+
+- Open the admin design page for a restaurant.
+- Select each premium theme.
+- Confirm the live preview changes palette, typography, hero mood, CTA shape, menu style labels, and gallery style labels.
+- Open `/restaurants/bella-napoli` and verify the public website still feels premium and reflects the selected theme/overrides.
+
 ## Phase 1.5 - Frontend Testing Foundation
 
 Files changed:

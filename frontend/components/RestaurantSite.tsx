@@ -31,6 +31,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import request from "@/lib/api";
 import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
 import { buildRestaurantJsonLd } from "@/lib/restaurantSeo";
+import { resolveRestaurantTheme, type RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import type { MenuItem, Restaurant, RestaurantOrder } from "@/lib/types";
 import ChatWidget from "./ChatWidget";
 
@@ -49,19 +50,14 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const [menuQuery, setMenuQuery] = useState("");
   const [dietaryFilter, setDietaryFilter] = useState<"all" | "vegan" | "vegetarian" | "halal">("all");
 
-  const theme = restaurant.theme;
-  const primary = restaurant.primary_color || theme?.primary_color || "#c84b31";
-  const secondary = restaurant.secondary_color || theme?.secondary_color || "#6b7048";
-  const background = restaurant.background_color || theme?.background_color || "#f7f3ea";
-  const text = restaurant.text_color || theme?.text_color || "#1b1b18";
-  const template = theme?.key || "mediterranean";
-  const font = restaurant.font_family || theme?.font_family || "Cormorant Garamond";
-  const buttonClass =
-    restaurant.button_style === "square"
-      ? ""
-      : restaurant.button_style === "soft"
-        ? "rounded-xl"
-        : "rounded-full";
+  const themeIdentity = resolveRestaurantTheme(restaurant);
+  const primary = themeIdentity.primary;
+  const secondary = themeIdentity.secondary;
+  const background = themeIdentity.background;
+  const text = themeIdentity.text;
+  const template = themeIdentity.key;
+  const font = themeIdentity.fontFamily;
+  const buttonClass = themeIdentity.buttonClass;
 
   const hours = useMemo(() => {
     try {
@@ -80,7 +76,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
   const heroVisual = restaurant.hero_image || gallery[0]?.url || "";
-  const personality = restaurantPersonality(template);
+  const personality = themeIdentity.personality;
   const storyMoments = buildStoryMoments(restaurant, featuredItems, personality);
   const dietaryPrompts = buildDietaryPrompts(menuItems);
   const filteredCategories = restaurant.categories.map((category) => ({
@@ -184,7 +180,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const darkHero = template === "elegant" || template === "japanese";
 
   return (
-    <div className="luxury-shell min-h-screen antialiased" style={{ backgroundColor: background, color: text, fontFamily: font }}>
+    <div className="luxury-shell min-h-screen antialiased" style={{ background: themeIdentity.shellBackground, backgroundColor: background, color: text, fontFamily: font }}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
@@ -236,8 +232,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           className={`noise relative flex min-h-[92svh] items-end overflow-hidden bg-cover bg-center sm:min-h-[100svh] ${template === "japanese" ? "grayscale" : ""}`}
           style={{
             backgroundImage: heroVisual
-              ? `linear-gradient(90deg, rgba(9,7,5,.94), rgba(10,8,5,.66) 42%, rgba(10,8,5,.18)), url(${heroVisual})`
-              : "linear-gradient(135deg, #15120f, #3b251f 48%, #15120f)",
+              ? `${themeIdentity.heroOverlay}, url(${heroVisual})`
+              : themeIdentity.heroFallback,
           }}
         >
           <div className="absolute inset-0 slow-drift bg-[radial-gradient(circle_at_75%_18%,rgba(255,255,255,.16),transparent_18rem)]" />
@@ -409,7 +405,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 </div>
 
                 {featuredItems.length > 0 && (
-                  <div className="ambient-glow mt-10 rounded-[2rem] border border-black/10 bg-[#171511] p-4 text-white shadow-2xl sm:p-5">
+                <div className={`ambient-glow mt-10 rounded-[2rem] border border-black/10 p-4 shadow-2xl sm:p-5 ${themeIdentity.signaturePanelClass}`}>
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
@@ -455,7 +451,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       {category.items.length === 0 ? (
                         <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">No dishes match the current search or filter.</div>
                       ) : (
-                        <div className={`mt-7 grid gap-5 ${restaurant.menu_style === "cards" || theme?.menu_style === "cards" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                        <div className={`mt-7 grid gap-5 ${themeIdentity.menuStyle === "cards" || themeIdentity.menuStyle === "refined" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
                           {category.items.map((item, index) => (
                             <MenuItemCard
                               key={item.id}
@@ -465,6 +461,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                               primary={primary}
                               secondary={secondary}
                               buttonClass={buttonClass}
+                              themeIdentity={themeIdentity}
                               onAdd={() => changeCart(item, 1)}
                             />
                           ))}
@@ -489,7 +486,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 Food, room, light, and service should feel connected before a guest ever opens the door.
               </p>
             </div>
-            <div className={`mx-auto grid max-w-7xl gap-3 ${theme?.gallery_style === "filmstrip" ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
+            <div className={`mx-auto grid max-w-7xl gap-3 ${themeIdentity.galleryClass}`}>
               {gallery.map((image, index) => (
                 <img
                   key={image.id}
@@ -737,6 +734,7 @@ function MenuItemCard({
   primary,
   secondary,
   buttonClass,
+  themeIdentity,
   onAdd,
 }: {
   item: MenuItem;
@@ -745,13 +743,14 @@ function MenuItemCard({
   primary: string;
   secondary: string;
   buttonClass: string;
+  themeIdentity: RestaurantThemeIdentity;
   onAdd: () => void;
 }) {
   const label = dishExperienceLabel(item, index);
   const pairing = pairingSuggestion(item);
 
   return (
-    <article className={`premium-lift luxury-menu-card group grid overflow-hidden rounded-[1.5rem] border border-black/10 shadow-sm sm:block ${!item.is_available ? "opacity-70 grayscale-[.25]" : ""}`}>
+    <article className={`premium-lift ${themeIdentity.menuCardClass} group grid overflow-hidden rounded-[1.5rem] border border-black/10 shadow-sm sm:block ${themeIdentity.menuStyle === "minimal" ? "rounded-none shadow-none" : ""} ${!item.is_available ? "opacity-70 grayscale-[.25]" : ""}`}>
       <div className="relative">
         {item.image_url ? (
           <img src={item.image_url} alt={item.name} className="h-48 w-full object-cover transition duration-700 group-hover:scale-105 sm:h-56" />
@@ -881,73 +880,7 @@ function buildDietaryPrompts(items: MenuItem[]) {
   return prompts.length > 0 ? prompts : ["Help me choose for allergies"];
 }
 
-function restaurantPersonality(template: string) {
-  const personalities: Record<string, { name: string; description: string; momentTitle: string; momentCopy: string }> = {
-    elegant: {
-      name: "Modern Luxury",
-      description: "A quiet, high-touch identity for restaurants that want every interaction to feel composed and intentional.",
-      momentTitle: "A room designed around anticipation.",
-      momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
-    },
-    modern_luxury: {
-      name: "Modern Luxury",
-      description: "A quiet, high-touch identity for restaurants that want every interaction to feel composed and intentional.",
-      momentTitle: "A room designed around anticipation.",
-      momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
-    },
-    italian: {
-      name: "Italian Heritage",
-      description: "Warm, generous, ingredient-led storytelling for restaurants built on family, fire, wine, and memory.",
-      momentTitle: "An evening that begins with the table.",
-      momentCopy: "Comfort, aroma, and hospitality lead the experience, with dishes presented as familiar rituals rather than simple products.",
-    },
-    nordic: {
-      name: "Nordic Michelin",
-      description: "Minimal, seasonal, and atmospheric: the restaurant feels precise, natural, and deeply connected to the moment.",
-      momentTitle: "Seasonality, restraint, and a little silence.",
-      momentCopy: "The story is told through space, ingredients, and confidence. Nothing shouts, but every detail carries weight.",
-    },
-    japanese: {
-      name: "Japanese Omakase",
-      description: "Disciplined pacing, quiet detail, and trust in the chef's sequence for restaurants centered on craft.",
-      momentTitle: "Let the evening unfold one course at a time.",
-      momentCopy: "The menu feels guided, personal, and precise, with the AI Maitre d' helping guests navigate preferences before they arrive.",
-    },
-    french: {
-      name: "French Fine Dining",
-      description: "Ceremonial, composed, and wine-aware with a sense of polish around booking, pacing, and service.",
-      momentTitle: "A more ceremonial kind of evening.",
-      momentCopy: "The experience gives guests confidence before arrival: what to order, how to pair, when to book, and how the room will feel.",
-    },
-    steakhouse: {
-      name: "Modern Steakhouse",
-      description: "Bold, direct, flame-led confidence for restaurants where craft, sourcing, and service create the atmosphere.",
-      momentTitle: "Fire, timing, and a confident room.",
-      momentCopy: "The experience highlights signature cuts, generous sides, and pairings that make ordering feel easy and decisive.",
-    },
-    mediterranean: {
-      name: "Mediterranean",
-      description: "Sunlit, relaxed, produce-forward hospitality for restaurants that want warmth without losing polish.",
-      momentTitle: "Bright plates, generous tables, easy decisions.",
-      momentCopy: "The guest journey feels open and inviting, with seasonal dishes, direct ordering, and reservations gathered into one elegant flow.",
-    },
-    minimal_black: {
-      name: "Minimal Black",
-      description: "Gallery-like restraint for restaurants that want the food, photography, and typography to carry the entire mood.",
-      momentTitle: "A darker room. A sharper focus.",
-      momentCopy: "The interface steps back so the food becomes the object: precise, desirable, and calm.",
-    },
-    "minimal-black": {
-      name: "Minimal Black",
-      description: "Gallery-like restraint for restaurants that want the food, photography, and typography to carry the entire mood.",
-      momentTitle: "A darker room. A sharper focus.",
-      momentCopy: "The interface steps back so the food becomes the object: precise, desirable, and calm.",
-    },
-  };
-  return personalities[template] ?? personalities.mediterranean;
-}
-
-function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], personality: ReturnType<typeof restaurantPersonality>) {
+function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], personality: RestaurantThemeIdentity["personality"]) {
   const firstDish = featuredItems[0]?.name || "the first plate";
   const secondDish = featuredItems[1]?.name || "the seasonal special";
   return [
