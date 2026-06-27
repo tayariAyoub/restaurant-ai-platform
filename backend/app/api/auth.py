@@ -12,6 +12,11 @@ from app.schemas import LoginRequest, Token, UserOut
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def prevent_auth_response_caching(response: Response) -> None:
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+
+
 def set_auth_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=settings.auth_cookie_name,
@@ -37,6 +42,7 @@ def clear_auth_cookie(response: Response) -> None:
 
 @router.post("/login", response_model=Token)
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> Token:
+    prevent_auth_response_caching(response)
     user = db.scalar(select(User).where(User.email == payload.email))
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
@@ -50,9 +56,11 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(response: Response) -> None:
+    prevent_auth_response_caching(response)
     clear_auth_cookie(response)
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: User = Depends(get_current_user)) -> User:
+def me(response: Response, user: User = Depends(get_current_user)) -> User:
+    prevent_auth_response_caching(response)
     return user

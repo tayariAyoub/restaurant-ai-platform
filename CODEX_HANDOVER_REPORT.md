@@ -3,6 +3,74 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Authentication Security Audit
+
+Audit findings:
+
+- Current admin login flow still stores the returned Bearer JWT in frontend `localStorage` under `restaurant_ai_token`.
+- Backend Bearer validation happens in `backend/app/dependencies.py` through the `Authorization: Bearer ...` header.
+- Backend already supports optional HttpOnly cookie authentication when `AUTH_COOKIE_ENABLED=true`.
+- `AUTH_COOKIE_ENABLED` defaults to `false`, so existing admin login behavior remains unchanged.
+- Cookie auth is additive: Bearer tokens still work and take priority over cookies.
+- Logout clears the auth cookie on the backend, but the current frontend logout still only removes the localStorage token because the frontend migration has not started.
+
+Risks:
+
+- `localStorage` tokens are exposed to successful XSS, browser extensions, and any injected script running on the admin origin.
+- Long-lived access tokens increase impact if a token is stolen.
+- HttpOnly cookies reduce script access, but require a CSRF strategy before they become the primary browser auth mechanism.
+- Cookie mode should use `AUTH_COOKIE_SECURE=true` in production behind HTTPS.
+
+Migration plan:
+
+1. Keep current Bearer/localStorage login as the compatibility path.
+2. Enable backend cookie support in a controlled environment with `AUTH_COOKIE_ENABLED=true`.
+3. Add CSRF protection for state-changing admin requests before making cookies the primary browser auth mechanism.
+4. Migrate the frontend to rely on same-origin HttpOnly cookies and call backend logout.
+5. Remove localStorage token storage only after cookie auth, CSRF, logout, and rollback have been validated.
+
+Safe improvements implemented:
+
+- Added `Cache-Control: no-store` and `Pragma: no-cache` headers to auth responses:
+  - `POST /auth/login`
+  - `POST /auth/logout`
+  - `GET /auth/me`
+- Added tests verifying:
+  - existing Bearer login response remains unchanged by default.
+  - Bearer auth still works.
+  - auth responses are not cacheable.
+  - cookie auth works when enabled.
+  - cookie auth uses HttpOnly plus configurable Secure and SameSite flags.
+  - logout clears the cookie.
+  - Bearer auth still takes priority over an invalid cookie.
+- No frontend files were changed.
+
+Files changed:
+
+- `backend/app/api/auth.py`
+- `backend/tests/test_auth_cookies.py`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `24 passed, 66 warnings`.
+
+Frontend validation:
+
+- Not run, because no frontend files were changed.
+
+Remaining recommendations:
+
+- Add CSRF protection before enabling cookie auth as the default browser flow.
+- Add refresh/session revocation if real restaurant owners will rely on long-lived admin sessions.
+- Reduce token lifetime for production and consider refresh-token rotation.
+- Frontend migration should be a separate milestone.
+
 ## Chat API Rate Limiting And Abuse Protection
 
 Audit findings:

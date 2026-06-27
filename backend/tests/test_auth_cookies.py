@@ -75,8 +75,15 @@ def login(client: TestClient) -> dict[str, str]:
 def test_login_keeps_existing_bearer_response_without_cookie_by_default(
     client: TestClient,
 ) -> None:
-    payload = login(client)
+    response = client.post(
+        "/auth/login",
+        json={"email": "owner@example.com", "password": "owner-password"},
+    )
+    payload = response.json()
 
+    assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
+    assert response.headers["Pragma"] == "no-cache"
     assert payload["access_token"]
     assert payload["token_type"] == "bearer"
     assert "restaurant_ai_access_token" not in client.cookies
@@ -91,6 +98,7 @@ def test_bearer_auth_still_works(client: TestClient) -> None:
     )
 
     assert response.status_code == 200
+    assert response.headers["Cache-Control"] == "no-store"
     assert response.json()["email"] == "owner@example.com"
 
 
@@ -107,6 +115,26 @@ def test_cookie_auth_works_when_enabled(
     assert response.json()["email"] == "owner@example.com"
 
 
+def test_cookie_auth_uses_httponly_and_configurable_security_flags(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "auth_cookie_enabled", True)
+    monkeypatch.setattr(settings, "auth_cookie_secure", True)
+    monkeypatch.setattr(settings, "auth_cookie_samesite", "strict")
+
+    response = client.post(
+        "/auth/login",
+        json={"email": "owner@example.com", "password": "owner-password"},
+    )
+
+    assert response.status_code == 200
+    set_cookie = response.headers["set-cookie"]
+    assert "HttpOnly" in set_cookie
+    assert "Secure" in set_cookie
+    assert "SameSite=strict" in set_cookie
+    assert "Max-Age=43200" in set_cookie
+
+
 def test_logout_clears_auth_cookie(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -116,6 +144,7 @@ def test_logout_clears_auth_cookie(
     response = client.post("/auth/logout")
 
     assert response.status_code == 204
+    assert response.headers["Cache-Control"] == "no-store"
     assert settings.auth_cookie_name not in client.cookies
     assert "Max-Age=0" in response.headers["set-cookie"]
 
