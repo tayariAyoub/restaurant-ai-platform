@@ -194,6 +194,11 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `DEMO_OWNER_PASSWORD` | Demo restaurant-owner password |
 | `FRONTEND_URL` | Allowed frontend origin |
 | `BACKEND_INTERNAL_URL` | Backend URL used by the Next.js proxy |
+| `RATE_LIMIT_CHAT_PER_MINUTE` | Public chat messages allowed per minute per IP; defaults to `10` for demos |
+| `RATE_LIMIT_RESERVATIONS_PER_MINUTE` | Public reservation requests allowed per minute per IP |
+| `RATE_LIMIT_ORDERS_PER_MINUTE` | Public order submissions allowed per minute per IP |
+| `RATE_LIMIT_PUBLIC_PER_MINUTE` | General public API requests allowed per minute per IP |
+| `TRUST_PROXY_HEADERS` | Set to `true` only behind a trusted reverse proxy that controls forwarded IP headers |
 
 Generate a strong JWT secret in PowerShell:
 

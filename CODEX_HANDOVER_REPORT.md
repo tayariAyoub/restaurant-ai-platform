@@ -3,6 +3,54 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Chat API Rate Limiting And Abuse Protection
+
+Audit findings:
+
+- A simple in-memory rate limiter already exists in `backend/app/core/rate_limit.py`.
+- Public chat endpoints are already protected through route dependencies in `backend/app/api/public.py`:
+  - `POST /api/restaurants/{slug}/chat`
+  - `POST /api/chat`
+- Public non-chat endpoints use separate reservation, order, and general-public rate-limit buckets.
+- Limits are configurable through environment variables in `.env.example` and Docker Compose.
+- Trusted proxy headers are disabled by default through `TRUST_PROXY_HEADERS=false`.
+- Admin routes are not wired into the public limiter, so normal dashboard usage is not accidentally blocked.
+
+Implementation summary:
+
+- Kept the existing MVP-safe in-memory limiter instead of adding Redis or rewriting middleware.
+- Added backend tests proving:
+  - default chat protection is `10` messages per minute per IP.
+  - chat and general public API limits use separate buckets.
+  - chat limiting is per IP when trusted proxy headers are explicitly enabled.
+- Documented rate-limit environment variables in `README.md`.
+- Left frontend, backend API behavior, database schema, admin routes, and OpenAI integration unchanged.
+
+Files changed:
+
+- `backend/tests/test_rate_limit.py`
+- `README.md`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `23 passed, 63 warnings`.
+
+Frontend validation:
+
+- Not run, because this milestone did not touch frontend code.
+
+Remaining recommendations:
+
+- Keep this in-memory limiter for local demos and single-process MVP deployments.
+- Before multi-instance production, move rate-limit state to Redis or another shared store.
+- Add basic observability dashboards for HTTP 429 counts and chat request volume before paid demos at scale.
+
 ## Customer Experience Design Polish - Public Restaurant Website
 
 Audit decision:

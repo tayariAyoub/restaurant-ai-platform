@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.core.rate_limit import (
     RateLimitRule,
+    chat_rule,
     client_ip,
     limiter,
     public_rule,
@@ -84,3 +85,51 @@ def test_rate_limit_can_use_trusted_forwarded_for(monkeypatch: pytest.MonkeyPatc
 
 def test_public_default_limit_is_demo_friendly() -> None:
     assert public_rule().limit == 100
+
+
+def test_chat_default_limit_protects_openai_usage_without_blocking_demo() -> None:
+    assert chat_rule().limit == 10
+
+
+def test_chat_and_general_public_limits_use_separate_buckets() -> None:
+    app = FastAPI()
+
+    @app.post("/chat", dependencies=[rate_limit(lambda: RateLimitRule("chat_bucket", 1))])
+    def chat() -> dict[str, str]:
+        return {"status": "chat-ok"}
+
+    @app.get("/restaurant", dependencies=[rate_limit(lambda: RateLimitRule("public_bucket", 1))])
+    def restaurant() -> dict[str, str]:
+        return {"status": "public-ok"}
+
+    client = TestClient(app)
+
+    assert client.post("/chat").status_code == 200
+    assert client.post("/chat").status_code == 429
+    assert client.get("/restaurant").status_code == 200
+
+
+def test_same_chat_limit_applies_per_ip_not_globally(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "trust_proxy_headers", True)
+    app = FastAPI()
+
+    @app.post("/restaurants/bella-napoli/chat", dependencies=[rate_limit(lambda: RateLimitRule("chat_per_ip", 1))])
+    def restaurant_chat() -> dict[str, str]:
+        return {"status": "chat-ok"}
+
+    client = TestClient(app)
+
+    assert client.post(
+        "/restaurants/bella-napoli/chat",
+        headers={"X-Forwarded-For": "203.0.113.10"},
+    ).status_code == 200
+    assert client.post(
+        "/restaurants/bella-napoli/chat",
+        headers={"X-Forwarded-For": "203.0.113.10"},
+    ).status_code == 429
+    assert client.post(
+        "/restaurants/bella-napoli/chat",
+        headers={"X-Forwarded-For": "203.0.113.11"},
+    ).status_code == 200
