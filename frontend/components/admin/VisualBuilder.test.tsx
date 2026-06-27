@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -54,6 +54,21 @@ const themes = [
     menu_style: "cards",
     gallery_style: "grid",
   },
+  {
+    id: 2,
+    key: "japanese",
+    name: "Japanese Minimal",
+    description: "Quiet sushi counter precision",
+    primary_color: "#111111",
+    secondary_color: "#b23a31",
+    background_color: "#fafafa",
+    text_color: "#171717",
+    font_family: "Inter",
+    button_style: "square",
+    homepage_style: "minimal",
+    menu_style: "minimal",
+    gallery_style: "filmstrip",
+  },
 ];
 
 const restaurantOverview = [{
@@ -105,6 +120,11 @@ describe("visual restaurant builder", () => {
         const payload = JSON.parse(String(options.body));
         return Promise.resolve({ ...bellaNapoli, ...payload });
       }
+      if (path === "/admin/restaurants/1/image-url" && options?.method === "POST") {
+        const payload = JSON.parse(String(options.body));
+        return Promise.resolve({ id: 99, restaurant_id: 1, sort_order: 2, created_at: "2026-01-01T00:00:00Z", ...payload });
+      }
+      if (path.startsWith("/admin/restaurants/1/images/") && options?.method === "DELETE") return Promise.resolve(undefined);
       return Promise.resolve({});
     });
   });
@@ -158,5 +178,85 @@ describe("visual restaurant builder", () => {
         }),
       );
     });
+  });
+
+  it("shows unsaved state, applies a premium theme, and saves it", async () => {
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    expect(await screen.findByDisplayValue(bellaNapoli.name)).toBeVisible();
+    expect(screen.getAllByText("Saved").length).toBeGreaterThan(0);
+
+    await user.click(screen.getByRole("button", { name: /brand/i }));
+    await user.click(screen.getByRole("button", { name: /japanese minimal/i }));
+
+    expect(screen.getByText("Unsaved")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(adminRequestMock).toHaveBeenCalledWith(
+        "/admin/restaurants/1",
+        "token-123",
+        expect.objectContaining({
+          method: "PUT",
+          body: expect.stringContaining('"theme_id":2'),
+        }),
+      );
+    });
+    expect(await screen.findByText(/website saved/i)).toBeVisible();
+  });
+
+  it("shows image previews, broken-image fallback, and clear controls", async () => {
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    expect(await screen.findByDisplayValue(bellaNapoli.name)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /brand/i }));
+
+    const heroPreview = screen.getByAltText("hero preview");
+    expect(heroPreview).toBeVisible();
+
+    fireEvent.error(heroPreview);
+
+    expect(await screen.findByText(/image url could not load/i)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /clear hero image url/i }));
+    expect(screen.getByLabelText(/hero image url/i)).toHaveValue("");
+    expect(screen.getByText("Unsaved")).toBeVisible();
+  });
+
+  it("warns before leaving with unsaved changes", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    const nameField = await screen.findByDisplayValue(bellaNapoli.name);
+    await user.type(nameField, " Updated");
+    await user.click(screen.getByRole("link", { name: /back to restaurants/i }));
+
+    expect(confirmSpy).toHaveBeenCalledWith("You have unsaved changes. Leave this page anyway?");
+    confirmSpy.mockRestore();
+  });
+
+  it("disables save actions while saving", async () => {
+    let resolveSave!: (value: typeof bellaNapoli) => void;
+    adminRequestMock.mockImplementation((path: string, _token: string, options?: RequestInit) => {
+      if (path === "/auth/me") return Promise.resolve(superAdmin);
+      if (path === "/admin/themes") return Promise.resolve(themes);
+      if (path === "/admin/restaurants-overview") return Promise.resolve(restaurantOverview);
+      if (path === "/admin/users") return Promise.resolve([owner]);
+      if (path === "/admin/restaurants/1" && !options) return Promise.resolve(bellaNapoli);
+      if (path === "/admin/restaurants/1" && options?.method === "PUT") {
+        return new Promise((resolve) => {
+          resolveSave = resolve;
+        });
+      }
+      return Promise.resolve({});
+    });
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    const nameField = await screen.findByDisplayValue(bellaNapoli.name);
+    await user.type(nameField, " Updated");
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    expect(screen.getByRole("button", { name: /saving/i })).toBeDisabled();
+    resolveSave(bellaNapoli);
+    expect(await screen.findByText(/website saved/i)).toBeVisible();
   });
 });

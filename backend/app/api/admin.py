@@ -37,6 +37,7 @@ from app.schemas import (
     DriverOut,
     DocumentOut,
     ImageOut,
+    ImageUrlCreate,
     MenuItemCreate,
     MenuItemOut,
     MenuItemUpdate,
@@ -471,6 +472,31 @@ async def upload_image(
         restaurant.logo_url = stored.url
     elif image_type == "hero":
         restaurant.hero_image = stored.url
+    db.add(image)
+    db.commit()
+    db.refresh(image)
+    return image
+
+
+@router.post("/restaurants/{restaurant_id}/image-url", response_model=ImageOut, status_code=201)
+def add_image_url(
+    restaurant_id: int,
+    payload: ImageUrlCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> RestaurantImage:
+    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    image = RestaurantImage(
+        restaurant_id=restaurant_id,
+        image_type=payload.image_type,
+        url=payload.url.strip(),
+        alt_text=payload.alt_text.strip(),
+        sort_order=payload.sort_order if payload.sort_order is not None else len(restaurant.images),
+    )
+    if image.image_type == "logo":
+        restaurant.logo_url = image.url
+    elif image.image_type == "hero":
+        restaurant.hero_image = image.url
     db.add(image)
     db.commit()
     db.refresh(image)

@@ -19,10 +19,11 @@ from app.models import (
     OrderItem,
     OrderStatus,
     Restaurant,
+    RestaurantImage,
     User,
 )
 from app.services import chat
-from app.schemas import DeliveryAddressCreate, OrderCreate, OrderItemCreate, RestaurantCreate
+from app.schemas import DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
 
 
 @pytest.fixture()
@@ -194,6 +195,37 @@ def test_super_admin_can_assign_new_restaurant_owner(db: Session) -> None:
     )
 
     assert created.owner_id == owner_one.id
+
+
+def test_image_url_creation_is_restaurant_scoped(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+
+    image = admin.add_image_url(
+        restaurant_one.id,
+        ImageUrlCreate(image_type="gallery", url="https://cdn.example.com/dining-room.jpg", alt_text="Dining room"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert image.restaurant_id == restaurant_one.id
+    assert image.image_type == "gallery"
+    assert db.query(RestaurantImage).filter_by(restaurant_id=restaurant_one.id).count() == 1
+    with pytest.raises(HTTPException) as error:
+        admin.add_image_url(
+            restaurant_two.id,
+            ImageUrlCreate(image_type="gallery", url="https://cdn.example.com/private.jpg"),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 403
+    assert db.query(RestaurantImage).filter_by(restaurant_id=restaurant_two.id).count() == 0
+    assert admin.add_image_url(
+        restaurant_two.id,
+        ImageUrlCreate(image_type="hero", url="https://cdn.example.com/hero.jpg"),
+        db=db,
+        user=owner_two,
+    ).url == "https://cdn.example.com/hero.jpg"
 
 
 def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:

@@ -3,6 +3,121 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 5.1 - Visual Builder Polish And Menu Builder Preparation
+
+Scope:
+
+- Visual Builder UX polish.
+- URL-based image preview/editing safety.
+- Menu Builder preparation only; no full menu builder was implemented.
+- No Phase 4 AI work was started.
+
+Audit findings:
+
+- The Phase 5 Visual Builder was functional but still felt like an internal form rather than a premium agency workspace.
+- Save state was implicit; users could edit fields without a clear unsaved/saved indicator.
+- Leaving the builder with unsaved changes was not protected.
+- Theme cards worked but needed stronger mood labels, richer swatches, and clearer active/select states.
+- Logo and hero image fields were plain URL inputs without visual confidence.
+- Gallery images are stored as `RestaurantImage` records, not restaurant fields, so real gallery URL editing needed a small API path instead of a local-only frontend field.
+- The existing menu editor already supports categories, menu items, prices, item image URLs, sold-out availability, vegan/vegetarian/halal tags, allergens, and category sort order. The next menu builder should reuse these APIs and contracts.
+
+Implementation summary:
+
+- Added visible save state:
+  - `Saved`
+  - `Unsaved`
+  - `Saving`
+- Added unsaved-changes protection:
+  - browser/tab unload warning
+  - guarded internal links for back/open-public-site actions
+- Improved builder actions:
+  - clearer `Back to restaurants`
+  - clearer `Open public site`
+  - disabled save button when there are no unsaved changes
+  - loading state while saving/publishing
+  - success/error message banners
+  - multi-message validation banner
+- Improved sidebar:
+  - numbered sections
+  - readiness checks
+  - launch progress
+  - save-state dot
+- Improved theme selector:
+  - premium visual cards
+  - mood labels
+  - color swatches
+  - active selected state
+  - select/selected pill
+- Improved image URL editing:
+  - logo preview
+  - hero preview
+  - broken-image fallback
+  - clear image URL actions
+  - persisted gallery URL add/remove flow
+- Added a schema-neutral backend endpoint for URL image records:
+  - `POST /admin/restaurants/{restaurant_id}/image-url`
+  - respects existing restaurant access control
+  - updates logo/hero restaurant fields when the image type is `logo` or `hero`
+  - stores gallery/food URLs as `RestaurantImage` records
+- Added tests for builder rendering, theme selection, image fallback/clear behavior, unsaved-warning behavior, save loading state, and image URL tenant scoping.
+
+Files changed:
+
+- `backend/app/api/admin.py`
+- `backend/app/schemas.py`
+- `backend/tests/test_tenant_safety.py`
+- `frontend/components/admin/VisualBuilder.tsx`
+- `frontend/components/admin/VisualBuilder.test.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm.cmd test
+pnpm.cmd build
+
+cd backend
+python -m pytest
+```
+
+Results:
+
+- Frontend tests: `8` test files passed, `32` tests passed.
+- Frontend build: passed.
+- Backend tests: `33 passed, 67 warnings`.
+
+Phase 5.5 Menu Builder recommendation:
+
+1. Reuse existing backend contracts:
+   - `POST /admin/restaurants/{id}/categories`
+   - `DELETE /admin/restaurants/{id}/categories/{category_id}`
+   - `POST /admin/restaurants/{id}/menu-items`
+   - `PUT /admin/restaurants/{id}/menu-items/{item_id}`
+   - `DELETE /admin/restaurants/{id}/menu-items/{item_id}`
+2. Build the menu builder as a dedicated Visual Builder section or nested route, not as a second unrelated editor.
+3. MVP scope:
+   - category list and add/edit/delete
+   - menu item add/edit/delete
+   - price editing
+   - dietary badges: vegan, vegetarian, halal
+   - allergen notes
+   - sold-out / available toggle using `is_available`
+   - item image URL field with preview/fallback
+4. Defer until after MVP:
+   - chef recommendation toggle, because no backend field exists yet
+   - drag/drop ordering, because item-level sort order does not exist yet
+   - image upload inside menu builder, because upload UX should reuse the safer storage abstraction
+   - bulk import, translations, and nutrition data
+
+Remaining risks:
+
+- Formal Alembic migrations are still needed before production.
+- URL-based gallery records do not validate remote image dimensions or availability beyond client-side preview.
+- The builder still does not autosave drafts.
+- A full menu builder should be carefully scoped to avoid duplicating the existing `RestaurantEditor` menu surface.
+
 ## Phase 5 - Visual Restaurant Builder
 
 Scope:

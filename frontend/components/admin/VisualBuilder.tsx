@@ -2,8 +2,10 @@
 
 import {
   ArrowLeft,
+  AlertCircle,
   CheckCircle2,
   Eye,
+  ExternalLink,
   Globe2,
   Image as ImageIcon,
   LayoutTemplate,
@@ -16,19 +18,21 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  Trash2,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 
 import AdminShell from "@/components/admin/AdminShell";
 import { adminRequest } from "@/lib/api";
 import { getToken } from "@/lib/auth";
-import type { Restaurant, RestaurantOverview, Theme, User } from "@/lib/types";
+import type { Restaurant, RestaurantImage, RestaurantOverview, Theme, User } from "@/lib/types";
 
 type BuilderMode = "list" | "create" | "edit";
 type BuilderSection = "basics" | "brand" | "content" | "services" | "preview";
 type PreviewMode = "desktop" | "mobile";
+type ToastState = { type: "success" | "error"; message: string } | null;
 
 type BuilderDraft = {
   id?: number;
@@ -68,6 +72,7 @@ type BuilderDraft = {
   dine_in_enabled: boolean;
   chatbot_enabled: boolean;
   is_published: boolean;
+  images: RestaurantImage[];
 };
 
 const sections: Array<{ id: BuilderSection; label: string; description: string }> = [
@@ -133,6 +138,7 @@ const blankDraft: BuilderDraft = {
   dine_in_enabled: true,
   chatbot_enabled: true,
   is_published: false,
+  images: [],
 };
 
 export default function VisualBuilder({ restaurantId }: { restaurantId?: number }) {
@@ -144,9 +150,11 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
   const [themes, setThemes] = useState<Theme[]>([]);
   const [restaurants, setRestaurants] = useState<RestaurantOverview[]>([]);
   const [draft, setDraft] = useState<BuilderDraft>(blankDraft);
+  const [savedSnapshot, setSavedSnapshot] = useState(() => serializeDraft(blankDraft));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState("");
+  const [toast, setToast] = useState<ToastState>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -176,7 +184,9 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
         if (restaurantId) {
           const restaurant = await adminRequest<Restaurant>(`/admin/restaurants/${restaurantId}`, token);
           if (!mounted) return;
-          setDraft(draftFromRestaurant(restaurant));
+          const loadedDraft = draftFromRestaurant(restaurant);
+          setDraft(loadedDraft);
+          setSavedSnapshot(serializeDraft(loadedDraft));
           setMode("edit");
         }
       } catch (loadError) {
@@ -194,16 +204,34 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
 
   const completion = useMemo(() => buildCompletion(draft), [draft]);
   const selectedTheme = themes.find((theme) => theme.id === draft.theme_id);
+  const draftSnapshot = useMemo(() => serializeDraft(draft), [draft]);
+  const hasUnsavedChanges = draftSnapshot !== savedSnapshot;
+  const saveState = saving ? "saving" : hasUnsavedChanges ? "unsaved" : "saved";
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || saving) return;
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeUnload);
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+  }, [hasUnsavedChanges, saving]);
 
   function startCreate() {
-    setDraft(blankDraft);
+    const nextDraft = { ...blankDraft, images: [] };
+    setDraft(nextDraft);
+    setSavedSnapshot(serializeDraft(nextDraft));
     setMode("create");
     setSection("basics");
-    setStatus("");
+    setToast(null);
+    setValidationErrors([]);
     setError("");
   }
 
   function updateDraft(values: Partial<BuilderDraft>) {
+    setToast(null);
+    setValidationErrors([]);
     setDraft((current) => {
       const next = { ...current, ...values };
       if ("name" in values && (!current.slug || current.slug === slugify(current.name))) {
@@ -235,14 +263,15 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
 
   async function saveDraft(options: { publish?: boolean } = {}) {
     setError("");
-    setStatus("");
+    setToast(null);
 
-    const validationError = validateDraft(draft);
-    if (validationError) {
-      setError(validationError);
+    const errors = validateDraft(draft);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
       setSection("basics");
       return;
     }
+    setValidationErrors([]);
 
     setSaving(true);
     try {
@@ -263,12 +292,66 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
               body: JSON.stringify(payload),
             });
 
-      setDraft(draftFromRestaurant(saved));
+      const nextDraft = draftFromRestaurant(saved);
+      setDraft(nextDraft);
+      setSavedSnapshot(serializeDraft(nextDraft));
       setMode("edit");
-      setStatus(options.publish ? "Website published. The public page is ready to review." : "Website saved.");
+      setToast({
+        type: "success",
+        message: options.publish ? "Website published. Open the public site to review the launch." : "Website saved.",
+      });
       setRestaurants(await adminRequest<RestaurantOverview[]>("/admin/restaurants-overview", token));
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save restaurant website.");
+      setToast({
+        type: "error",
+        message: saveError instanceof Error ? saveError.message : "Could not save restaurant website.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addGalleryImage(url: string, altText: string) {
+    if (!draft.id) {
+      setToast({ type: "error", message: "Save the restaurant before adding gallery images." });
+      return;
+    }
+    setSaving(true);
+    setToast(null);
+    try {
+      const token = getToken();
+      await adminRequest<RestaurantImage>(`/admin/restaurants/${draft.id}/image-url`, token, {
+        method: "POST",
+        body: JSON.stringify({ image_type: "gallery", url, alt_text: altText }),
+      });
+      const updated = await adminRequest<Restaurant>(`/admin/restaurants/${draft.id}`, token);
+      setDraft((current) => ({ ...current, images: updated.images }));
+      setToast({ type: "success", message: "Gallery image URL added." });
+    } catch (galleryError) {
+      setToast({
+        type: "error",
+        message: galleryError instanceof Error ? galleryError.message : "Could not add gallery image URL.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function clearGalleryImage(imageId: number) {
+    if (!draft.id) return;
+    setSaving(true);
+    setToast(null);
+    try {
+      const token = getToken();
+      await adminRequest(`/admin/restaurants/${draft.id}/images/${imageId}`, token, { method: "DELETE" });
+      const updated = await adminRequest<Restaurant>(`/admin/restaurants/${draft.id}`, token);
+      setDraft((current) => ({ ...current, images: updated.images }));
+      setToast({ type: "success", message: "Gallery image removed." });
+    } catch (galleryError) {
+      setToast({
+        type: "error",
+        message: galleryError instanceof Error ? galleryError.message : "Could not remove gallery image.",
+      });
     } finally {
       setSaving(false);
     }
@@ -295,26 +378,33 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
               Create, polish, preview, and publish a premium restaurant website from the fields already used by RestaurantAI.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {mode !== "list" && <SaveStatusBadge state={saveState} />}
             {mode !== "list" && (
-              <Link href="/admin/builder" className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold shadow-sm">
-                <ArrowLeft size={16} /> All websites
-              </Link>
+              <GuardedLink
+                href="/admin/builder"
+                hasUnsavedChanges={hasUnsavedChanges}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold shadow-sm"
+              >
+                <ArrowLeft size={16} /> Back to restaurants
+              </GuardedLink>
             )}
             {draft.slug && (
-              <Link
+              <GuardedLink
                 href={`/restaurants/${draft.slug}`}
+                hasUnsavedChanges={hasUnsavedChanges}
                 target="_blank"
                 className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm"
               >
-                <Eye size={16} /> Preview live site
-              </Link>
+                <ExternalLink size={16} /> Open public site
+              </GuardedLink>
             )}
           </div>
         </div>
 
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">{error}</div>}
-        {status && <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-800">{status}</div>}
+        {error && <MessageBanner type="error" message={error} />}
+        {toast && <MessageBanner type={toast.type} message={toast.message} />}
+        {validationErrors.length > 0 && <ValidationBanner errors={validationErrors} />}
 
         {mode === "list" ? (
           <BuilderLanding
@@ -326,25 +416,40 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
           <div className="grid gap-6 xl:grid-cols-[260px_1fr_360px]">
             <aside className="rounded-3xl border border-black/5 bg-white p-4 shadow-sm xl:sticky xl:top-24 xl:self-start">
               <div className="rounded-2xl bg-slate-950 p-4 text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">Progress</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/45">Progress</p>
+                  <SaveStatusDot state={saveState} />
+                </div>
                 <p className="mt-2 text-3xl font-semibold">{completion.score}%</p>
+                <p className="mt-1 text-xs text-white/50">Launch readiness</p>
                 <div className="mt-3 h-2 rounded-full bg-white/10">
                   <div className="h-2 rounded-full bg-orange-400" style={{ width: `${completion.score}%` }} />
                 </div>
               </div>
               <nav className="mt-4 space-y-2">
-                {sections.map((item) => (
+                {sections.map((item, index) => {
+                  const matchingItems = completion.items.filter((completionItem) => completionItem.section === item.id);
+                  const sectionReady = matchingItems.length > 0 && matchingItems.every((completionItem) => completionItem.done);
+                  return (
                   <button
                     key={item.id}
                     onClick={() => setSection(item.id)}
-                    className={`w-full rounded-2xl px-4 py-3 text-left transition ${
+                    className={`flex w-full items-start gap-3 rounded-2xl px-4 py-3 text-left transition ${
                       section === item.id ? "bg-slate-950 text-white shadow-lg" : "bg-slate-50 text-slate-700 hover:bg-slate-100"
                     }`}
                   >
-                    <span className="block text-sm font-semibold">{item.label}</span>
-                    <span className={`mt-1 block text-xs ${section === item.id ? "text-white/55" : "text-slate-400"}`}>{item.description}</span>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                      section === item.id ? "bg-white text-slate-950" : sectionReady ? "bg-green-100 text-green-700" : "bg-white text-slate-400"
+                    }`}>
+                      {sectionReady ? <CheckCircle2 size={15} /> : index + 1}
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold">{item.label}</span>
+                      <span className={`mt-1 block text-xs ${section === item.id ? "text-white/55" : "text-slate-400"}`}>{item.description}</span>
+                    </span>
                   </button>
-                ))}
+                  );
+                })}
               </nav>
             </aside>
 
@@ -361,22 +466,26 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
                 onApplyTheme={applyTheme}
                 onHoursChange={updateHours}
                 onSectionChange={setSection}
+                onAddGalleryImage={addGalleryImage}
+                onClearGalleryImage={clearGalleryImage}
+                saving={saving}
               />
               <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5">
                 <button
                   onClick={() => saveDraft()}
-                  disabled={saving}
+                  disabled={saving || !hasUnsavedChanges}
                   className="inline-flex min-h-12 items-center gap-2 rounded-xl border bg-white px-5 py-3 text-sm font-semibold shadow-sm disabled:opacity-60"
                 >
                   {saving ? <Loader2 size={17} className="animate-spin" /> : <Save size={17} />}
-                  Save changes
+                  {saving ? "Saving..." : hasUnsavedChanges ? "Save changes" : "Saved"}
                 </button>
                 <button
                   onClick={() => saveDraft({ publish: true })}
                   disabled={saving}
                   className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-60"
                 >
-                  <Globe2 size={17} /> Publish website
+                  {saving ? <Loader2 size={17} className="animate-spin" /> : <Globe2 size={17} />}
+                  {saving ? "Publishing..." : "Publish website"}
                 </button>
               </div>
             </section>
@@ -509,6 +618,85 @@ function BuilderLanding({
   );
 }
 
+function GuardedLink({
+  href,
+  hasUnsavedChanges,
+  className,
+  target,
+  children,
+}: {
+  href: string;
+  hasUnsavedChanges: boolean;
+  className: string;
+  target?: string;
+  children: ReactNode;
+}) {
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (!hasUnsavedChanges) return;
+    const shouldLeave = window.confirm("You have unsaved changes. Leave this page anyway?");
+    if (!shouldLeave) event.preventDefault();
+  }
+
+  return (
+    <Link href={href} target={target} className={className} onClick={handleClick}>
+      {children}
+    </Link>
+  );
+}
+
+function SaveStatusBadge({ state }: { state: "saved" | "saving" | "unsaved" }) {
+  const copy = {
+    saved: ["Saved", "bg-green-50 text-green-700 border-green-100"],
+    saving: ["Saving", "bg-amber-50 text-amber-800 border-amber-100"],
+    unsaved: ["Unsaved", "bg-orange-50 text-orange-800 border-orange-100"],
+  }[state];
+
+  return (
+    <span className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${copy[1]}`}>
+      <SaveStatusDot state={state} /> {copy[0]}
+    </span>
+  );
+}
+
+function SaveStatusDot({ state }: { state: "saved" | "saving" | "unsaved" }) {
+  return (
+    <span
+      className={`h-2.5 w-2.5 rounded-full ${
+        state === "saved" ? "bg-green-500" : state === "saving" ? "animate-pulse bg-amber-500" : "bg-orange-500"
+      }`}
+      aria-hidden="true"
+    />
+  );
+}
+
+function MessageBanner({ type, message }: { type: "success" | "error"; message: string }) {
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-2xl border p-4 text-sm font-semibold ${
+        type === "success" ? "border-green-200 bg-green-50 text-green-800" : "border-red-200 bg-red-50 text-red-800"
+      }`}
+    >
+      {type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+      <span>{message}</span>
+    </div>
+  );
+}
+
+function ValidationBanner({ errors }: { errors: string[] }) {
+  return (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+      <div className="flex items-center gap-2 font-semibold">
+        <AlertCircle size={18} /> Please fix these details before saving.
+      </div>
+      <ul className="mt-3 space-y-1">
+        {errors.map((error) => (
+          <li key={error}>- {error}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function BuilderForm({
   section,
   draft,
@@ -521,6 +709,9 @@ function BuilderForm({
   onApplyTheme,
   onHoursChange,
   onSectionChange,
+  onAddGalleryImage,
+  onClearGalleryImage,
+  saving,
 }: {
   section: BuilderSection;
   draft: BuilderDraft;
@@ -533,6 +724,9 @@ function BuilderForm({
   onApplyTheme: (theme: Theme) => void;
   onHoursChange: (day: string, value: string) => void;
   onSectionChange: (section: BuilderSection) => void;
+  onAddGalleryImage: (url: string, altText: string) => Promise<void>;
+  onClearGalleryImage: (imageId: number) => Promise<void>;
+  saving: boolean;
 }) {
   if (section === "basics") {
     return (
@@ -576,21 +770,12 @@ function BuilderForm({
         <SectionHeader icon={Palette} title="Brand and visual identity" copy="Choose a premium mood, then adjust colors and images for the restaurant." />
         <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {themes.map((theme) => (
-            <button
+            <ThemeCard
               key={theme.id}
-              onClick={() => onApplyTheme(theme)}
-              className={`rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-lg ${
-                draft.theme_id === theme.id ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white"
-              }`}
-            >
-              <div className="flex gap-2">
-                {[theme.primary_color, theme.secondary_color, theme.background_color].map((color) => (
-                  <span key={color} className="h-7 w-7 rounded-full border border-black/10" style={{ backgroundColor: color }} />
-                ))}
-              </div>
-              <p className="mt-4 font-semibold">{theme.name}</p>
-              <p className={`mt-1 text-sm leading-6 ${draft.theme_id === theme.id ? "text-white/62" : "text-slate-500"}`}>{theme.description}</p>
-            </button>
+              theme={theme}
+              active={draft.theme_id === theme.id}
+              onSelect={() => onApplyTheme(theme)}
+            />
           ))}
         </div>
 
@@ -601,14 +786,31 @@ function BuilderForm({
             <ColorField label="Secondary" value={draft.secondary_color} onChange={(secondary_color) => onChange({ secondary_color })} />
             <ColorField label="Background" value={draft.background_color} onChange={(background_color) => onChange({ background_color })} />
             <ColorField label="Text" value={draft.text_color} onChange={(text_color) => onChange({ text_color })} />
-            <Field label="Logo URL" value={draft.logo_url} placeholder="https://..." onChange={(logo_url) => onChange({ logo_url })} />
-            <Field label="Hero image URL" value={draft.hero_image} placeholder="https://..." onChange={(hero_image) => onChange({ hero_image })} />
+            <ImageUrlField
+              label="Logo URL"
+              value={draft.logo_url}
+              preview="logo"
+              placeholder="https://..."
+              fallbackText="Logo preview"
+              onChange={(logo_url) => onChange({ logo_url })}
+              onClear={() => onChange({ logo_url: "" })}
+            />
+            <ImageUrlField
+              label="Hero image URL"
+              value={draft.hero_image}
+              preview="hero"
+              placeholder="https://..."
+              fallbackText="Hero preview"
+              onChange={(hero_image) => onChange({ hero_image })}
+              onClear={() => onChange({ hero_image: "" })}
+            />
           </div>
-          {draft.id && (
-            <Link href={`/admin/restaurants/${draft.id}/images`} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
-              <ImageIcon size={16} /> Open image manager
-            </Link>
-          )}
+          <GalleryUrlManager
+            draft={draft}
+            saving={saving}
+            onAddGalleryImage={onAddGalleryImage}
+            onClearGalleryImage={onClearGalleryImage}
+          />
         </div>
       </div>
     );
@@ -710,6 +912,255 @@ function SectionHeader({
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{copy}</p>
       </div>
     </div>
+  );
+}
+
+function ThemeCard({
+  theme,
+  active,
+  onSelect,
+}: {
+  theme: Theme;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`group overflow-hidden rounded-3xl border text-left transition hover:-translate-y-0.5 hover:shadow-xl ${
+        active ? "border-slate-950 bg-slate-950 text-white shadow-2xl" : "border-slate-200 bg-white"
+      }`}
+    >
+      <div
+        className="h-24"
+        style={{
+          background: `linear-gradient(135deg, ${theme.primary_color}, ${theme.secondary_color} 52%, ${theme.background_color})`,
+        }}
+      />
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${active ? "text-white/45" : "text-slate-400"}`}>
+              {themeMood(theme)}
+            </p>
+            <p className="mt-1 text-lg font-semibold">{theme.name}</p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${active ? "bg-white text-slate-950" : "bg-slate-100 text-slate-500"}`}>
+            {active ? "Selected" : "Select"}
+          </span>
+        </div>
+        <p className={`mt-3 min-h-12 text-sm leading-6 ${active ? "text-white/62" : "text-slate-500"}`}>
+          {theme.description || themeDescriptor(theme)}
+        </p>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex gap-2">
+            {[theme.primary_color, theme.secondary_color, theme.background_color, theme.text_color].map((color) => (
+              <span key={color} className="h-6 w-6 rounded-full border border-black/10 shadow-sm" style={{ backgroundColor: color }} />
+            ))}
+          </div>
+          <span className={`text-xs font-semibold ${active ? "text-white/55" : "text-slate-400"}`}>
+            {theme.menu_style || "menu"} / {theme.gallery_style || "gallery"}
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function ImageUrlField({
+  label,
+  value,
+  preview,
+  fallbackText,
+  placeholder,
+  onChange,
+  onClear,
+}: {
+  label: string;
+  value: string;
+  preview: "logo" | "hero";
+  fallbackText: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+}) {
+  const [broken, setBroken] = useState(false);
+  const inputId = `${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-input`;
+
+  useEffect(() => {
+    setBroken(false);
+  }, [value]);
+
+  return (
+    <div className="grid gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={inputId} className="text-sm font-semibold text-slate-700">{label}</label>
+        {value && (
+          <button type="button" onClick={onClear} className="text-xs font-semibold text-red-600" aria-label={`Clear ${label}`}>
+            Clear
+          </button>
+        )}
+      </div>
+      <ImagePreview
+        src={value}
+        broken={broken}
+        onBroken={() => setBroken(true)}
+        fallbackText={broken ? "Image URL could not load" : fallbackText}
+        variant={preview}
+      />
+      <input
+        id={inputId}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="min-h-12 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-normal text-slate-900 shadow-sm outline-none transition focus:border-slate-400 sm:text-sm"
+      />
+    </div>
+  );
+}
+
+function GalleryUrlManager({
+  draft,
+  saving,
+  onAddGalleryImage,
+  onClearGalleryImage,
+}: {
+  draft: BuilderDraft;
+  saving: boolean;
+  onAddGalleryImage: (url: string, altText: string) => Promise<void>;
+  onClearGalleryImage: (imageId: number) => Promise<void>;
+}) {
+  const [url, setUrl] = useState("");
+  const [altText, setAltText] = useState("");
+  const galleryImages = draft.images.filter((image) => ["gallery", "food"].includes(image.image_type));
+
+  async function submitGalleryUrl() {
+    if (!url.trim()) return;
+    await onAddGalleryImage(url.trim(), altText.trim());
+    setUrl("");
+    setAltText("");
+  }
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold">Gallery URLs</p>
+          <p className="mt-1 text-sm text-slate-500">Add polished gallery images by URL for now. Uploads stay in the image manager.</p>
+        </div>
+        {draft.id && (
+          <Link href={`/admin/restaurants/${draft.id}/images`} className="inline-flex min-h-10 items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm font-semibold">
+            <ImageIcon size={15} /> Image manager
+          </Link>
+        )}
+      </div>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Field label="Gallery image URL" value={url} placeholder="https://..." onChange={setUrl} />
+        <Field label="Alt text" value={altText} placeholder={draft.name || "Dining room"} onChange={setAltText} />
+      </div>
+      <button
+        type="button"
+        onClick={submitGalleryUrl}
+        disabled={saving || !draft.id || !url.trim()}
+        className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        {saving ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+        Add gallery URL
+      </button>
+      {!draft.id && <p className="mt-2 text-xs text-slate-500">Save the restaurant before adding gallery images.</p>}
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        {galleryImages.length === 0 ? (
+          <div className="rounded-2xl border border-dashed p-5 text-sm text-slate-500 sm:col-span-3">
+            No gallery images yet. Add a URL after the restaurant is saved.
+          </div>
+        ) : (
+          galleryImages.map((image) => (
+            <GalleryImageCard key={image.id} image={image} saving={saving} onClear={() => onClearGalleryImage(image.id)} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GalleryImageCard({
+  image,
+  saving,
+  onClear,
+}: {
+  image: RestaurantImage;
+  saving: boolean;
+  onClear: () => void;
+}) {
+  const [broken, setBroken] = useState(false);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50">
+      <ImagePreview
+        src={image.url}
+        broken={broken}
+        onBroken={() => setBroken(true)}
+        fallbackText="Gallery image could not load"
+        variant="gallery"
+      />
+      <div className="flex items-center justify-between gap-2 p-3">
+        <p className="truncate text-xs font-semibold text-slate-500">{image.alt_text || image.url}</p>
+        <button
+          type="button"
+          onClick={onClear}
+          disabled={saving}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-red-600 shadow-sm disabled:opacity-45"
+          aria-label={`Clear gallery image ${image.id}`}
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ImagePreview({
+  src,
+  broken,
+  onBroken,
+  fallbackText,
+  variant,
+}: {
+  src: string;
+  broken: boolean;
+  onBroken: () => void;
+  fallbackText: string;
+  variant: "logo" | "hero" | "gallery";
+}) {
+  const sizeClass =
+    variant === "logo"
+      ? "h-28"
+      : variant === "hero"
+        ? "h-44"
+        : "h-32";
+
+  if (!src || broken) {
+    return (
+      <div className={`${sizeClass} grid place-items-center rounded-xl border border-dashed bg-slate-50 text-center text-xs font-semibold text-slate-400`}>
+        <span>
+          <ImageIcon className="mx-auto mb-2" size={20} />
+          {fallbackText}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={`${variant} preview`}
+      onError={onBroken}
+      className={`${sizeClass} w-full rounded-xl object-cover`}
+      loading="lazy"
+      decoding="async"
+    />
   );
 }
 
@@ -823,7 +1274,7 @@ function WebsitePreview({ draft, previewMode }: { draft: BuilderDraft; previewMo
   const serviceLine = [
     draft.reservations_enabled && "Reserve",
     draft.ordering_enabled && "Order",
-    draft.chatbot_enabled && "AI guide",
+    draft.chatbot_enabled && "AI Maitre d'",
   ].filter(Boolean).join(" / ");
 
   return (
@@ -935,6 +1386,7 @@ function draftFromRestaurant(restaurant: Restaurant): BuilderDraft {
     dine_in_enabled: restaurant.dine_in_enabled !== false,
     chatbot_enabled: restaurant.chatbot_enabled !== false,
     is_published: restaurant.is_published,
+    images: restaurant.images || [],
   };
 }
 
@@ -980,11 +1432,15 @@ function payloadFromDraft(draft: BuilderDraft) {
 }
 
 function validateDraft(draft: BuilderDraft) {
-  if (!draft.name.trim()) return "Restaurant name is required.";
-  if (!draft.email.trim()) return "Restaurant email is required.";
-  if (!draft.city.trim()) return "City is required.";
-  if (!slugify(draft.slug || draft.name)) return "A website slug is required.";
-  return "";
+  const errors: string[] = [];
+  if (!draft.name.trim()) errors.push("Restaurant name is required.");
+  if (!draft.email.trim()) errors.push("Restaurant email is required.");
+  if (!draft.city.trim()) errors.push("City is required.");
+  if (!slugify(draft.slug || draft.name)) errors.push("A website slug is required.");
+  if (draft.ordering_enabled && !draft.pickup_enabled && !draft.dine_in_enabled && !draft.delivery_enabled) {
+    errors.push("At least one order mode must be enabled when online ordering is enabled.");
+  }
+  return errors;
 }
 
 function parseHours(value: string): Record<string, string> {
@@ -1006,6 +1462,28 @@ function slugify(value: string) {
 
 function safeColor(value: string) {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#c6a15b";
+}
+
+function serializeDraft(draft: BuilderDraft) {
+  return JSON.stringify(payloadFromDraft(draft));
+}
+
+function themeMood(theme: Theme) {
+  const value = `${theme.key} ${theme.name}`.toLowerCase();
+  if (value.includes("italian")) return "Italian warmth";
+  if (value.includes("japanese") || value.includes("sushi")) return "Japanese minimal";
+  if (value.includes("vegan")) return "Plant-led natural";
+  if (value.includes("cafe")) return "Cafe comfort";
+  if (value.includes("steak")) return "Fire and cellar";
+  if (value.includes("elegant") || value.includes("fine") || value.includes("gold")) return "Quiet luxury";
+  return "Premium restaurant mood";
+}
+
+function themeDescriptor(theme: Theme) {
+  if (theme.homepage_style || theme.menu_style || theme.gallery_style) {
+    return `${theme.homepage_style || "editorial"} homepage, ${theme.menu_style || "refined"} menu, ${theme.gallery_style || "gallery"} gallery.`;
+  }
+  return "A polished visual system for a restaurant website.";
 }
 
 function buildCompletion(draft: BuilderDraft) {
@@ -1036,7 +1514,7 @@ function buildCompletion(draft: BuilderDraft) {
     },
     {
       label: "Service choices",
-      description: "Reservations, ordering, and AI guide settings are reviewed.",
+      description: "Reservations, ordering, and AI Maitre d' settings are reviewed.",
       section: "services" as const,
       done: draft.reservations_enabled || draft.ordering_enabled || draft.chatbot_enabled,
     },

@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -98,6 +99,13 @@ class ImageOut(ORMModel):
     alt_text: str
     sort_order: int
     created_at: datetime
+
+
+class ImageUrlCreate(BaseModel):
+    image_type: Literal["logo", "hero", "gallery", "food"] = "gallery"
+    url: str = Field(min_length=1, max_length=1000)
+    alt_text: str = ""
+    sort_order: int | None = None
 
 
 class RestaurantBase(BaseModel):
