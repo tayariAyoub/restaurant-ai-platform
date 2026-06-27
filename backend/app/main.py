@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api import admin, auth, public
-from app.core.config import collect_configuration_issues, settings
+from app.core.config import collect_configuration_issues, settings, should_run_legacy_startup_migrations
 from app.core.database import Base, SessionLocal, engine
 from app.services.migrations import upgrade_existing_database
 from app.services.seed import seed_demo_data
@@ -28,13 +28,22 @@ def validate_environment_configuration() -> None:
         logger.info("OpenAI API key detected; AI chat and embeddings are enabled.")
 
 
+def prepare_database_for_startup() -> None:
+    if not should_run_legacy_startup_migrations(settings):
+        logger.info("Skipping legacy startup schema mutation. Run `alembic upgrade head` before production startup.")
+        return
+
+    if engine.dialect.name == "postgresql":
+        with engine.begin() as connection:
+            connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    Base.metadata.create_all(bind=engine)
+    upgrade_existing_database()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     validate_environment_configuration()
-    with engine.begin() as connection:
-        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    Base.metadata.create_all(bind=engine)
-    upgrade_existing_database()
+    prepare_database_for_startup()
     with SessionLocal() as db:
         seed_demo_data(db)
     yield

@@ -82,6 +82,7 @@ The backend requires these values:
 | `DEMO_OWNER_PASSWORD` | Yes | Initial demo owner password. Replace before pilots or disable demo seed data later. |
 | `FRONTEND_URL` | Yes | Frontend origin allowed by CORS, for example `https://your-domain.com`. |
 | `STORAGE_PROVIDER` | Yes | Currently supports `local` only. |
+| `AUTO_MIGRATE_ON_STARTUP` | Local only | Keep `true` for local demos. Set `false` in production and run Alembic explicitly. |
 
 Frontend/public URL variables:
 
@@ -135,6 +136,32 @@ Checks:
 - `backend`: Python 3.12 dependency install, `python -m pytest`
 
 Pull Requests should not be merged unless CI passes.
+
+## Database Migrations
+
+RestaurantAI uses Alembic for production schema changes.
+
+For a fresh database:
+
+```powershell
+cd backend
+alembic upgrade head
+```
+
+For Docker:
+
+```powershell
+docker compose run --rm backend alembic upgrade head
+```
+
+For an existing MVP database that already has the current schema, back it up first and use:
+
+```powershell
+cd backend
+alembic stamp head
+```
+
+Read [DATABASE_MIGRATIONS.md](DATABASE_MIGRATIONS.md) before changing SQLAlchemy models or running production schema updates.
 
 ## Common Errors
 

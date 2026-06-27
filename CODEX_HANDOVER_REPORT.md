@@ -2133,3 +2133,76 @@ No application source behavior was changed.
 - GitHub Actions has been added locally but still needs to run on GitHub after push/PR to confirm hosted runner behavior.
 - Local backend tests were run with Python 3.14.5; CI is configured for Python 3.12 to match the Dockerfile.
 - Production still needs real deployment secrets, HTTPS URLs, persistent backups, object storage beyond local uploads, and a managed database migration tool.
+
+## Phase 1.2 - Alembic Migrations
+
+### Audit Summary
+
+- SQLAlchemy models define the full current schema in `backend/app/models.py`.
+- Startup previously ran `Base.metadata.create_all()` plus `upgrade_existing_database()` on every environment.
+- The old bridge in `backend/app/services/migrations.py` is an idempotent MVP compatibility layer with PostgreSQL-specific `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements.
+- There was no Alembic configuration, revision history, or documented production migration workflow.
+
+### Implementation
+
+- Added Alembic to backend dependencies.
+- Added `backend/alembic.ini`, `backend/alembic/env.py`, and an initial baseline revision:
+  - `20260627_0001_initial_schema.py`
+- The initial migration creates the current tables, indexes, foreign keys, and PostgreSQL `vector` extension.
+- Added a SQLite-compatible migration smoke path for tests by using JSON for the embedding column only when the test dialect is not PostgreSQL.
+- Added backend tests that verify:
+  - Alembic has a single head revision.
+  - `alembic upgrade head` creates the expected core tables on a temporary database.
+  - legacy startup schema mutation remains enabled outside production.
+  - legacy startup schema mutation is disabled/rejected for production.
+- Updated backend startup:
+  - local/demo can still use the legacy bridge for compatibility.
+  - production skips automatic schema mutation and requires explicit Alembic migrations.
+- Added `AUTO_MIGRATE_ON_STARTUP` to `.env.example` and Docker Compose.
+- Added Alembic files to the backend Docker image so migration commands can run from the container.
+- Added `docs/DATABASE_MIGRATIONS.md` with local, Docker, fresh database, existing MVP database, production, and rollback guidance.
+- Updated production readiness docs and README to link the migration workflow.
+
+### Files Changed
+
+- `.env.example`
+- `README.md`
+- `backend/Dockerfile`
+- `backend/alembic.ini`
+- `backend/alembic/env.py`
+- `backend/alembic/versions/20260627_0001_initial_schema.py`
+- `backend/app/core/config.py`
+- `backend/app/main.py`
+- `backend/requirements.txt`
+- `backend/tests/test_alembic_migrations.py`
+- `backend/tests/test_config_validation.py`
+- `docker-compose.yml`
+- `docs/DATABASE_MIGRATIONS.md`
+- `docs/PRODUCTION_READINESS.md`
+
+### Validation
+
+- Installed backend dependencies after adding Alembic: `python -m pip install -r requirements.txt` -> successful.
+- Alembic head check: `python -m alembic heads` -> `20260627_0001 (head)`.
+- Migration smoke tests: `python -m pytest tests\test_alembic_migrations.py tests\test_config_validation.py` -> 9 passed.
+- Backend compile check: `python -m compileall app tests alembic` -> successful.
+- Backend tests: `python -m pytest` -> 51 passed, 75 warnings.
+- Frontend tests: `pnpm.cmd test` -> 10 test files passed, 40 tests passed.
+- Frontend build: `pnpm.cmd build` -> successful production build.
+- Docker build: `docker compose build` -> backend and frontend images built successfully.
+- Backend container Alembic smoke: `docker compose run --rm --no-deps backend python -m alembic heads` -> `20260627_0001 (head)`.
+- `git diff --check` -> no whitespace errors; Git reported Windows line-ending normalization warnings for `.env.example` and `backend/requirements.txt`.
+- Secret scan for high-confidence OpenAI key patterns -> no matches.
+
+### Production Guidance
+
+- Fresh database: run `alembic upgrade head`.
+- Existing MVP database that already has the current schema: back it up, then run `alembic stamp head`.
+- Production must set `APP_ENV=production` and `AUTO_MIGRATE_ON_STARTUP=false`.
+- Do not run the initial migration over an existing populated database that already has these tables.
+
+### Remaining Risks
+
+- The old bridge still exists for local/demo compatibility and should be removed only after all active environments have been stamped or migrated with Alembic.
+- The initial migration is a baseline; the next schema change should be a small reviewed Alembic revision generated from model changes.
+- Production still needs a formal backup/restore procedure and a deployment step that runs migrations before the API starts.

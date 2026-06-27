@@ -1,6 +1,10 @@
 from types import SimpleNamespace
 
-from app.core.config import LOCAL_DEMO_JWT_SECRET, collect_configuration_issues
+from app.core.config import (
+    LOCAL_DEMO_JWT_SECRET,
+    collect_configuration_issues,
+    should_run_legacy_startup_migrations,
+)
 
 
 def make_config(**overrides):
@@ -11,6 +15,7 @@ def make_config(**overrides):
         "admin_password": "safe-development-admin-password",
         "demo_owner_password": "safe-development-owner-password",
         "storage_provider": "local",
+        "auto_migrate_on_startup": None,
         "openai_api_key": "",
         "frontend_url": "http://localhost:3000",
         "auth_cookie_enabled": False,
@@ -59,3 +64,24 @@ def test_unknown_storage_provider_is_rejected():
     report = collect_configuration_issues(make_config(storage_provider="s3"))
 
     assert "STORAGE_PROVIDER" in " ".join(report.errors)
+
+
+def test_legacy_startup_migrations_run_by_default_outside_production():
+    assert should_run_legacy_startup_migrations(make_config(app_env="development")) is True
+    assert should_run_legacy_startup_migrations(make_config(app_env="test")) is True
+
+
+def test_legacy_startup_migrations_do_not_run_in_production():
+    assert should_run_legacy_startup_migrations(make_config(app_env="production")) is False
+
+
+def test_production_rejects_automatic_startup_migrations():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="production-secret-with-enough-length",
+            auto_migrate_on_startup=True,
+        )
+    )
+
+    assert "AUTO_MIGRATE_ON_STARTUP" in " ".join(report.errors)

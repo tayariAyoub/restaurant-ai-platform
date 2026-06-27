@@ -197,6 +197,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `NEXT_PUBLIC_SITE_URL` | Public frontend URL used for canonical SEO metadata |
 | `BACKEND_INTERNAL_URL` | Backend URL used by the Next.js proxy |
 | `STORAGE_PROVIDER` | Upload storage backend; use `local` for development |
+| `AUTO_MIGRATE_ON_STARTUP` | Local/demo schema compatibility bridge; set to `false` in production and run Alembic explicitly |
 | `RATE_LIMIT_CHAT_PER_MINUTE` | Public chat messages allowed per minute per IP; defaults to `10` for demos |
 | `RATE_LIMIT_RESERVATIONS_PER_MINUTE` | Public reservation requests allowed per minute per IP |
 | `RATE_LIMIT_ORDERS_PER_MINUTE` | Public order submissions allowed per minute per IP |
@@ -300,6 +301,8 @@ docker-compose.yml  local full-stack environment
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before making changes. Work in short feature branches and merge reviewed pull requests into `ai-production-saas-upgrade`.
 
 For setup, Docker, environment validation, OpenAI configuration, CI, and common production errors, read [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md).
+
+For database schema changes, read [docs/DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md).
 
 ## License
 

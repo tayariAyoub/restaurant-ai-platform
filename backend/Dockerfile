@@ -5,6 +5,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
 COPY requirements.txt .
 COPY pytest.ini .
+COPY alembic.ini .
+COPY alembic ./alembic
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app

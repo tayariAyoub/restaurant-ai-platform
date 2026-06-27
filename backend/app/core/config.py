@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     demo_owner_password: str
     upload_dir: str = "uploads"
     storage_provider: str = "local"
+    auto_migrate_on_startup: bool | None = None
     rate_limit_chat_per_minute: int = 10
     rate_limit_reservations_per_minute: int = 5
     rate_limit_orders_per_minute: int = 10
@@ -60,6 +61,15 @@ def _add_security_issue(config: Any, errors: list[str], warnings: list[str], mes
         errors.append(message)
     else:
         warnings.append(message)
+
+
+def should_run_legacy_startup_migrations(config: Any) -> bool:
+    if _is_production(config):
+        return False
+    explicit_value = getattr(config, "auto_migrate_on_startup", None)
+    if explicit_value is not None:
+        return bool(explicit_value)
+    return True
 
 
 def collect_configuration_issues(config: Any) -> ConfigurationReport:
@@ -98,6 +108,9 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
     storage_provider = _clean(getattr(config, "storage_provider", "local")).lower()
     if storage_provider != "local":
         errors.append("STORAGE_PROVIDER currently supports only 'local'.")
+
+    if _is_production(config) and getattr(config, "auto_migrate_on_startup", None) is True:
+        errors.append("AUTO_MIGRATE_ON_STARTUP must be false in production. Run Alembic migrations explicitly.")
 
     if not _clean(getattr(config, "openai_api_key", "")):
         warnings.append(
