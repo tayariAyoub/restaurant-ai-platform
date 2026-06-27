@@ -29,6 +29,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import request from "@/lib/api";
 import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
+import { buildRestaurantJsonLd } from "@/lib/restaurantSeo";
 import type { MenuItem, Restaurant, RestaurantOrder } from "@/lib/types";
 import ChatWidget from "./ChatWidget";
 
@@ -89,7 +90,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
   const subtotal = cartLines.reduce((total, line) => total + Number(line.item.price) * line.quantity, 0);
   const completedEstimate = completedOrder ? estimateText(completedOrder) : "";
-  const structuredData = buildRestaurantStructuredData(restaurant);
+  const structuredData = buildRestaurantJsonLd(restaurant);
   const cartScope = restaurant.slug || restaurant.id;
 
   useEffect(() => {
@@ -1006,68 +1007,6 @@ function matchesMenuFilters(item: MenuItem, query: string, filter: "all" | "vega
 
 function shortOrderNumber(publicId: string) {
   return publicId.split("-")[0].toUpperCase();
-}
-
-function publicSiteOrigin() {
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
-  if (typeof window !== "undefined") return window.location.origin;
-  if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
-  return undefined;
-}
-
-function toAbsolutePublicUrl(pathOrUrl: string | undefined) {
-  if (!pathOrUrl) return undefined;
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  const origin = publicSiteOrigin();
-  if (!origin) return undefined;
-  return `${origin}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
-}
-
-function parsedOpeningHours(openingHours: string) {
-  if (!openingHours) return undefined;
-  try {
-    const parsed = JSON.parse(openingHours) as Record<string, string>;
-    const values = Object.entries(parsed)
-      .filter(([, value]) => value && value.toLowerCase() !== "closed")
-      .map(([day, value]) => `${day}: ${value}`);
-    return values.length > 0 ? values : undefined;
-  } catch {
-    return [openingHours];
-  }
-}
-
-function buildRestaurantStructuredData(restaurant: Restaurant) {
-  const origin = publicSiteOrigin();
-  const url = origin ? `${origin}/restaurants/${restaurant.slug}` : undefined;
-  const image =
-    toAbsolutePublicUrl(restaurant.hero_image) ||
-    toAbsolutePublicUrl(restaurant.images.find((item) => item.image_type === "gallery")?.url);
-  const logo = toAbsolutePublicUrl(restaurant.logo_url);
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "Restaurant",
-    name: restaurant.name,
-    description: restaurant.description || restaurant.tagline || undefined,
-    url,
-    image,
-    logo,
-    telephone: restaurant.phone || undefined,
-    email: restaurant.email || undefined,
-    address:
-      restaurant.address || restaurant.city || restaurant.postal_code
-        ? {
-            "@type": "PostalAddress",
-            streetAddress: restaurant.address || undefined,
-            addressLocality: restaurant.city || undefined,
-            postalCode: restaurant.postal_code || undefined,
-          }
-        : undefined,
-    sameAs: [restaurant.instagram_url, restaurant.facebook_url, restaurant.tiktok_url].filter(Boolean),
-    openingHours: parsedOpeningHours(restaurant.opening_hours),
-    hasMenu: `${url}#menu`,
-    acceptsReservations: true,
-  };
 }
 
 function safeJsonLd(value: unknown) {

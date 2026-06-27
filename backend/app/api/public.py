@@ -31,6 +31,7 @@ from app.schemas import (
     ContactOut,
     OrderCreate,
     OrderOut,
+    PublicRestaurantSummary,
     RestaurantOut,
 )
 from app.services.chat import answer_question
@@ -70,6 +71,21 @@ def get_public_restaurant(db: Session, slug: str | None = None) -> Restaurant:
 )
 def legacy_restaurant(db: Session = Depends(get_db)) -> Restaurant:
     return get_public_restaurant(db)
+
+
+@router.get(
+    "/restaurants",
+    response_model=list[PublicRestaurantSummary],
+    dependencies=[rate_limit(public_rule)],
+)
+def public_restaurants(db: Session = Depends(get_db)) -> list[Restaurant]:
+    return list(
+        db.scalars(
+            select(Restaurant)
+            .where(Restaurant.is_published.is_(True))
+            .order_by(Restaurant.created_at.desc())
+        )
+    )
 
 
 @router.get(

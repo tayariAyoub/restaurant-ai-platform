@@ -1,7 +1,104 @@
 # RestaurantAI Codex Handover Report
 
-Generated: 2026-06-26
-Scope: safe baseline audit only. No application behavior was changed.
+Generated: 2026-06-27
+Scope: RestaurantAI production hardening checkpoints and handover notes.
+
+## Task 1.1 - Dynamic SEO Audit And Production Completion
+
+Audit findings:
+
+- Global metadata lives in `frontend/app/layout.tsx` and correctly keeps admin/general pages on RestaurantAI branding.
+- Public restaurant metadata already existed in `frontend/app/restaurants/[slug]/page.tsx`, but it was only partially production-ready.
+- Dynamic title, description, keywords, canonical URL, Open Graph, Twitter cards, and robots metadata existed for `/restaurants/[slug]`.
+- `NEXT_PUBLIC_SITE_URL` was already available in `.env.example`, but SEO URL generation was not centralized.
+- Restaurant JSON-LD existed in `frontend/components/RestaurantSite.tsx`, but it was component-local and less complete than schema.org best practice.
+- No `frontend/app/sitemap.ts` existed.
+- No `frontend/app/robots.ts` existed.
+- Public restaurant pages loaded restaurant content through a client-side fetch after hydration, which was weaker for SEO and duplicated the restaurant request after metadata generation.
+- Backend had public single-restaurant endpoints but no public published-restaurant list for sitemap generation.
+
+Improvements implemented:
+
+- Added shared SEO helpers in `frontend/lib/restaurantSeo.ts`.
+- Restaurant pages now generate production-oriented metadata from existing restaurant data:
+  - unique SEO title
+  - dynamic SEO description
+  - intelligent keywords
+  - canonical URL
+  - robots index/follow for published pages
+  - Open Graph title, description, URL, locale, site name, and large image
+  - Twitter `summary_large_image` card when an image exists
+  - image alt metadata
+- JSON-LD now uses the shared SEO helper and includes:
+  - `Restaurant` schema type
+  - stable `@id`
+  - name, description, URL
+  - logo and images
+  - phone and email
+  - postal address
+  - cuisine
+  - inferred price range
+  - menu URL
+  - reservation action
+  - social links
+  - opening hours specification when structured hours are available
+- Added `frontend/app/sitemap.ts`.
+  - Includes static public pages.
+  - Includes all published restaurants from the backend public list endpoint.
+  - Uses dynamic rendering so future restaurants can appear without frontend code edits.
+- Added `frontend/app/robots.ts`.
+  - Allows public pages and restaurant pages.
+  - Disallows admin and API paths.
+  - Points crawlers to the sitemap when `NEXT_PUBLIC_SITE_URL` is configured.
+- Added a minimal backend public endpoint, `GET /api/restaurants`, returning published restaurant summaries only.
+- Added a backend regression test verifying the public sitemap source excludes unpublished restaurants.
+- Updated `/restaurants/[slug]` to pass server-fetched restaurant data into the client page so crawlers receive real restaurant content earlier and the browser avoids the normal duplicate initial fetch.
+
+Files changed:
+
+- `backend/app/api/public.py`
+- `backend/app/schemas.py`
+- `backend/tests/test_tenant_safety.py`
+- `frontend/app/restaurants/[slug]/RestaurantWebsiteClient.tsx`
+- `frontend/app/restaurants/[slug]/page.tsx`
+- `frontend/app/robots.ts`
+- `frontend/app/sitemap.ts`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/lib/restaurantSeo.ts`
+- `frontend/lib/types.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 4 test files passed, 14 tests passed.
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: 20 tests passed, 60 warnings.
+
+Remaining SEO recommendations:
+
+- Configure `NEXT_PUBLIC_SITE_URL` to the real production domain before launch. Production intentionally does not fall back to localhost.
+- Add real geo coordinates to the restaurant model later if map/local SEO precision becomes a priority.
+- Add aggregate ratings only after real review/rating data exists. No fake rating data was invented.
+- Consider generating dedicated 1200x630 social preview images per restaurant when branding assets mature.
+- Add Search Console/Bing Webmaster validation after deployment.
+- Add E2E checks for `/sitemap.xml`, `/robots.txt`, and selected restaurant metadata once Playwright is introduced.
 
 ## Phase 1.5 - Frontend Testing Foundation
 

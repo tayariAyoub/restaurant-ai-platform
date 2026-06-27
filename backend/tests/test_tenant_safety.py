@@ -192,6 +192,23 @@ def test_public_order_tracking_does_not_leak_across_restaurants(db: Session) -> 
     assert error.value.status_code == 404
 
 
+def test_public_restaurant_sitemap_source_returns_only_published_restaurants(db: Session) -> None:
+    unpublished = Restaurant(
+        name="Private Draft",
+        slug="private-draft",
+        description="Not public yet",
+        city="Berlin",
+        email="draft@example.com",
+        is_published=False,
+    )
+    db.add(unpublished)
+    db.commit()
+
+    summaries = public.public_restaurants(db=db)
+
+    assert {restaurant.slug for restaurant in summaries} == {"tenant-one", "tenant-two"}
+
+
 def test_public_order_creation_stores_order_and_returns_response(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:

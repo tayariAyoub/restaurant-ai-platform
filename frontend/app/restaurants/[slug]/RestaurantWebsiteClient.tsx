@@ -6,13 +6,20 @@ import RestaurantSite from "@/components/RestaurantSite";
 import { getRestaurantBySlug } from "@/lib/api";
 import type { Restaurant } from "@/lib/types";
 
-export default function RestaurantWebsiteClient({ slug }: { slug: string }) {
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+export default function RestaurantWebsiteClient({
+  slug,
+  initialRestaurant = null,
+}: {
+  slug: string;
+  initialRestaurant?: Restaurant | null;
+}) {
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (initialRestaurant) return;
     getRestaurantBySlug(slug).then(setRestaurant).catch((reason) => setError(reason.message));
-  }, [slug]);
+  }, [initialRestaurant, slug]);
 
   if (error) {
     return (

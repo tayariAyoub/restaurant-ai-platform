@@ -99,6 +99,11 @@ export type RestaurantSummary = Pick<
   "id" | "owner_id" | "theme_id" | "name" | "slug" | "city" | "email" | "hero_image" | "is_published" | "created_at"
 >;
 
+export type PublicRestaurantSummary = Pick<
+  Restaurant,
+  "id" | "name" | "slug" | "city" | "hero_image" | "is_published" | "created_at"
+>;
+
 export type SetupChecklist = {
   information: boolean;
   opening_hours: boolean;

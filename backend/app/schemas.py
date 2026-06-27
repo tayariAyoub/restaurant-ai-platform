@@ -154,6 +154,16 @@ class RestaurantSummary(ORMModel):
     created_at: datetime
 
 
+class PublicRestaurantSummary(ORMModel):
+    id: int
+    name: str
+    slug: str
+    city: str
+    hero_image: str
+    is_published: bool
+    created_at: datetime
+
+
 class SetupChecklist(BaseModel):
     information: bool
     opening_hours: bool
