@@ -73,7 +73,10 @@ describe("restaurant page", () => {
   });
 
   it("clears the persisted cart only after a successful order", async () => {
-    requestMock.mockResolvedValueOnce(orderResponse);
+    let resolveOrder!: (value: typeof orderResponse) => void;
+    requestMock.mockReturnValueOnce(new Promise((resolve) => {
+      resolveOrder = resolve;
+    }));
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
 
@@ -89,6 +92,9 @@ describe("restaurant page", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
+    expect(screen.getByRole("button", { name: /confirming order/i })).toBeDisabled();
+
+    resolveOrder(orderResponse);
     expect(await screen.findByText(/order received/i)).toBeVisible();
     expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toBeNull();
   });

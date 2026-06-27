@@ -10,6 +10,7 @@ import {
   Heart,
   Instagram,
   Leaf,
+  Loader2,
   type LucideIcon,
   MapPin,
   Menu as MenuIcon,
@@ -43,6 +44,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   const [cartOpen, setCartOpen] = useState(false);
   const [orderType, setOrderType] = useState<"PICKUP" | "EAT_IN" | "DELIVERY">("PICKUP");
   const [orderStatus, setOrderStatus] = useState("");
+  const [orderSubmitting, setOrderSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<RestaurantOrder | null>(null);
   const [menuQuery, setMenuQuery] = useState("");
   const [dietaryFilter, setDietaryFilter] = useState<"all" | "vegan" | "vegetarian" | "halal">("all");
@@ -120,7 +122,9 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
+    if (orderSubmitting) return;
     setOrderStatus("Sending your order...");
+    setOrderSubmitting(true);
     try {
       const order = await request<RestaurantOrder>(`/restaurants/${restaurant.slug}/orders`, {
         method: "POST",
@@ -152,6 +156,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       setOrderStatus("");
     } catch (error) {
       setOrderStatus(error instanceof Error ? error.message : "Could not place order.");
+    } finally {
+      setOrderSubmitting(false);
     }
   }
 
@@ -679,9 +685,10 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                   <div className="flex justify-between text-xl font-bold"><span>Total</span><span>EUR {(subtotal + (orderType === "DELIVERY" ? 3.5 : 0)).toFixed(2)}</span></div>
                 </div>
 
-                {orderStatus && <p className="mt-3 text-center text-sm text-slate-600">{orderStatus}</p>}
-                <button disabled={cartLines.length === 0} className={`luxury-button mt-5 w-full ${buttonClass} py-4 font-bold text-white disabled:opacity-50`} style={{ backgroundColor: primary }}>
-                  Confirm order
+                {orderStatus && <p className="mt-3 text-center text-sm text-slate-600" aria-live="polite">{orderStatus}</p>}
+                <button disabled={cartLines.length === 0 || orderSubmitting} className={`luxury-button mt-5 flex w-full items-center justify-center gap-2 ${buttonClass} py-4 font-bold text-white disabled:opacity-50`} style={{ backgroundColor: primary }}>
+                  {orderSubmitting && <Loader2 size={18} className="animate-spin" />}
+                  {orderSubmitting ? "Confirming order..." : "Confirm order"}
                 </button>
               </form>
             )}

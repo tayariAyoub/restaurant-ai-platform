@@ -142,6 +142,55 @@ pnpm build
 
 Result: passed.
 
+## Task 1.3 - Premium Loading Experience
+
+Status:
+
+- Added a premium public restaurant loading skeleton.
+- No backend schema changes were made.
+- No unrelated features were added.
+- Existing restaurant page UI remains unchanged once data has loaded.
+
+Implementation summary:
+
+- Added `frontend/components/RestaurantPageSkeleton.tsx`.
+  - Mirrors the public restaurant page structure with a cinematic hero, visual panel, and menu-card placeholders.
+  - Uses fixed dimensions and responsive layout to reduce layout shift.
+  - Keeps the Michelin/luxury visual language during loading instead of showing plain text.
+- Added `frontend/app/restaurants/[slug]/loading.tsx`.
+  - Next.js now shows the premium skeleton while the dynamic restaurant route is loading.
+- Updated `frontend/app/restaurants/[slug]/RestaurantWebsiteClient.tsx`.
+  - Client-side fallback now uses the same premium skeleton if no initial restaurant data is available.
+- Updated `frontend/components/RestaurantSite.tsx`.
+  - Order modal now shows a refined in-flight state while an order is being submitted.
+  - Confirm button is disabled during submission to avoid duplicate orders.
+  - Order status uses polite live-region semantics.
+- Updated `frontend/components/ChatWidget.tsx`.
+  - Starter prompt buttons are disabled while the AI response is loading.
+  - Chat loading state now announces politely for assistive technology.
+
+Frontend tests updated:
+
+- Added `frontend/app/restaurants/[slug]/RestaurantWebsiteClient.test.tsx`.
+- Added coverage that the premium restaurant loading skeleton appears while restaurant data is loading.
+- Strengthened the cart/order test to verify the order modal shows and disables the confirming state during submission.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 5 test files passed, 18 tests passed.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
 ## Phase 1.5 - Frontend Testing Foundation
 
 Files changed:

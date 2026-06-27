@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import RestaurantPageSkeleton from "@/components/RestaurantPageSkeleton";
 import RestaurantSite from "@/components/RestaurantSite";
 import { getRestaurantBySlug } from "@/lib/api";
 import type { Restaurant } from "@/lib/types";
@@ -33,7 +34,7 @@ export default function RestaurantWebsiteClient({
   }
 
   if (!restaurant) {
-    return <main className="grid min-h-screen place-items-center text-slate-500">Preparing the restaurant...</main>;
+    return <RestaurantPageSkeleton />;
   }
 
   return <RestaurantSite restaurant={restaurant} />;

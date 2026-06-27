@@ -134,7 +134,8 @@ export default function ChatWidget({
                         <button
                           key={question}
                           onClick={() => send(undefined, question)}
-                          className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs font-semibold text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20"
+                          disabled={loading}
+                          className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs font-semibold text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 disabled:cursor-wait disabled:opacity-60"
                         >
                           {question}
                         </button>
@@ -146,7 +147,7 @@ export default function ChatWidget({
             )}
 
             {loading && (
-              <div className="flex w-fit items-center gap-2 rounded-2xl rounded-bl-md border border-black/5 bg-white px-4 py-3 text-sm text-stone-500 shadow-sm">
+              <div className="flex w-fit items-center gap-2 rounded-2xl rounded-bl-md border border-black/5 bg-white px-4 py-3 text-sm text-stone-500 shadow-sm" aria-live="polite">
                 <Loader2 size={16} className="animate-spin" /> Checking menu, hours, and policies...
               </div>
             )}
