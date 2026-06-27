@@ -3,6 +3,107 @@
 Generated: 2026-06-26
 Scope: safe baseline audit only. No application behavior was changed.
 
+## Phase 1.5 - Frontend Testing Foundation
+
+Files changed:
+
+- `.github/workflows/ci.yml`
+- `frontend/app/admin/login/page.test.tsx`
+- `frontend/app/page.test.tsx`
+- `frontend/components/ChatWidget.test.tsx`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/package.json`
+- `frontend/pnpm-lock.yaml`
+- `frontend/test/fixtures.ts`
+- `frontend/test/setup.ts`
+- `frontend/test/test-utils.tsx`
+- `frontend/vitest.config.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Testing framework chosen:
+
+- Vitest for fast TypeScript/React component tests.
+- React Testing Library for user-focused DOM assertions.
+- `@testing-library/user-event` for realistic interactions.
+- jsdom for browser-like component execution without full E2E overhead.
+- `@testing-library/jest-dom` for readable assertions.
+
+Reasoning:
+
+- The frontend is a Next.js App Router app with client-heavy public/admin flows.
+- Vitest plus React Testing Library is lightweight, maintainable, and deterministic for component-level regression coverage.
+- Playwright is still recommended later for real browser E2E and visual smoke tests, but it would be heavier than needed for this milestone.
+
+Tests added:
+
+- Homepage:
+  - Renders after mocked restaurant load.
+  - Hero section is visible.
+  - Primary CTA links exist.
+  - Navigation links are present.
+  - Mobile-width render keeps the hero available.
+- Restaurant page:
+  - Restaurant hero and menu render from existing data.
+  - Menu categories and menu items display.
+  - Sold-out item state displays and disables ordering.
+  - Dietary tags render.
+  - Gallery images render.
+  - Chatbot trigger renders.
+  - Mobile-width render keeps key page surfaces available.
+- Cart:
+  - Add item.
+  - Quantity update.
+  - Remove item.
+  - Total recalculation.
+  - Persistence after remount through localStorage cart storage.
+- Chat widget:
+  - Widget opens.
+  - Send button is disabled for empty input and enabled for valid text.
+  - Loading state appears.
+  - Successful mocked response renders.
+  - Error state renders without calling OpenAI.
+- Admin login:
+  - Form renders.
+  - Required fields prevent submit.
+  - Loading state appears.
+  - Successful mocked login stores token and navigates.
+  - Error state renders.
+
+CI update:
+
+- Pull Request frontend job now runs `pnpm install`, `pnpm test`, and `pnpm build`.
+- Pull Request backend job runs `python -m pytest`.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: `4 passed`, `14 passed`.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed. Next.js compiled successfully and TypeScript passed.
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `19 passed, 59 warnings`.
+
+Future testing recommendations:
+
+- Add Playwright E2E smoke tests for real browser flows: public restaurant page, cart order flow, admin login, and mobile navigation.
+- Add API contract fixtures so backend/frontend schema drift is caught earlier.
+- Add visual regression screenshots for the premium public restaurant website once the design stabilizes.
+- Add admin dashboard editing-flow coverage after the public journey is protected.
+
 ## Public Restaurant Website Luxury Redesign
 
 Files changed:
