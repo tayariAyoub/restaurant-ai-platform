@@ -18,9 +18,9 @@ describe("ChatWidget", () => {
   it("opens and enables send only for a valid message", async () => {
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open ai maitre d'/i }));
+    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
 
-    expect(screen.getByText(/Bella Napoli AI Maitre d'/i)).toBeVisible();
+    expect(screen.getByText(/Bella Napoli menu guide/i)).toBeVisible();
     expect(screen.getByRole("button", { name: /send message/i })).toBeDisabled();
 
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "What should I order?");
@@ -36,7 +36,7 @@ describe("ChatWidget", () => {
     );
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open ai maitre d'/i }));
+    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Plan dinner");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
@@ -51,7 +51,7 @@ describe("ChatWidget", () => {
     requestMock.mockRejectedValue(new Error("Network failed"));
     const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
 
-    await user.click(screen.getByRole("button", { name: /open ai maitre d'/i }));
+    await user.click(screen.getByRole("button", { name: /open menu guide/i }));
     await user.type(screen.getByPlaceholderText(/tell me your mood/i), "Help");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 

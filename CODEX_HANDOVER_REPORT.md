@@ -3,6 +3,52 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Customer Experience Design Polish - Public Restaurant Website
+
+Audit decision:
+
+- The public homepage currently renders the default restaurant through `PublicShell`, so it should behave as a restaurant-owned customer homepage, not a SaaS marketing homepage.
+- The SaaS/admin product remains separate from the public customer journey.
+- Customer-facing pages still had platform-flavored copy such as RestaurantAI, AI Maitre d', software, and hospitality-online language.
+- The restaurant page already had premium structure, menu cards, gallery, reservation, ordering, cart, and chat integration, but several labels made the experience feel like a platform demo instead of the restaurant's own website.
+
+Files changed:
+
+- `frontend/app/page.tsx`
+- `frontend/app/page.test.tsx`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/components/ChatWidget.test.tsx`
+- `frontend/components/Footer.tsx`
+- `frontend/lib/restaurantTheme.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Improvements implemented:
+
+- Reduced public RestaurantAI/platform language from restaurant-owned customer pages.
+- Reframed the homepage around customer intent: what the restaurant serves, where it is, how to view the menu, how to reserve, and how to order.
+- Updated restaurant page hero, menu, signature dish, empty-menu, gallery, story, footer, and chat copy to focus on food, atmosphere, trust, reservation, and ordering.
+- Renamed visible chat entry points from AI Maitre d' to restaurant-owned menu guide language while preserving the same chat behavior.
+- Strengthened theme personality copy so each preset feels more distinct:
+  - Michelin Fine Dining: quiet luxury.
+  - Italian Warm: family, fire, wine, shared-table warmth.
+  - Sushi Minimal: Japanese precision and calm sequencing.
+  - Vegan Natural: fresh, plant-led, seasonal clarity.
+  - Modern Cafe: cozy, bright, all-day comfort.
+- Kept backend schema, API contract, auth, payments, and admin dashboard behavior unchanged.
+
+Validation:
+
+- `cd frontend; pnpm.cmd test` passed: 6 test files, 21 tests.
+- `cd frontend; pnpm.cmd build` passed: Next.js compiled successfully, TypeScript passed, 12 static pages generated.
+
+Remaining recommendations:
+
+- Perform a live browser visual QA pass on restaurant themes with real images before presenting to restaurant owners.
+- Later, consider a separate owner-facing SaaS marketing page if the product needs public B2B acquisition; do not mix that with restaurant customer pages.
+- Add visual regression screenshots once the public design stabilizes.
+
 ## Task 1.1 - Dynamic SEO Audit And Production Completion
 
 Audit findings:

@@ -2,9 +2,11 @@ import type { Restaurant } from "./types";
 
 type ThemePersonality = {
   name: string;
+  guestKicker: string;
   description: string;
   momentTitle: string;
   momentCopy: string;
+  signatureCopy: string;
 };
 
 type ThemePreset = {
@@ -59,9 +61,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-4",
     personality: {
       name: "Michelin Fine Dining",
-      description: "A quiet, high-touch identity for restaurants that want every interaction to feel composed and intentional.",
+      guestKicker: "Quiet luxury",
+      description: "A composed fine-dining mood built around soft light, precise choices, and a dining room that feels intentionally calm.",
       momentTitle: "A room designed around anticipation.",
       momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
+      signatureCopy: "Begin with the dishes the kitchen would proudly place at the center of the table.",
     },
   },
   cafe: {
@@ -85,9 +89,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-3",
     personality: {
       name: "Modern Cafe",
+      guestKicker: "Cozy all-day table",
       description: "Warm, bright, and approachable for cafes, brunch rooms, bakeries, and all-day neighborhood spots.",
       momentTitle: "An easy room for regulars and first visits.",
       momentCopy: "The experience feels relaxed and useful: clear menus, friendly choices, and ordering that never feels heavy.",
+      signatureCopy: "Choose something comforting, something fresh, and something worth coming back for.",
     },
   },
   "italian-warm": {
@@ -111,9 +117,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-3",
     personality: {
       name: "Italian Warm",
-      description: "Warm, generous, ingredient-led storytelling for restaurants built on family, fire, wine, and memory.",
+      guestKicker: "Italian warmth",
+      description: "Generous, ingredient-led hospitality for restaurants built on family, fire, wine, and memory.",
       momentTitle: "An evening that begins with the table.",
       momentCopy: "Comfort, aroma, and hospitality lead the experience, with dishes presented as familiar rituals rather than simple products.",
+      signatureCopy: "Start with the plates that smell of the oven, the garden, and a table meant to be shared.",
     },
   },
   mediterranean: {
@@ -137,9 +145,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-3",
     personality: {
       name: "Italian Warm",
+      guestKicker: "Sunlit table",
       description: "Sunlit, relaxed, produce-forward hospitality for restaurants that want warmth without losing polish.",
       momentTitle: "Bright plates, generous tables, easy decisions.",
       momentCopy: "The guest journey feels open and inviting, with seasonal dishes, direct ordering, and reservations gathered into one elegant flow.",
+      signatureCopy: "Start with colorful plates, seasonal produce, and the dishes guests naturally share.",
     },
   },
   japanese: {
@@ -163,9 +173,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-4",
     personality: {
       name: "Sushi Minimal",
+      guestKicker: "Japanese minimal",
       description: "Disciplined pacing, quiet detail, and trust in the chef's sequence for restaurants centered on craft.",
       momentTitle: "Let the evening unfold one course at a time.",
-      momentCopy: "The menu feels guided, personal, and precise, with the AI Maitre d' helping guests navigate preferences before they arrive.",
+      momentCopy: "The menu feels precise and calm, helping guests move from craving to choice without noise.",
+      signatureCopy: "Begin with clean, exact flavors and a sequence that respects appetite, timing, and balance.",
     },
   },
   "vegan-natural": {
@@ -189,9 +201,11 @@ const presets: Record<string, ThemePreset> = {
     galleryClass: "md:grid-cols-4",
     personality: {
       name: "Vegan Natural",
+      guestKicker: "Fresh and plant-led",
       description: "Seasonal, ingredient-led, calm, and natural for plant-forward restaurants and produce-driven kitchens.",
       momentTitle: "Seasonality, freshness, and a grounded table.",
       momentCopy: "The site feels clean and alive, making dietary clarity and ingredient stories part of the premium experience.",
+      signatureCopy: "Start with vivid, produce-led dishes that feel fresh, nourishing, and full of texture.",
     },
   },
 };

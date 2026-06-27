@@ -197,7 +197,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             )}
             <span className="min-w-0">
               <span className="block truncate leading-tight">{restaurant.name}</span>
-              <span className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/55 sm:block">Private dining online</span>
+              <span className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/55 sm:block">Menu, tables, and takeaway</span>
             </span>
           </a>
           <nav className="hidden items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-2 text-sm font-semibold shadow-2xl backdrop-blur-xl md:flex">
@@ -241,7 +241,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-8 px-4 pb-8 pt-28 text-white sm:gap-10 sm:px-6 sm:pb-10 sm:pt-36 lg:grid-cols-[1.02fr_.98fr] lg:items-end lg:pb-16">
             <div className="fade-up">
               <p className="luxury-kicker inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-bold backdrop-blur" style={{ color: "#fff" }}>
-                <Sparkles size={14} /> {restaurant.city || "A table is waiting"} / Michelin-level hospitality
+                <Sparkles size={14} /> {restaurant.city || "A table is waiting"} / {personality.guestKicker}
               </p>
               <h1 className={`mt-5 max-w-5xl text-balance font-semibold leading-[.92] sm:mt-6 sm:leading-[.88] ${template === "fast-food" ? "text-[clamp(2.7rem,13vw,4.6rem)] uppercase sm:text-7xl lg:text-8xl" : "text-[clamp(2.7rem,13vw,4.6rem)] sm:text-7xl lg:text-8xl"}`}>
                 {restaurant.tagline || restaurant.name}
@@ -258,12 +258,12 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               <div className="mt-6 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-xs backdrop-blur-xl sm:mt-8 sm:text-sm">
                 <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Sections</span></div>
                 <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">{availableItems}</b><span className="text-white/65">Choices</span></div>
-                <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">AI</b><span className="text-white/65">Maitre d'</span></div>
+                <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">Direct</b><span className="text-white/65">Ordering</span></div>
               </div>
               <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/75">
                 <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Direct reservation request</span>
                 <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Online ordering</span>
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Allergy-aware guidance</span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Allergy-aware menu help</span>
               </div>
             </div>
             <div className="art-frame luxury-hero-shadow hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 backdrop-blur-xl lg:block">
@@ -287,7 +287,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               <div className="mt-4 grid gap-3 rounded-2xl bg-black/30 p-5">
                 <p className="flex items-center gap-2 text-sm font-semibold"><Award size={17} /> Chef's selection, direct ordering, and table requests in one calm flow.</p>
                 <div className="luxury-divider opacity-40" />
-                <p className="text-xs leading-5 text-white/65">Designed to feel like the first moment of service, not a software screen.</p>
+                <p className="text-xs leading-5 text-white/65">Browse signature dishes, reserve a table, or place an order directly with {restaurant.name}.</p>
               </div>
             </div>
           </div>
@@ -355,13 +355,13 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             <div className="mx-auto max-w-4xl text-center">
               <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>Fresh from the kitchen</p>
               <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">A menu that feels curated, not listed.</h2>
-              <p className="mx-auto mt-5 max-w-2xl leading-7 opacity-65">Browse dishes like a tasting conversation: chef cues, dietary clarity, pairing suggestions, sold-out states, and ordering that stays calm on mobile.</p>
+              <p className="mx-auto mt-5 max-w-2xl leading-7 opacity-65">Browse dishes by craving, ingredients, and dietary needs, then reserve or order without losing your place in the menu.</p>
             </div>
             {restaurant.categories.length === 0 || menuItems.length === 0 ? (
               <div className="mt-12 rounded-3xl border border-dashed bg-white p-10 text-center shadow-sm">
                 <ChefHat className="mx-auto opacity-35" size={42} />
                 <h3 className="mt-4 text-2xl font-semibold">Menu coming soon</h3>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">The restaurant is still preparing its online menu. Ask the AI Maitre d' or request a table for help.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">The restaurant is still preparing its online menu. Call the restaurant or request a table for help.</p>
               </div>
             ) : (
               <>
@@ -410,7 +410,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       <div>
                         <p className="text-xs font-bold uppercase tracking-[.22em]" style={{ color: primary }}>Signature dishes</p>
                         <h3 className="mt-1 text-2xl font-semibold">A few plates to begin with.</h3>
-                        <p className="mt-1 text-sm opacity-55">Ask the AI Maitre d' for a pairing or a full meal built around these dishes.</p>
+                        <p className="mt-1 text-sm opacity-55">{personality.signatureCopy}</p>
                       </div>
                       <Sparkles className="hidden opacity-40 sm:block" />
                     </div>
@@ -483,7 +483,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 <h2 className="mt-3 text-4xl font-semibold leading-tight sm:text-6xl">A glimpse before you arrive.</h2>
               </div>
               <p className="max-w-xl text-sm leading-7 opacity-60 lg:justify-self-end">
-                Food, room, light, and service should feel connected before a guest ever opens the door.
+                Food, room, light, and service should feel connected before you ever open the door.
               </p>
             </div>
             <div className={`mx-auto grid max-w-7xl gap-3 ${themeIdentity.galleryClass}`}>
@@ -541,7 +541,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
       <footer className="px-6 py-12 text-center text-sm" style={{ backgroundColor: text, color: background }}>
         <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
         <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
-        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Reservations, ordering, and hospitality online.</p>
+        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Menu, reservations, directions, and ordering.</p>
       </footer>
 
       <ChatWidget
@@ -783,7 +783,7 @@ function MenuItemCard({
             <b className="block text-xl font-semibold" style={{ color: primary }}>EUR {Number(item.price).toFixed(2)}</b>
           </div>
         </div>
-        <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the AI Maitre d' what pairs well with this dish."}</p>
+        <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the restaurant what pairs well with this dish."}</p>
         <p className="mt-4 rounded-2xl border border-black/5 bg-white/70 px-3 py-3 text-xs leading-5 opacity-75">
           {pairing}
         </p>
@@ -887,7 +887,7 @@ function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], pe
     {
       icon: Sparkles,
       label: personality.name,
-      value: "A restaurant identity ready to become a full website theme.",
+      value: "A dining mood you can understand before you arrive.",
       detail: personality.description,
     },
     {
@@ -912,7 +912,7 @@ function buildStoryMoments(restaurant: Restaurant, featuredItems: MenuItem[], pe
       icon: Wine,
       label: "Pairing cue",
       value: "Guests are invited to ask for pairings, allergies, and occasion-based guidance.",
-      detail: "This makes the AI Maitre d' feel like part of hospitality, not just a question box.",
+      detail: "This keeps menu help connected to the food, the table, and the restaurant's own hospitality.",
     },
   ];
 }
@@ -931,7 +931,7 @@ function pairingSuggestion(item: MenuItem) {
   if (description.includes("beef") || description.includes("steak")) return "Ask for a bold red wine or a roasted side to make this feel like the center of the table.";
   if (description.includes("fish") || description.includes("sea")) return "A crisp white wine, fresh salad, or citrus-forward starter will keep the plate lifted.";
   if (item.is_vegan || item.is_vegetarian) return "A fresh starter keeps this plant-forward choice bright and balanced.";
-  return "Ask the AI Maitre d' for a pairing based on your mood, appetite, and table plans.";
+  return "Ask for a pairing based on your mood, appetite, and table plans.";
 }
 
 function matchesMenuFilters(item: MenuItem, query: string, filter: "all" | "vegan" | "vegetarian" | "halal") {

@@ -9,7 +9,7 @@ import type { Message } from "@/lib/types";
 function welcomeMessage(restaurantName: string): Message {
   return {
     role: "assistant",
-    content: `Good evening. I am the AI Maitre d' for ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will guide you through the menu like a careful member of the dining room team.`,
+    content: `Good evening. Welcome to ${restaurantName}. Tell me your mood, occasion, appetite, allergies, or timing, and I will help you find the right dish, table plan, or order.`,
   };
 }
 
@@ -78,7 +78,7 @@ export default function ChatWidget({
                   <Bot size={22} />
                 </span>
                 <div>
-                  <p className="font-semibold leading-tight">{restaurantName} AI Maitre d'</p>
+                  <p className="font-semibold leading-tight">{restaurantName} menu guide</p>
                   <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
@@ -158,7 +158,7 @@ export default function ChatWidget({
             <input
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder={loading ? "AI Maitre d' is checking..." : "Tell me your mood, allergies, occasion..."}
+              placeholder={loading ? "Checking the menu..." : "Tell me your mood, allergies, occasion..."}
               className="min-h-12 min-w-0 flex-1 rounded-full border px-4 py-3 text-base outline-none focus:border-stone-500 sm:text-sm"
               disabled={loading}
             />
@@ -178,7 +178,7 @@ export default function ChatWidget({
         onClick={() => setOpen(!open)}
         className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105 sm:h-16 sm:w-16"
         style={{ backgroundColor: primaryColor }}
-        aria-label="Open AI Maitre d'"
+        aria-label="Open menu guide"
       >
         {open ? <X /> : <MessageCircle />}
       </button>

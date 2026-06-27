@@ -32,7 +32,7 @@ describe("restaurant page", () => {
     expect(screen.getAllByText("Halal").length).toBeGreaterThan(0);
     expect(screen.getByText("Vegan")).toBeVisible();
     expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
-    expect(screen.getByRole("button", { name: /open ai maitre d'/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /open menu guide/i })).toBeVisible();
   });
 
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {

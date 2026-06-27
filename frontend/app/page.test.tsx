@@ -19,9 +19,9 @@ describe("public homepage", () => {
     renderWithUser(<Home />);
 
     expect(await screen.findByRole("heading", { name: bellaNapoli.tagline })).toBeVisible();
-    expect(screen.getByRole("link", { name: /enter the restaurant/i })).toHaveAttribute("href", `/restaurants/${bellaNapoli.slug}`);
+    expect(screen.getByRole("link", { name: /view the menu/i })).toHaveAttribute("href", `/restaurants/${bellaNapoli.slug}#menu`);
     expect(screen.getAllByRole("link", { name: /reserve a table/i })[0]).toBeVisible();
-    expect(screen.getByText(/AI Maitre d'/i)).toBeVisible();
+    expect(screen.getByText(/Order from the restaurant/i)).toBeVisible();
   });
 
   it("keeps navigation links available", async () => {
@@ -45,6 +45,6 @@ describe("public homepage", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: bellaNapoli.tagline })).toBeVisible();
     });
-    expect(screen.getByRole("link", { name: /enter the restaurant/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /view the menu/i })).toBeVisible();
   });
 });

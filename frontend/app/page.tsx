@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Clock3, MapPin, Sparkles, Star, Utensils, Wine } from "lucide-react";
+import { ArrowRight, MapPin, Phone, ShieldCheck, Sparkles, Star, Utensils, Wine } from "lucide-react";
 import Link from "next/link";
 
 import PublicShell from "@/components/PublicShell";
@@ -12,7 +12,9 @@ export default function Home() {
         const gallery = restaurant.images.filter((image) => ["gallery", "food"].includes(image.image_type));
         const heroImage = restaurant.hero_image || gallery[0]?.url || "";
         const menuCount = restaurant.categories.reduce((total, category) => total + category.items.length, 0);
-        const featuredItems = restaurant.categories.flatMap((category) => category.items).filter((item) => item.is_available).slice(0, 3);
+        const allItems = restaurant.categories.flatMap((category) => category.items);
+        const featuredItems = allItems.filter((item) => item.is_available).slice(0, 3);
+        const cuisineLine = restaurant.theme?.name || restaurant.categories[0]?.name || "Fresh from the kitchen";
 
         return (
           <main className="luxury-shell">
@@ -28,26 +30,26 @@ export default function Home() {
               <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-12 pt-36 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end lg:pb-20">
                 <div className="fade-up">
                   <p className="luxury-kicker inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-bold backdrop-blur">
-                    <Sparkles size={14} /> {restaurant.city || "Fine dining"} / RestaurantAI experience
+                    <Sparkles size={14} /> {restaurant.city || "Local dining"} / {cuisineLine}
                   </p>
                   <h1 className="mt-6 max-w-5xl text-balance text-5xl font-semibold leading-[.88] sm:text-7xl lg:text-8xl">
-                    {restaurant.tagline || `${restaurant.name}, presented beautifully online.`}
+                    {restaurant.tagline || `${restaurant.name}, ready for your next table.`}
                   </h1>
                   <p className="mt-7 max-w-2xl text-base leading-8 text-white/82 sm:text-lg">
-                    {restaurant.description || "A refined restaurant website for reservations, menu discovery, online ordering, and AI-guided hospitality."}
+                    {restaurant.description || `Explore the menu, reserve a table, and order directly from ${restaurant.name}.`}
                   </p>
                   <div className="mt-9 flex flex-wrap gap-3">
-                    <Link href={`/restaurants/${restaurant.slug}`} className="luxury-button flex items-center gap-2 rounded-full bg-white px-7 py-4 font-semibold text-slate-950 shadow-2xl">
-                      Enter the restaurant <ArrowRight size={18} />
+                    <Link href={`/restaurants/${restaurant.slug}#menu`} className="luxury-button flex items-center gap-2 rounded-full bg-white px-7 py-4 font-semibold text-slate-950 shadow-2xl">
+                      View the menu <ArrowRight size={18} />
                     </Link>
-                    <Link href="/contact#reservation" className="luxury-button rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold backdrop-blur">
+                    <Link href={`/restaurants/${restaurant.slug}#reserve`} className="luxury-button rounded-full border border-white/40 bg-white/10 px-7 py-4 font-semibold backdrop-blur">
                       Reserve a table
                     </Link>
                   </div>
                   <div className="mt-8 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-sm backdrop-blur-xl">
                     <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Menu sections</span></div>
                     <div className="p-4"><b className="block text-2xl">{menuCount}</b><span className="text-white/65">Dishes online</span></div>
-                    <div className="p-4"><b className="block text-2xl">24/7</b><span className="text-white/65">AI guidance</span></div>
+                    <div className="p-4"><b className="block text-2xl">Direct</b><span className="text-white/65">Reservations</span></div>
                   </div>
                 </div>
 
@@ -83,17 +85,17 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="flex gap-4 py-7 md:px-8">
-                  <Clock3 className="shrink-0 text-tomato" />
+                  <Phone className="shrink-0 text-tomato" />
                   <div>
-                    <p className="font-semibold">Reservations and ordering</p>
-                    <p className="text-sm text-stone-500">Handled directly by the restaurant</p>
+                    <p className="font-semibold">{restaurant.phone || "Call for details"}</p>
+                    <p className="text-sm text-stone-500">Reservations and questions</p>
                   </div>
                 </div>
                 <div className="flex gap-4 py-7 md:pl-8">
-                  <Sparkles className="shrink-0 text-tomato" />
+                  <ShieldCheck className="shrink-0 text-tomato" />
                   <div>
-                    <p className="font-semibold">AI Maitre d'</p>
-                    <p className="text-sm text-stone-500">Menu guidance before guests arrive</p>
+                    <p className="font-semibold">Order from the restaurant</p>
+                    <p className="text-sm text-stone-500">Menu, allergies, and pickup in one place</p>
                   </div>
                 </div>
               </div>
@@ -103,7 +105,7 @@ export default function Home() {
               <div>
                 <p className="luxury-kicker text-xs font-bold text-tomato">Restaurant story</p>
                 <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">
-                  A premium digital front door for {restaurant.name}.
+                  Food, atmosphere, and hospitality before you arrive.
                 </h2>
               </div>
               <div className="premium-card rounded-[2rem] p-6 sm:p-8">
@@ -122,7 +124,7 @@ export default function Home() {
                   ))}
                 </div>
                 <Link href={`/restaurants/${restaurant.slug}`} className="mt-8 inline-flex items-center gap-2 font-semibold text-tomato">
-                  Explore the full experience <ArrowRight size={18} />
+                  See menu, reservations, and ordering <ArrowRight size={18} />
                 </Link>
               </div>
             </section>
