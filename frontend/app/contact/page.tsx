@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 import PublicShell from "@/components/PublicShell";
 import request from "@/lib/api";
 
-const inputClass = "w-full rounded-xl border border-black/15 bg-white px-4 py-3";
+const inputClass = "min-h-12 w-full rounded-xl border border-black/15 bg-white px-4 py-3 text-base sm:text-sm";
 
 function parseHours(openingHours: string) {
   try {
@@ -73,14 +73,14 @@ export default function ContactPage() {
                 <h2 className="mt-3 text-4xl font-semibold">We will save you a seat.</h2>
                 <p className="mt-2 text-sm text-stone-500">Requests are confirmed by our team by phone or email.</p>
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  <input className={inputClass} name="name" placeholder="Your name" required />
-                  <input className={inputClass} name="email" type="email" placeholder="Email address" required />
-                  <input className={inputClass} name="phone" placeholder="Phone number" />
-                  <input className={inputClass} name="party_size" type="number" min="1" max="100" placeholder="Guests" />
+                  <input className={inputClass} name="name" placeholder="Your name" autoComplete="name" required />
+                  <input className={inputClass} name="email" type="email" inputMode="email" autoComplete="email" placeholder="Email address" required />
+                  <input className={inputClass} name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number" />
+                  <input className={inputClass} name="party_size" type="number" inputMode="numeric" min="1" max="100" placeholder="Guests" />
                   <input className={`${inputClass} sm:col-span-2`} name="requested_at" type="datetime-local" />
-                  <textarea className={`${inputClass} min-h-28 sm:col-span-2`} name="message" placeholder="Anything we should know?" />
+                  <textarea className={`${inputClass} min-h-32 sm:col-span-2`} name="message" placeholder="Anything we should know?" />
                 </div>
-                <button className="mt-5 w-full rounded-xl bg-tomato px-6 py-4 font-semibold text-white hover:bg-red-700">
+                <button className="mt-5 min-h-12 w-full rounded-xl bg-tomato px-6 py-4 font-semibold text-white hover:bg-red-700">
                   Send reservation request
                 </button>
                 {status && <p className="mt-4 text-center text-sm text-stone-600">{status}</p>}

@@ -204,17 +204,17 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
               <span className="hidden text-[10px] font-bold uppercase tracking-[0.24em] text-white/55 sm:block">Private dining online</span>
             </span>
           </a>
-          <nav className="hidden items-center gap-7 rounded-full border border-white/15 bg-black/30 px-5 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl md:flex">
-            <a href="#story">Story</a>
-            <a href="#menu">Menu</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#contact">Contact</a>
-            <a href="#reserve" className={`luxury-button ${buttonClass} px-5 py-2.5 text-white shadow-lg`} style={{ backgroundColor: primary }}>
+          <nav className="hidden items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-2 text-sm font-semibold shadow-2xl backdrop-blur-xl md:flex">
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#story">Story</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#menu">Menu</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#gallery">Gallery</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#contact">Contact</a>
+            <a href="#reserve" className={`luxury-button ${buttonClass} inline-flex min-h-11 items-center px-5 py-2.5 text-white shadow-lg`} style={{ backgroundColor: primary }}>
               Reserve
             </a>
           </nav>
           <button
-            className="rounded-full border border-white/25 bg-black/20 p-2 backdrop-blur md:hidden"
+            className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/20 backdrop-blur md:hidden"
             onClick={() => setMobile(!mobile)}
             aria-label="Toggle menu"
           >
@@ -222,19 +222,18 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           </button>
         </div>
         {mobile && (
-          <nav className="mx-4 flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/90 p-6 text-white shadow-2xl backdrop-blur md:hidden">
-            <a href="#story">Story</a>
-            <a href="#menu">Menu</a>
-            <a href="#gallery">Gallery</a>
-            <a href="#contact">Contact</a>
-            <a href="#reserve">Reserve</a>
+          <nav className="fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 grid grid-cols-2 gap-2 rounded-[1.5rem] border border-white/10 bg-black/90 p-3 text-sm font-bold text-white shadow-2xl backdrop-blur md:hidden">
+            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#story" onClick={() => setMobile(false)}>Story</a>
+            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#menu" onClick={() => setMobile(false)}>Menu</a>
+            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#gallery" onClick={() => setMobile(false)}>Gallery</a>
+            <a className="rounded-2xl bg-white px-4 py-3 text-center text-slate-950" href="#reserve" onClick={() => setMobile(false)}>Reserve</a>
           </nav>
         )}
       </header>
 
       <main id="top">
         <section
-          className={`noise relative flex min-h-[100svh] items-end overflow-hidden bg-cover bg-center ${template === "japanese" ? "grayscale" : ""}`}
+          className={`noise relative flex min-h-[92svh] items-end overflow-hidden bg-cover bg-center sm:min-h-[100svh] ${template === "japanese" ? "grayscale" : ""}`}
           style={{
             backgroundImage: heroVisual
               ? `linear-gradient(90deg, rgba(9,7,5,.94), rgba(10,8,5,.66) 42%, rgba(10,8,5,.18)), url(${heroVisual})`
@@ -243,27 +242,27 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         >
           <div className="absolute inset-0 slow-drift bg-[radial-gradient(circle_at_75%_18%,rgba(255,255,255,.16),transparent_18rem)]" />
           <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-black/60 to-transparent" />
-          <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-10 pt-36 text-white sm:px-6 lg:grid-cols-[1.02fr_.98fr] lg:items-end lg:pb-16">
+          <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-8 px-4 pb-8 pt-28 text-white sm:gap-10 sm:px-6 sm:pb-10 sm:pt-36 lg:grid-cols-[1.02fr_.98fr] lg:items-end lg:pb-16">
             <div className="fade-up">
               <p className="luxury-kicker inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[10px] font-bold backdrop-blur" style={{ color: "#fff" }}>
                 <Sparkles size={14} /> {restaurant.city || "A table is waiting"} / Michelin-level hospitality
               </p>
-              <h1 className={`mt-6 max-w-5xl text-balance font-semibold leading-[.88] ${template === "fast-food" ? "text-5xl uppercase sm:text-7xl lg:text-8xl" : "text-5xl sm:text-7xl lg:text-8xl"}`}>
+              <h1 className={`mt-5 max-w-5xl text-balance font-semibold leading-[.92] sm:mt-6 sm:leading-[.88] ${template === "fast-food" ? "text-[clamp(2.7rem,13vw,4.6rem)] uppercase sm:text-7xl lg:text-8xl" : "text-[clamp(2.7rem,13vw,4.6rem)] sm:text-7xl lg:text-8xl"}`}>
                 {restaurant.tagline || restaurant.name}
               </h1>
-              <p className="mt-7 max-w-2xl text-base leading-8 text-white/85 sm:text-lg">{restaurant.description}</p>
-              <div className="mt-9 flex flex-wrap gap-3">
-                <a href="#menu" className={`luxury-button ${buttonClass} inline-flex items-center gap-2 px-7 py-4 font-semibold text-white shadow-2xl`} style={{ backgroundColor: primary }}>
+              <p className="mt-5 max-w-2xl text-[15px] leading-7 text-white/85 sm:mt-7 sm:text-lg sm:leading-8">{restaurant.description}</p>
+              <div className="mt-7 grid gap-3 sm:mt-9 sm:flex sm:flex-wrap">
+                <a href="#menu" className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3.5 font-semibold text-white shadow-2xl sm:py-4`} style={{ backgroundColor: primary }}>
                   Explore menu <ArrowRight size={18} />
                 </a>
-                <a href="#reserve" className={`luxury-button ${buttonClass} border border-white/40 bg-white/10 px-7 py-4 font-semibold backdrop-blur`}>
+                <a href="#reserve" className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center border border-white/40 bg-white/10 px-7 py-3.5 font-semibold backdrop-blur sm:py-4`}>
                   Book a table
                 </a>
               </div>
-              <div className="mt-8 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-sm backdrop-blur-xl">
-                <div className="p-4"><b className="block text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Curated sections</span></div>
-                <div className="p-4"><b className="block text-2xl">{availableItems}</b><span className="text-white/65">Kitchen choices</span></div>
-                <div className="p-4"><b className="block text-2xl">AI</b><span className="text-white/65">Maitre d'</span></div>
+              <div className="mt-6 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-xs backdrop-blur-xl sm:mt-8 sm:text-sm">
+                <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">{restaurant.categories.length}</b><span className="text-white/65">Sections</span></div>
+                <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">{availableItems}</b><span className="text-white/65">Choices</span></div>
+                <div className="p-3 sm:p-4"><b className="block text-xl sm:text-2xl">AI</b><span className="text-white/65">Maitre d'</span></div>
               </div>
               <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/75">
                 <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Direct reservation request</span>
@@ -377,16 +376,17 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       <input
                         value={menuQuery}
                         onChange={(event) => setMenuQuery(event.target.value)}
-                        className="w-full rounded-full border border-black/10 bg-white py-3 pl-11 pr-4 text-sm shadow-sm"
+                        className="min-h-12 w-full rounded-full border border-black/10 bg-white py-3 pl-11 pr-4 text-base shadow-sm sm:text-sm"
                         placeholder="Search dishes, ingredients, allergens..."
+                        autoComplete="off"
                       />
                     </label>
-                    <div className="flex gap-2 overflow-x-auto">
+                    <div className="flex snap-x gap-2 overflow-x-auto [-webkit-overflow-scrolling:touch]">
                       {(["all", "vegan", "vegetarian", "halal"] as const).map((filter) => (
                         <button
                           key={filter}
                           onClick={() => setDietaryFilter(filter)}
-                          className={`luxury-button shrink-0 rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-wider ${dietaryFilter === filter ? "text-white shadow-md" : "bg-white"}`}
+                          className={`luxury-button min-h-11 shrink-0 snap-start rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-wider ${dietaryFilter === filter ? "text-white shadow-md" : "bg-white"}`}
                           style={dietaryFilter === filter ? { backgroundColor: primary, borderColor: primary } : undefined}
                         >
                           {filter}
@@ -394,12 +394,12 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                       ))}
                     </div>
                   </div>
-                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:justify-center">
+                  <div className="mt-3 flex snap-x gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:justify-center">
                     {restaurant.categories.map((category) => (
                       <a
                         key={category.id}
                         href={`#category-${category.id}`}
-                        className="luxury-button shrink-0 rounded-full border border-black/10 bg-white px-4 py-2 text-sm font-bold shadow-sm hover:border-black/20"
+                        className="luxury-button flex min-h-11 shrink-0 snap-start items-center rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-black/20"
                       >
                         {category.name}
                       </a>
@@ -441,7 +441,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
 
                 <div className="mt-14 space-y-16">
                   {filteredCategories.map((category) => (
-                    <section id={`category-${category.id}`} key={category.id} className="scroll-mt-24">
+                    <section id={`category-${category.id}`} key={category.id} className="scroll-mt-32">
                       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-black/15 pb-5">
                         <div>
                           <p className="luxury-kicker text-[10px] font-bold opacity-40">Course {String(category.sort_order || category.id).padStart(2, "0")}</p>
@@ -517,8 +517,8 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                   </p>
                 ))}
               </div>
-              {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" className="inline-block font-semibold underline">Open Google Maps</a>}
-              {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" className="flex items-center gap-2"><Instagram size={17} /> Instagram</a>}
+              {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" className="inline-flex min-h-11 items-center font-semibold underline">Open Google Maps</a>}
+              {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" className="flex min-h-11 items-center gap-2"><Instagram size={17} /> Instagram</a>}
             </div>
           </div>
           <form id="reserve" onSubmit={reserve} className="premium-card rounded-[2rem] p-6 text-slate-900 sm:p-8">
@@ -526,14 +526,14 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
             <h2 className="mt-2 text-3xl font-semibold sm:text-4xl">Request a table</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">The restaurant will confirm your request. Add dietary notes, allergies, or a special occasion below.</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <input name="name" required placeholder="Your name" className="rounded-xl border px-4 py-3" />
-              <input name="email" type="email" required placeholder="Email" className="rounded-xl border px-4 py-3" />
-              <input name="phone" placeholder="Phone" className="rounded-xl border px-4 py-3" />
-              <input name="party_size" type="number" min="1" placeholder="Guests" className="rounded-xl border px-4 py-3" />
-              <input name="requested_at" type="datetime-local" className="rounded-xl border px-4 py-3 sm:col-span-2" />
-              <textarea name="message" placeholder="Message" className="min-h-24 rounded-xl border px-4 py-3 sm:col-span-2" />
+              <input name="name" required placeholder="Your name" autoComplete="name" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+              <input name="email" type="email" required placeholder="Email" autoComplete="email" inputMode="email" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+              <input name="party_size" type="number" min="1" inputMode="numeric" placeholder="Guests" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+              <input name="requested_at" type="datetime-local" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
+              <textarea name="message" placeholder="Message" className="min-h-28 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
             </div>
-            <button className={`luxury-button mt-4 w-full ${buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: primary }}>
+            <button className={`luxury-button mt-4 min-h-12 w-full ${buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: primary }}>
               Send reservation request
             </button>
             {reservationStatus && <p className="mt-3 rounded-xl border border-green-100 bg-green-50 p-3 text-center text-sm font-semibold text-green-800">{reservationStatus}</p>}
@@ -553,13 +553,13 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         primaryColor={primary}
         menuHighlights={featuredItems.map((item) => item.name)}
         dietaryPrompts={dietaryPrompts}
-        bottomOffsetClass={cartCount > 0 ? "bottom-24 sm:bottom-5" : "bottom-5"}
+        bottomOffsetClass={cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
       />
 
       {cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
-          className="luxury-button fixed inset-x-4 bottom-4 z-40 flex items-center justify-between gap-3 rounded-2xl border border-white/15 px-4 py-3 text-left text-sm font-bold text-white shadow-2xl backdrop-blur sm:left-1/2 sm:right-auto sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
+          className="luxury-button fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/15 px-4 py-3 text-left text-sm font-bold text-white shadow-2xl backdrop-blur sm:left-1/2 sm:right-auto sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
           style={{ backgroundColor: primary }}
         >
           <span className="flex min-w-0 items-center gap-3">
@@ -575,13 +575,13 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
 
       {cartOpen && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
-          <div className="max-h-[94vh] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] bg-[#fbfaf7] p-6 text-slate-900 shadow-2xl sm:rounded-[2rem]">
+          <div className="max-h-[calc(100svh-0.75rem)] w-full max-w-2xl overflow-y-auto rounded-t-[2rem] bg-[#fbfaf7] p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-slate-900 shadow-2xl sm:max-h-[94vh] sm:rounded-[2rem] sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>Online order</p>
                 <h2 className="text-3xl font-semibold">Your selected dishes</h2>
               </div>
-              <button onClick={() => { setCartOpen(false); setCompletedOrder(null); }} className="rounded-full border p-2" aria-label="Close cart"><X /></button>
+              <button onClick={() => { setCartOpen(false); setCompletedOrder(null); }} className="grid h-11 w-11 place-items-center rounded-full border bg-white" aria-label="Close cart"><X /></button>
             </div>
 
             {completedOrder ? (
@@ -632,16 +632,16 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 </div>
                 <div className="mt-6 space-y-3">
                   {cartLines.map((line) => (
-                    <div key={line.item.id} className="flex items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white p-3 shadow-sm">
-                      <div>
+                    <div key={line.item.id} className="grid gap-3 rounded-2xl border border-black/5 bg-white p-3 shadow-sm sm:flex sm:items-center sm:justify-between">
+                      <div className="min-w-0">
                         <p className="font-semibold">{line.item.name}</p>
                         <p className="text-sm text-slate-500">EUR {Number(line.item.price).toFixed(2)} each</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => changeCart(line.item, -1)} className="rounded-lg border bg-white p-2" aria-label={`Remove one ${line.item.name}`}><Minus size={15} /></button>
-                        <b>{line.quantity}</b>
-                        <button type="button" onClick={() => changeCart(line.item, 1)} className="rounded-lg border bg-white p-2" aria-label={`Add one ${line.item.name}`}><Plus size={15} /></button>
-                        <button type="button" onClick={() => setCart((current) => { const next = { ...current }; delete next[line.item.id]; return next; })} className="ml-2 text-red-600" aria-label={`Remove ${line.item.name}`}><Trash2 size={17} /></button>
+                      <div className="flex items-center justify-between gap-2 sm:justify-end">
+                        <button type="button" onClick={() => changeCart(line.item, -1)} className="grid h-11 w-11 place-items-center rounded-xl border bg-white" aria-label={`Remove one ${line.item.name}`}><Minus size={15} /></button>
+                        <b className="min-w-8 text-center">{line.quantity}</b>
+                        <button type="button" onClick={() => changeCart(line.item, 1)} className="grid h-11 w-11 place-items-center rounded-xl border bg-white" aria-label={`Add one ${line.item.name}`}><Plus size={15} /></button>
+                        <button type="button" onClick={() => setCart((current) => { const next = { ...current }; delete next[line.item.id]; return next; })} className="ml-auto grid h-11 w-11 place-items-center rounded-xl text-red-600 sm:ml-2" aria-label={`Remove ${line.item.name}`}><Trash2 size={17} /></button>
                       </div>
                     </div>
                   ))}
@@ -655,7 +655,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                         type="button"
                         key={value}
                         onClick={() => setOrderType(value as typeof orderType)}
-                        className={`luxury-button rounded-xl border px-2 py-3 text-sm font-bold ${orderType === value ? "text-white" : "bg-white"}`}
+                        className={`luxury-button min-h-12 rounded-xl border px-2 py-3 text-sm font-bold ${orderType === value ? "text-white" : "bg-white"}`}
                         style={orderType === value ? { backgroundColor: primary } : undefined}
                       >
                         {label}
@@ -665,18 +665,18 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
                 </div>
 
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <input required name="customer_name" placeholder="Your name" className="rounded-xl border px-4 py-3" />
-                  <input required name="customer_phone" placeholder="Phone number" className="rounded-xl border px-4 py-3" />
-                  <input name="customer_email" type="email" placeholder="Email (optional)" className="rounded-xl border px-4 py-3 sm:col-span-2" />
+                  <input required name="customer_name" placeholder="Your name" autoComplete="name" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+                  <input required name="customer_phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone number" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+                  <input name="customer_email" type="email" inputMode="email" autoComplete="email" placeholder="Email (optional)" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
                   {orderType === "DELIVERY" && (
                     <>
-                      <input required name="street" placeholder="Street and house number" className="rounded-xl border px-4 py-3 sm:col-span-2" />
-                      <input required name="delivery_postal_code" placeholder="Postal code" className="rounded-xl border px-4 py-3" />
-                      <input required name="delivery_city" placeholder="City" className="rounded-xl border px-4 py-3" />
-                      <input name="delivery_instructions" placeholder="Doorbell, floor, delivery instructions" className="rounded-xl border px-4 py-3 sm:col-span-2" />
+                      <input required name="street" autoComplete="street-address" placeholder="Street and house number" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
+                      <input required name="delivery_postal_code" inputMode="numeric" autoComplete="postal-code" placeholder="Postal code" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+                      <input required name="delivery_city" autoComplete="address-level2" placeholder="City" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
+                      <input name="delivery_instructions" placeholder="Doorbell, floor, delivery instructions" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
                     </>
                   )}
-                  <textarea name="notes" placeholder="Notes for the restaurant" className="min-h-20 rounded-xl border px-4 py-3 sm:col-span-2" />
+                  <textarea name="notes" placeholder="Notes for the restaurant" className="min-h-24 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
                 </div>
 
                 <div className="mt-6 space-y-2 border-t pt-4 text-sm">

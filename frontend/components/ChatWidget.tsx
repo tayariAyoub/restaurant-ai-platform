@@ -67,9 +67,9 @@ export default function ChatWidget({
   }
 
   return (
-    <div className={`fixed right-4 z-50 sm:right-5 ${bottomOffsetClass}`}>
+    <div className={`fixed inset-x-3 z-50 flex justify-end sm:left-auto sm:right-5 ${bottomOffsetClass}`}>
       {open && (
-        <div className="mb-4 flex h-[min(720px,84vh)] w-[min(460px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-[0_32px_90px_rgba(0,0,0,.24)]">
+        <div className="mb-3 flex h-[min(680px,calc(100svh-7.75rem))] w-full flex-col overflow-hidden rounded-[1.5rem] border border-white/20 bg-white shadow-[0_32px_90px_rgba(0,0,0,.24)] sm:mb-4 sm:h-[min(720px,84vh)] sm:w-[min(460px,calc(100vw-2rem))] sm:rounded-[2rem]">
           <div className="relative overflow-hidden px-5 py-5 text-white" style={{ backgroundColor: primaryColor }}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(255,255,255,.28),transparent_16rem),linear-gradient(135deg,rgba(0,0,0,.05),rgba(0,0,0,.28))]" />
             <div className="relative flex items-start justify-between gap-4">
@@ -82,7 +82,7 @@ export default function ChatWidget({
                   <p className="mt-1 flex items-center gap-1 text-xs text-white/80"><Sparkles size={12} /> Mood, pairings, reservations</p>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} aria-label="Close chat" className="rounded-full bg-white/15 p-2 hover:bg-white/25">
+              <button onClick={() => setOpen(false)} aria-label="Close chat" className="grid h-11 w-11 place-items-center rounded-full bg-white/15 hover:bg-white/25">
                 <X size={18} />
               </button>
             </div>
@@ -96,13 +96,13 @@ export default function ChatWidget({
           </div>
 
           <div className="grid grid-cols-3 border-b bg-white text-center text-[11px] font-bold text-stone-500">
-            <button onClick={() => send(undefined, "Recommend a full meal for my mood tonight")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+            <button onClick={() => send(undefined, "Recommend a full meal for my mood tonight")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
               <Utensils size={14} /> Meal
             </button>
-            <button onClick={() => send(undefined, "Help me build a pickup order")} className="flex items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
+            <button onClick={() => send(undefined, "Help me build a pickup order")} className="flex min-h-11 items-center justify-center gap-1 border-r px-2 py-3 hover:bg-stone-50">
               <ShoppingBag size={14} /> Order
             </button>
-            <button onClick={() => send(undefined, "Can I reserve a table?")} className="flex items-center justify-center gap-1 px-2 py-3 hover:bg-stone-50">
+            <button onClick={() => send(undefined, "Can I reserve a table?")} className="flex min-h-11 items-center justify-center gap-1 px-2 py-3 hover:bg-stone-50">
               <Clock3 size={14} /> Reserve
             </button>
           </div>
@@ -135,7 +135,7 @@ export default function ChatWidget({
                           key={question}
                           onClick={() => send(undefined, question)}
                           disabled={loading}
-                          className="rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs font-semibold text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 disabled:cursor-wait disabled:opacity-60"
+                          className="min-h-11 rounded-2xl border border-black/10 bg-white px-3 py-2.5 text-left text-xs font-semibold text-stone-700 shadow-sm transition hover:-translate-y-0.5 hover:border-black/20 disabled:cursor-wait disabled:opacity-60"
                         >
                           {question}
                         </button>
@@ -159,11 +159,11 @@ export default function ChatWidget({
               value={text}
               onChange={(event) => setText(event.target.value)}
               placeholder={loading ? "AI Maitre d' is checking..." : "Tell me your mood, allergies, occasion..."}
-              className="min-w-0 flex-1 rounded-full border px-4 py-3 text-sm outline-none focus:border-stone-500"
+              className="min-h-12 min-w-0 flex-1 rounded-full border px-4 py-3 text-base outline-none focus:border-stone-500 sm:text-sm"
               disabled={loading}
             />
             <button
-              className="rounded-full p-3 text-white shadow-lg disabled:opacity-50"
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-full text-white shadow-lg disabled:opacity-50"
               style={{ backgroundColor: primaryColor }}
               disabled={!text.trim() || loading}
               aria-label="Send message"
@@ -176,7 +176,7 @@ export default function ChatWidget({
 
       <button
         onClick={() => setOpen(!open)}
-        className="ml-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105"
+        className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105 sm:h-16 sm:w-16"
         style={{ backgroundColor: primaryColor }}
         aria-label="Open AI Maitre d'"
       >

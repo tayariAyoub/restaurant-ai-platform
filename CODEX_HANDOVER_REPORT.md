@@ -191,6 +191,87 @@ pnpm build
 
 Result: passed.
 
+## Task 1.4 - Mobile Excellence
+
+Mobile audit findings:
+
+- Tested the public restaurant page at 390x844, 375x812, 412x915, and 768x1024.
+- Tested public homepage and contact page at 390x844.
+- No horizontal scrolling was detected on the audited public pages.
+- Public restaurant page had several mobile comfort issues:
+  - mobile menu toggle was slightly below the 44px touch target target.
+  - menu filter buttons were slightly under 44px high.
+  - category anchor chips were too short for comfortable thumb use.
+  - tablet header navigation links were visually elegant but too small as touch targets.
+  - cart quantity controls were compact inside the order sheet.
+  - chat and cart floating controls needed safer spacing around mobile safe areas.
+  - order/reservation inputs needed better mobile keyboard hints.
+  - hero was full-height on phones, making the menu feel farther away than necessary.
+
+Improvements made:
+
+- Reduced phone hero height from full-screen to a denser premium mobile hero while preserving the desktop/tablet cinematic layout.
+- Improved hero type scaling with `clamp()` for small screens.
+- Made hero CTAs full-width and easier to tap on phones.
+- Reworked the mobile navigation menu into a bottom tray for easier one-handed access.
+- Increased touch targets for:
+  - mobile menu toggle
+  - tablet/desktop nav links
+  - menu dietary filters
+  - category chips
+  - cart quantity controls
+  - cart close button
+  - order type selector
+  - order submit button
+  - chatbot close, send, quick prompt, and quick action buttons
+- Added safe-area-aware bottom positioning for floating cart and chatbot controls.
+- Made the chatbot behave more like a premium mobile sheet on phones.
+- Improved cart sheet spacing and line-item controls for thumb use.
+- Added mobile keyboard hints and autocomplete attributes to:
+  - reservation form
+  - public contact form
+  - order checkout form
+  - delivery address fields
+- Added global focus-visible outlines and scroll padding for anchored sections.
+
+Verification:
+
+- Browser mobile audit after changes:
+  - 390x844: no horizontal overflow, no detected visible touch targets under 44px.
+  - 375x812: no horizontal overflow, no detected visible touch targets under 44px.
+  - 412x915: no horizontal overflow, no detected visible touch targets under 44px.
+  - 768x1024: no horizontal overflow, no detected visible touch targets under 44px.
+
+Files changed:
+
+- `frontend/app/contact/page.tsx`
+- `frontend/app/globals.css`
+- `frontend/components/ChatWidget.tsx`
+- `frontend/components/RestaurantSite.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 5 test files passed, 18 tests passed.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
+Remaining recommendations:
+
+- Add Playwright visual regression checks for the same four mobile/tablet viewport sizes.
+- Consider a dedicated mobile category rail with active-section highlighting in a later task.
+- Consider a true native-app-style bottom navigation only if analytics show guests use many sections per visit.
+
 ## Phase 1.5 - Frontend Testing Foundation
 
 Files changed:
