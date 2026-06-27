@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     demo_owner_email: str = "owner@example.com"
     demo_owner_password: str
     upload_dir: str = "uploads"
+    storage_provider: str = "local"
     rate_limit_chat_per_minute: int = 10
     rate_limit_reservations_per_minute: int = 5
     rate_limit_orders_per_minute: int = 10

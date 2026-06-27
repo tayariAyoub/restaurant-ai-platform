@@ -1,12 +1,10 @@
 import re
 import uuid
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import hash_password
 from app.dependencies import get_current_user, require_super_admin
@@ -61,6 +59,7 @@ from app.services.knowledge import (
     extract_upload_text,
     rebuild_structured_knowledge,
 )
+from app.services.storage import get_storage_service, validate_document_upload
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -454,28 +453,24 @@ async def upload_image(
     user: User = Depends(get_current_user),
 ) -> RestaurantImage:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    if file.content_type not in {"image/jpeg", "image/png", "image/webp", "image/gif"}:
-        raise HTTPException(status_code=400, detail="Upload JPG, PNG, WEBP, or GIF images")
     content = await file.read()
-    if len(content) > 8 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="Image is larger than 8 MB")
-    suffix = Path(file.filename or "image.jpg").suffix.lower() or ".jpg"
-    directory = Path(settings.upload_dir, str(restaurant_id))
-    directory.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}{suffix}"
-    Path(directory, filename).write_bytes(content)
-    url = f"/uploads/{restaurant_id}/{filename}"
+    stored = get_storage_service().save_image(
+        restaurant_id,
+        content,
+        file.filename,
+        file.content_type,
+    )
     image = RestaurantImage(
         restaurant_id=restaurant_id,
         image_type=image_type,
-        url=url,
+        url=stored.url,
         alt_text=alt_text,
         sort_order=len(restaurant.images),
     )
     if image_type == "logo":
-        restaurant.logo_url = url
+        restaurant.logo_url = stored.url
     elif image_type == "hero":
-        restaurant.hero_image = url
+        restaurant.hero_image = stored.url
     db.add(image)
     db.commit()
     db.refresh(image)
@@ -497,9 +492,7 @@ def delete_image(
         restaurant.logo_url = ""
     if restaurant.hero_image == image.url:
         restaurant.hero_image = ""
-    if image.url.startswith("/uploads/"):
-        path = Path(settings.upload_dir, image.url.removeprefix("/uploads/"))
-        path.unlink(missing_ok=True)
+    get_storage_service().delete_url(image.url)
     db.delete(image)
     db.commit()
 
@@ -515,21 +508,17 @@ async def upload_document(
 ) -> KnowledgeDocument:
     get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
-    if len(content) > 10 * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File is larger than 10 MB")
+    validate_document_upload(content, file.filename)
     try:
         chunks = chunk_text(extract_upload_text(file, content))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not chunks:
         raise HTTPException(status_code=400, detail="No readable text found")
-    directory = Path(settings.upload_dir, str(restaurant_id), "documents")
-    directory.mkdir(parents=True, exist_ok=True)
-    safe_name = Path(file.filename or "upload.txt").name
-    Path(directory, safe_name).write_bytes(content)
+    stored = get_storage_service().save_document(restaurant_id, content, file.filename)
     document = KnowledgeDocument(
         restaurant_id=restaurant_id,
-        filename=safe_name,
+        filename=stored.filename,
         content_type=file.content_type or "application/octet-stream",
     )
     db.add(document)

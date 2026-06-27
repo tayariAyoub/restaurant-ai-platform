@@ -3,6 +3,74 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Task 1.6 - Cloud Storage Preparation And Upload Safety
+
+Audit findings:
+
+- Image uploads were handled directly inside `backend/app/api/admin.py`.
+- Uploaded images were stored on the local filesystem under `settings.upload_dir/{restaurant_id}/`.
+- Local files are served publicly through FastAPI static files at `/uploads`.
+- Image URLs are stored as `/uploads/{restaurant_id}/{filename}` in `RestaurantImage.url`, `restaurant.logo_url`, and `restaurant.hero_image`.
+- Current image validation allowed JPG, PNG, WEBP, and GIF by content type and enforced an 8 MB size limit.
+- Document uploads were stored under `uploads/{restaurant_id}/documents`.
+- Document filenames were path-basename sanitized, but storage and validation logic lived in route handlers.
+- Local storage is fine for development and demos, but production needs a cloud/object-storage provider, durable backups, CDN support, malware scanning strategy, and tenant-aware deletion.
+
+Implementation summary:
+
+- Added `backend/app/services/storage.py` with:
+  - `StorageService`
+  - `LocalStorageProvider`
+  - `StoredFile`
+  - image/document validation helpers
+  - future provider seam for S3/R2-style object storage
+- Kept local upload URLs and existing API contracts unchanged.
+- Added `STORAGE_PROVIDER=local` configuration in:
+  - `backend/app/core/config.py`
+  - `.env.example`
+  - `docker-compose.yml`
+  - `README.md`
+- Moved image saving, document saving, and upload deletion through the storage service.
+- Added upload validation for:
+  - allowed image MIME types
+  - image max size: 8 MB
+  - document max size: 10 MB
+  - safe generated filenames
+  - dangerous extensions such as `.php`, `.exe`, `.js`, `.sh`, `.svg`
+  - image extension/content-type mismatch
+- Ensured document size/filename validation runs before text extraction.
+
+Files changed:
+
+- `backend/app/core/config.py`
+- `backend/app/api/admin.py`
+- `backend/app/services/storage.py`
+- `backend/tests/test_storage.py`
+- `.env.example`
+- `docker-compose.yml`
+- `README.md`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd backend
+python -m pytest
+```
+
+Result: `32 passed, 66 warnings`.
+
+Frontend validation:
+
+- Not run, because no frontend files were changed.
+
+Remaining recommendations:
+
+- Add an `ObjectStorageProvider` for S3/R2 when production hosting is selected.
+- Add content sniffing or image decoding verification before launch with untrusted uploads.
+- Add antivirus/malware scanning for documents before production use.
+- Move public uploads behind CDN/object storage and signed administrative delete operations later.
+
 ## Restaurant Owner Onboarding Wizard
 
 Audit findings:
