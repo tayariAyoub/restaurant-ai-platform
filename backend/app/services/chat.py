@@ -10,6 +10,14 @@ from app.models import KnowledgeChunk, Restaurant
 from app.services.knowledge import create_embeddings
 
 FALLBACK = "I don't have this information. Please contact the restaurant directly."
+PUBLIC_AI_UNAVAILABLE = (
+    "Our AI assistant is temporarily unavailable. You can still browse the menu, "
+    "place an order, or contact the restaurant directly."
+)
+ADMIN_AI_UNAVAILABLE = (
+    "OpenAI is not configured for RestaurantAI. Set OPENAI_API_KEY in the backend "
+    "environment and restart the backend container."
+)
 MIN_TOKEN_OVERLAP = 2
 
 
@@ -125,12 +133,17 @@ def restaurant_ai_settings(restaurant: Restaurant | None) -> dict[str, str]:
     }
 
 
-def answer_question(db: Session, restaurant_id: int, question: str) -> ChatAnswer:
+def answer_question(
+    db: Session,
+    restaurant_id: int,
+    question: str,
+    include_setup_details: bool = False,
+) -> ChatAnswer:
     restaurant = db.get(Restaurant, restaurant_id)
     ai_settings = restaurant_ai_settings(restaurant)
     if not settings.openai_api_key:
         return ChatAnswer(
-            answer=f"{ai_settings['name']} is not configured yet. {ai_settings['escalation']}",
+            answer=ADMIN_AI_UNAVAILABLE if include_setup_details else PUBLIC_AI_UNAVAILABLE,
             unanswered=True,
             sources=[],
         )

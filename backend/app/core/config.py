@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     auth_cookie_samesite: str = "lax"
     auth_cookie_max_age_seconds: int = 43200
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
 
 @lru_cache

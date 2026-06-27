@@ -413,7 +413,7 @@ def test_structured_ai_knowledge_includes_services_menu_and_allergens(
     assert "Dietary options: vegetarian" in combined
 
 
-def test_ai_fallback_uses_restaurant_specific_escalation_when_openai_is_missing(
+def test_public_ai_fallback_hides_openai_setup_details_when_key_is_missing(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     restaurant_one, _ = restaurants(db)
@@ -424,7 +424,28 @@ def test_ai_fallback_uses_restaurant_specific_escalation_when_openai_is_missing(
 
     result = chat.answer_question(db, restaurant_one.id, "Do you deliver tonight?")
 
-    assert result.answer == "Tenant AI is not configured yet. Call Tenant One directly."
+    assert result.answer == (
+        "Our AI assistant is temporarily unavailable. You can still browse the menu, "
+        "place an order, or contact the restaurant directly."
+    )
+    assert result.unanswered is True
+    assert result.sources == []
+
+
+def test_admin_ai_test_can_show_openai_setup_guidance_when_key_is_missing(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    monkeypatch.setattr(chat.settings, "openai_api_key", "")
+
+    result = chat.answer_question(
+        db,
+        restaurant_one.id,
+        "Do you deliver tonight?",
+        include_setup_details=True,
+    )
+
+    assert "Set OPENAI_API_KEY" in result.answer
     assert result.unanswered is True
     assert result.sources == []
 
@@ -434,9 +455,15 @@ def test_public_chat_response_includes_ai_sources(
 ) -> None:
     restaurant_one, _ = restaurants(db)
 
-    def fake_answer(_: Session, restaurant_id: int, question: str) -> chat.ChatAnswer:
+    def fake_answer(
+        _: Session,
+        restaurant_id: int,
+        question: str,
+        include_setup_details: bool = False,
+    ) -> chat.ChatAnswer:
         assert restaurant_id == restaurant_one.id
         assert question == "What pasta is available?"
+        assert include_setup_details is False
         return chat.ChatAnswer("Tenant One Pasta is available.", False, ["menu"])
 
     monkeypatch.setattr(public, "answer_question", fake_answer)
@@ -588,9 +615,15 @@ def test_admin_ai_test_conversations_are_separate_from_public_customer_conversat
     owner_one, _, _ = users(db)
     restaurant_one, _ = restaurants(db)
 
-    def fake_answer(_: Session, restaurant_id: int, question: str) -> chat.ChatAnswer:
+    def fake_answer(
+        _: Session,
+        restaurant_id: int,
+        question: str,
+        include_setup_details: bool = False,
+    ) -> chat.ChatAnswer:
         assert restaurant_id == restaurant_one.id
         assert question == "What should I order?"
+        assert include_setup_details is True
         return chat.ChatAnswer("Order Tenant One Pasta.", False, ["menu"])
 
     monkeypatch.setattr(public, "answer_question", fake_answer)

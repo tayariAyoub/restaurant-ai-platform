@@ -141,7 +141,12 @@ def chat_for_restaurant(
         db.add(conversation)
         db.flush()
     db.add(Message(conversation_id=conversation.id, role="user", content=payload.message))
-    result = answer_question(db, restaurant.id, payload.message)
+    result = answer_question(
+        db,
+        restaurant.id,
+        payload.message,
+        include_setup_details=is_test,
+    )
     db.add(
         Message(
             conversation_id=conversation.id,
