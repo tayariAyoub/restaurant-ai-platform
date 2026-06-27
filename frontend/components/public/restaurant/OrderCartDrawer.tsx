@@ -29,6 +29,7 @@ type OrderCartDrawerProps = {
   orderSubmitting: boolean;
   completedOrder: RestaurantOrder | null;
   setCompletedOrder: (order: RestaurantOrder | null) => void;
+  orderModes: RestaurantOrder["order_type"][];
   primary: string;
   buttonClass: string;
   changeCart: (item: MenuItem, change: number) => void;
@@ -48,6 +49,7 @@ export default function OrderCartDrawer({
   orderSubmitting,
   completedOrder,
   setCompletedOrder,
+  orderModes,
   primary,
   buttonClass,
   changeCart,
@@ -58,6 +60,7 @@ export default function OrderCartDrawer({
 
   const total = subtotal + (orderType === "DELIVERY" ? 3.5 : 0);
   const completedEstimate = completedOrder ? estimateText(completedOrder) : "";
+  const availableModes = orderModes.length > 0 ? orderModes : ["PICKUP" as const];
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
@@ -143,20 +146,16 @@ export default function OrderCartDrawer({
 
             <div className="mt-6">
               <p className="text-sm font-bold">How would you like your order?</p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {[
-                  ["PICKUP", "Pickup"],
-                  ["EAT_IN", "Dine in"],
-                  ["DELIVERY", "Delivery"],
-                ].map(([value, label]) => (
+              <div className={`mt-3 grid gap-2 ${availableModes.length >= 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+                {availableModes.map((value) => (
                   <button
                     type="button"
                     key={value}
-                    onClick={() => setOrderType(value as RestaurantOrder["order_type"])}
+                    onClick={() => setOrderType(value)}
                     className={`luxury-button min-h-12 rounded-xl border px-2 py-3 text-sm font-bold ${orderType === value ? "text-white" : "bg-white"}`}
                     style={orderType === value ? { backgroundColor: primary } : undefined}
                   >
-                    {label}
+                    {orderModeLabel(value)}
                   </button>
                 ))}
               </div>
@@ -202,6 +201,12 @@ function SuccessMetric({ label, value }: { label: string; value: string }) {
       <p className="mt-1 font-bold text-slate-900">{value}</p>
     </div>
   );
+}
+
+function orderModeLabel(value: RestaurantOrder["order_type"]) {
+  if (value === "EAT_IN") return "Dine in";
+  if (value === "DELIVERY") return "Delivery";
+  return "Pickup";
 }
 
 function OrderTimeline({ status, orderType }: { status: string; orderType: RestaurantOrder["order_type"] }) {

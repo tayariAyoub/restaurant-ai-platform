@@ -86,6 +86,12 @@ export type Restaurant = {
   homepage_style: string;
   menu_style: string;
   gallery_style: string;
+  reservations_enabled: boolean;
+  ordering_enabled: boolean;
+  delivery_enabled: boolean;
+  pickup_enabled: boolean;
+  dine_in_enabled: boolean;
+  chatbot_enabled: boolean;
   is_published: boolean;
   created_at: string;
   owner?: User | null;

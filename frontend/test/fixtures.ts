@@ -31,6 +31,12 @@ export const bellaNapoli: Restaurant = {
   homepage_style: "editorial",
   menu_style: "cards",
   gallery_style: "grid",
+  reservations_enabled: true,
+  ordering_enabled: true,
+  delivery_enabled: true,
+  pickup_enabled: true,
+  dine_in_enabled: true,
+  chatbot_enabled: true,
   is_published: true,
   created_at: "2026-01-01T00:00:00Z",
   theme: {

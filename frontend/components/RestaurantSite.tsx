@@ -66,6 +66,33 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   );
   const structuredData = buildRestaurantJsonLd(restaurant);
   const cartScope = restaurant.slug || restaurant.id;
+  const reservationsEnabled = restaurant.reservations_enabled !== false;
+  const orderingEnabled = restaurant.ordering_enabled !== false;
+  const deliveryEnabled = restaurant.delivery_enabled !== false;
+  const pickupEnabled = restaurant.pickup_enabled !== false;
+  const dineInEnabled = restaurant.dine_in_enabled !== false;
+  const chatbotEnabled = restaurant.chatbot_enabled !== false;
+  const orderModes = useMemo(
+    () =>
+      [
+        pickupEnabled && "PICKUP",
+        dineInEnabled && "EAT_IN",
+        deliveryEnabled && "DELIVERY",
+      ].filter(Boolean) as RestaurantOrder["order_type"][],
+    [deliveryEnabled, dineInEnabled, pickupEnabled],
+  );
+  const footerServices = [
+    "Menu",
+    reservationsEnabled && "reservations",
+    "directions",
+    orderingEnabled && "ordering",
+  ].filter(Boolean).join(", ");
+
+  useEffect(() => {
+    if (orderModes.length > 0 && !orderModes.includes(orderType)) {
+      setOrderType(orderModes[0]);
+    }
+  }, [orderModes, orderType]);
 
   useEffect(() => {
     setCartHydrated(false);
@@ -79,6 +106,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
   }, [cart, cartHydrated, cartScope]);
 
   function changeCart(item: MenuItem, change: number) {
+    if (!orderingEnabled) return;
     setCart((current) => {
       const quantity = (current[item.id]?.quantity || 0) + change;
       if (quantity <= 0) {
@@ -177,6 +205,11 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           heroVisual={heroVisual}
           heroGallery={heroGallery}
           availableItems={availableItems}
+          reservationsEnabled={reservationsEnabled}
+          orderingEnabled={orderingEnabled}
+          deliveryEnabled={deliveryEnabled}
+          pickupEnabled={pickupEnabled}
+          dineInEnabled={dineInEnabled}
           mobileOpen={mobile}
           onToggleMobile={() => setMobile((current) => !current)}
           onCloseMobile={() => setMobile(false)}
@@ -192,34 +225,39 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           menuItems={menuItems}
           featuredItems={featuredItems}
           quantities={quantities}
+          orderingEnabled={orderingEnabled}
           onAdd={(item) => changeCart(item, 1)}
         />
         <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
-        <ReservationPanel
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          hours={hours}
-          reservationStatus={reservationStatus}
-          onReserve={reserve}
-        />
+        {reservationsEnabled && (
+          <ReservationPanel
+            restaurant={restaurant}
+            themeIdentity={themeIdentity}
+            hours={hours}
+            reservationStatus={reservationStatus}
+            onReserve={reserve}
+          />
+        )}
       </main>
 
       <footer className="px-6 py-12 text-center text-sm" style={{ backgroundColor: text, color: background }}>
         <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
         <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
-        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">Menu, reservations, directions, and ordering.</p>
+        <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">{footerServices}.</p>
       </footer>
 
-      <ChatWidget
-        slug={restaurant.slug}
-        restaurantName={restaurant.name}
-        primaryColor={primary}
-        menuHighlights={featuredItems.map((item) => item.name)}
-        dietaryPrompts={dietaryPrompts}
-        bottomOffsetClass={cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
-      />
+      {chatbotEnabled && (
+        <ChatWidget
+          slug={restaurant.slug}
+          restaurantName={restaurant.name}
+          primaryColor={primary}
+          menuHighlights={featuredItems.map((item) => item.name)}
+          dietaryPrompts={dietaryPrompts}
+          bottomOffsetClass={cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
+        />
+      )}
 
-      {cartCount > 0 && (
+      {orderingEnabled && cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
           className="luxury-button fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/15 px-4 py-3 text-left text-sm font-bold text-white shadow-2xl backdrop-blur sm:left-1/2 sm:right-auto sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
@@ -248,6 +286,7 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         orderSubmitting={orderSubmitting}
         completedOrder={completedOrder}
         setCompletedOrder={setCompletedOrder}
+        orderModes={orderModes}
         primary={primary}
         buttonClass={buttonClass}
         changeCart={changeCart}

@@ -77,6 +77,12 @@ class Restaurant(Base):
     homepage_style: Mapped[str] = mapped_column(String(40), default="")
     menu_style: Mapped[str] = mapped_column(String(40), default="")
     gallery_style: Mapped[str] = mapped_column(String(40), default="")
+    reservations_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    ordering_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    delivery_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    pickup_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    dine_in_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    chatbot_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

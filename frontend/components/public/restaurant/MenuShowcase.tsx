@@ -16,6 +16,7 @@ type MenuShowcaseProps = {
   menuItems: MenuItem[];
   featuredItems: MenuItem[];
   quantities: Record<number, number>;
+  orderingEnabled: boolean;
   onAdd: (item: MenuItem) => void;
 };
 
@@ -25,6 +26,7 @@ export default function MenuShowcase({
   menuItems,
   featuredItems,
   quantities,
+  orderingEnabled,
   onAdd,
 }: MenuShowcaseProps) {
   const [menuQuery, setMenuQuery] = useState("");
@@ -119,8 +121,11 @@ export default function MenuShowcase({
                   {featuredItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => onAdd(item)}
-                      className="premium-lift w-60 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white text-left text-slate-950 shadow-sm"
+                      onClick={() => {
+                        if (orderingEnabled) onAdd(item);
+                      }}
+                      disabled={!orderingEnabled}
+                      className="premium-lift w-60 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white text-left text-slate-950 shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {item.image_url ? (
                         <img src={item.image_url} alt={item.name} className={`h-28 w-full object-cover ${themeIdentity.imageTreatmentClass}`} loading="lazy" decoding="async" />
@@ -131,7 +136,7 @@ export default function MenuShowcase({
                         <span className="block truncate font-semibold">{item.name}</span>
                         <span className="mt-1 flex items-center justify-between text-sm opacity-65">
                           <span>{formatPrice(item.price)}</span>
-                          <Plus size={16} style={{ color: primary }} />
+                          {orderingEnabled ? <Plus size={16} style={{ color: primary }} /> : <span className="text-xs">Browse</span>}
                         </span>
                       </span>
                     </button>
@@ -169,6 +174,7 @@ export default function MenuShowcase({
                           secondary={secondary}
                           buttonClass={buttonClass}
                           themeIdentity={themeIdentity}
+                          orderingEnabled={orderingEnabled}
                           onAdd={() => onAdd(item)}
                         />
                       ))}
@@ -207,6 +213,7 @@ function MenuItemCard({
   secondary,
   buttonClass,
   themeIdentity,
+  orderingEnabled,
   onAdd,
 }: {
   item: MenuItem;
@@ -216,6 +223,7 @@ function MenuItemCard({
   secondary: string;
   buttonClass: string;
   themeIdentity: RestaurantThemeIdentity;
+  orderingEnabled: boolean;
   onAdd: () => void;
 }) {
   const label = dishExperienceLabel(item, index);
@@ -277,14 +285,25 @@ function MenuItemCard({
           <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Ask staff about allergens before ordering.</p>
         )}
         <button
-          disabled={!item.is_available}
+          disabled={!orderingEnabled || !item.is_available}
           onClick={onAdd}
           className={`luxury-button mt-5 flex w-full items-center justify-center gap-2 ${buttonClass} py-3.5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none`}
-          style={item.is_available ? { backgroundColor: primary } : undefined}
+          style={orderingEnabled && item.is_available ? { backgroundColor: primary } : undefined}
         >
-          <Plus size={16} /> {item.is_available ? "Add to order" : "Unavailable today"}
+          <Plus size={16} /> {orderButtonLabel({ orderingEnabled, itemAvailable: item.is_available })}
         </button>
       </div>
     </article>
   );
+}
+
+function orderButtonLabel({
+  orderingEnabled,
+  itemAvailable,
+}: {
+  orderingEnabled: boolean;
+  itemAvailable: boolean;
+}) {
+  if (!orderingEnabled) return "Ordering paused";
+  return itemAvailable ? "Add to order" : "Unavailable today";
 }

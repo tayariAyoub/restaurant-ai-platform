@@ -128,6 +128,12 @@ class RestaurantBase(BaseModel):
     homepage_style: str = ""
     menu_style: str = ""
     gallery_style: str = ""
+    reservations_enabled: bool = True
+    ordering_enabled: bool = True
+    delivery_enabled: bool = True
+    pickup_enabled: bool = True
+    dine_in_enabled: bool = True
+    chatbot_enabled: bool = True
     is_published: bool = True
 
 

@@ -10,6 +10,7 @@ import {
   Clock3,
   DollarSign,
   Image as ImageIcon,
+  LayoutTemplate,
   type LucideIcon,
   Menu,
   Paintbrush,
@@ -306,9 +307,14 @@ export default function DashboardPage() {
           title="RestaurantAI control center"
           description="A clean operating view for launching restaurants, spotting support gaps, and keeping demos presentation-ready."
         />
-        <Link href="/admin/restaurants/new" className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg">
-          <Plus size={17} /> Create restaurant
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/builder" className="flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg">
+            <LayoutTemplate size={17} /> Visual Builder
+          </Link>
+          <Link href="/admin/restaurants/new" className="flex items-center gap-2 rounded-xl border bg-white px-5 py-3 text-sm font-semibold shadow-sm">
+            <Plus size={17} /> Create restaurant
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">

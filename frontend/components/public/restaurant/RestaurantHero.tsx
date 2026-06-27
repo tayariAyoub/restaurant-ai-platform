@@ -21,6 +21,11 @@ type RestaurantHeroProps = {
   heroVisual: string;
   heroGallery: RestaurantImage[];
   availableItems: number;
+  reservationsEnabled: boolean;
+  orderingEnabled: boolean;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  dineInEnabled: boolean;
   mobileOpen: boolean;
   onToggleMobile: () => void;
   onCloseMobile: () => void;
@@ -32,6 +37,11 @@ export default function RestaurantHero({
   heroVisual,
   heroGallery,
   availableItems,
+  reservationsEnabled,
+  orderingEnabled,
+  deliveryEnabled,
+  pickupEnabled,
+  dineInEnabled,
   mobileOpen,
   onToggleMobile,
   onCloseMobile,
@@ -73,13 +83,15 @@ export default function RestaurantHero({
             <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#menu">Menu</a>
             <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#gallery">Gallery</a>
             <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#contact">Contact</a>
-            <a
-              href="#reserve"
-              className={`luxury-button ${buttonClass} inline-flex min-h-11 items-center px-5 py-2.5 text-white shadow-lg`}
-              style={{ backgroundColor: primary }}
-            >
-              Reserve
-            </a>
+            {reservationsEnabled && (
+              <a
+                href="#reserve"
+                className={`luxury-button ${buttonClass} inline-flex min-h-11 items-center px-5 py-2.5 text-white shadow-lg`}
+                style={{ backgroundColor: primary }}
+              >
+                Reserve
+              </a>
+            )}
           </nav>
           <button
             className="grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/20 backdrop-blur md:hidden"
@@ -94,7 +106,9 @@ export default function RestaurantHero({
             <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#story" onClick={onCloseMobile}>Story</a>
             <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#menu" onClick={onCloseMobile}>Menu</a>
             <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#gallery" onClick={onCloseMobile}>Gallery</a>
-            <a className="rounded-2xl bg-white px-4 py-3 text-center text-slate-950" href="#reserve" onClick={onCloseMobile}>Reserve</a>
+            <a className="rounded-2xl bg-white px-4 py-3 text-center text-slate-950" href={reservationsEnabled ? "#reserve" : "#contact"} onClick={onCloseMobile}>
+              {reservationsEnabled ? "Reserve" : "Contact"}
+            </a>
           </nav>
         )}
       </header>
@@ -126,28 +140,38 @@ export default function RestaurantHero({
               </p>
             )}
             <div className="mt-7 grid gap-3 sm:mt-9 sm:flex sm:flex-wrap">
-              <a
-                href="#reserve"
-                className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3.5 font-semibold text-white shadow-2xl sm:py-4`}
-                style={{ backgroundColor: primary }}
-              >
-                Reserve a table <ArrowRight size={18} />
-              </a>
+              {reservationsEnabled && (
+                <a
+                  href="#reserve"
+                  className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3.5 font-semibold text-white shadow-2xl sm:py-4`}
+                  style={{ backgroundColor: primary }}
+                >
+                  Reserve a table <ArrowRight size={18} />
+                </a>
+              )}
               <a
                 href="#menu"
                 className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center border border-white/40 bg-white/10 px-7 py-3.5 font-semibold backdrop-blur sm:py-4`}
               >
-                View menu / order
+                {orderingEnabled ? "View menu / order" : "View menu"}
               </a>
             </div>
             <div className="mt-6 grid max-w-2xl grid-cols-3 divide-x divide-white/15 rounded-3xl border border-white/15 bg-black/25 text-center text-xs backdrop-blur-xl sm:mt-8 sm:text-sm">
               <HeroMetric value={personality.name.replace("Michelin ", "")} label="Style" />
               <HeroMetric value={availableItems} label="Menu choices" />
-              <HeroMetric value="Direct" label="Ordering" />
+              <HeroMetric value={orderingEnabled ? "Direct" : "Browse"} label={orderingEnabled ? "Ordering" : "Menu"} />
             </div>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold text-white/75">
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Reservation request confirmed by the restaurant</span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">Pickup, dine-in, and delivery options</span>
+              {reservationsEnabled && (
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">
+                  Reservation request confirmed by the restaurant
+                </span>
+              )}
+              {orderingEnabled && (
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">
+                  {serviceModeLabel({ deliveryEnabled, pickupEnabled, dineInEnabled })}
+                </span>
+              )}
               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">AI Maître d' menu guidance</span>
             </div>
           </div>
@@ -173,11 +197,13 @@ export default function RestaurantHero({
             </div>
             <div className="mt-4 grid gap-3 rounded-2xl bg-black/30 p-5">
               <p className="flex items-center gap-2 text-sm font-semibold">
-                <Award size={17} /> Chef's selection, direct ordering, and table requests in one calm flow.
+                <Award size={17} /> Chef's selection{orderingEnabled ? ", direct ordering," : ","} and table requests in one calm flow.
               </p>
               <div className="luxury-divider opacity-40" />
               <p className="text-xs leading-5 text-white/65">
-                Browse signature dishes, reserve a table, or place an order directly with {restaurant.name}.
+                {orderingEnabled
+                  ? `Browse signature dishes, reserve a table, or place an order directly with ${restaurant.name}.`
+                  : `Browse signature dishes, contact the restaurant, or request a table directly with ${restaurant.name}.`}
               </p>
             </div>
           </div>
@@ -188,16 +214,30 @@ export default function RestaurantHero({
         <div className="mx-auto grid max-w-7xl divide-y px-4 sm:px-6 md:grid-cols-3 md:divide-x md:divide-y-0">
           <QuickFact icon={MapPin} color={primary} text={`${restaurant.address}, ${restaurant.city}`} />
           <QuickFact icon={Phone} color={primary} text={restaurant.phone || "Phone coming soon"} />
-          <QuickFact icon={Clock3} color={primary} text="Reservations, pickup, and delivery below" />
+          <QuickFact
+            icon={Clock3}
+            color={primary}
+            text={serviceFact({ reservationsEnabled, orderingEnabled, deliveryEnabled, pickupEnabled, dineInEnabled })}
+          />
         </div>
       </section>
 
       <section className="bg-white/65 px-4 py-5 sm:px-6">
         <div className="mx-auto grid max-w-7xl gap-3 text-sm sm:grid-cols-3">
           {[
-            ["Direct with the restaurant", "Orders and requests go straight to the team."],
+            [
+              "Direct with the restaurant",
+              orderingEnabled
+                ? "Orders and requests go straight to the team."
+                : "Requests and questions go straight to the team.",
+            ],
             ["Hospitality-first", "Clear allergy prompts, opening hours, and contact details."],
-            ["No hidden friction", "Payment is handled at the restaurant or on delivery."],
+            [
+              "No hidden friction",
+              orderingEnabled
+                ? "Payment is handled at the restaurant or on delivery."
+                : "Browse the menu and contact the restaurant without extra steps.",
+            ],
           ].map(([title, copy]) => (
             <div key={title} className="flex gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
               <ShieldCheck size={18} style={{ color: primary }} />
@@ -237,4 +277,47 @@ function QuickFact({
       <span>{text}</span>
     </div>
   );
+}
+
+function serviceModeLabel({
+  deliveryEnabled,
+  pickupEnabled,
+  dineInEnabled,
+}: {
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  dineInEnabled: boolean;
+}) {
+  const modes = [
+    pickupEnabled && "pickup",
+    dineInEnabled && "dine-in",
+    deliveryEnabled && "delivery",
+  ].filter(Boolean);
+  return modes.length > 0 ? `${modes.join(", ")} options` : "Menu browsing available";
+}
+
+function serviceFact({
+  reservationsEnabled,
+  orderingEnabled,
+  deliveryEnabled,
+  pickupEnabled,
+  dineInEnabled,
+}: {
+  reservationsEnabled: boolean;
+  orderingEnabled: boolean;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
+  dineInEnabled: boolean;
+}) {
+  const services = [
+    reservationsEnabled && "reservations",
+    orderingEnabled && pickupEnabled && "pickup",
+    orderingEnabled && dineInEnabled && "dine-in",
+    orderingEnabled && deliveryEnabled && "delivery",
+  ].filter(Boolean);
+  return services.length > 0 ? `${capitalize(services.join(", "))} below` : "Menu and contact details below";
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

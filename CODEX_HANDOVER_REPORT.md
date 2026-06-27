@@ -3,6 +3,96 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 5 - Visual Restaurant Builder
+
+Scope:
+
+- Platform-owner / super-admin visual website builder.
+- Public restaurant display settings only where needed to support the builder.
+- Existing admin dashboard, restaurant editor, onboarding wizard, public website, ordering, reservations, uploads, auth, payments, and AI behavior were preserved.
+
+Audit findings:
+
+- Restaurant creation already existed through the onboarding wizard at `/admin/restaurants/new`.
+- Restaurant editing already existed through `RestaurantEditor` screens for information, design, menu, images, chatbot, reservations, orders, and customers.
+- Themes already existed in backend seed data and frontend theme resolution.
+- Logo and hero image URLs already existed on the restaurant model, and uploaded image management already existed in the admin editor.
+- The confusing gap was product workflow: a platform owner had no single visual workspace to create, polish, preview, and publish a restaurant website.
+- Existing data fields were enough for a useful MVP builder, except public display toggles for reservations, ordering modes, and chatbot visibility.
+
+Implementation summary:
+
+- Added a new admin route:
+  - `/admin/builder`
+  - `/admin/builder/[id]`
+- Added `VisualBuilder` with:
+  - existing restaurant website list
+  - create flow
+  - edit flow
+  - basic restaurant information
+  - owner assignment for super admins
+  - theme selection
+  - color controls
+  - logo and hero URL controls
+  - story/social/opening-hours content
+  - service toggles
+  - desktop/mobile live preview
+  - save and publish actions
+- Added a super-admin navigation entry and dashboard action for the Visual Builder.
+- Added minimal backend restaurant settings:
+  - `reservations_enabled`
+  - `ordering_enabled`
+  - `delivery_enabled`
+  - `pickup_enabled`
+  - `dine_in_enabled`
+  - `chatbot_enabled`
+- Threaded these settings through the public restaurant page so disabled services are not advertised or actionable.
+- Kept all defaults enabled so existing restaurants retain current behavior.
+
+Files changed:
+
+- `backend/app/models.py`
+- `backend/app/schemas.py`
+- `backend/app/services/migrations.py`
+- `frontend/app/admin/builder/page.tsx`
+- `frontend/app/admin/builder/[id]/page.tsx`
+- `frontend/app/admin/dashboard/page.tsx`
+- `frontend/components/admin/AdminShell.tsx`
+- `frontend/components/admin/VisualBuilder.tsx`
+- `frontend/components/admin/VisualBuilder.test.tsx`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/public/restaurant/RestaurantHero.tsx`
+- `frontend/components/public/restaurant/MenuShowcase.tsx`
+- `frontend/components/public/restaurant/OrderCartDrawer.tsx`
+- `frontend/lib/types.ts`
+- `frontend/test/fixtures.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm.cmd test
+pnpm.cmd build
+
+cd backend
+python -m pytest
+```
+
+Results:
+
+- Frontend tests: `8` test files passed, `28` tests passed.
+- Frontend build: passed, including `/admin/builder` and `/admin/builder/[id]`.
+- Backend tests: `32 passed, 66 warnings`.
+
+Remaining recommendations:
+
+- Add browser visual QA screenshots for the builder at desktop, tablet, and mobile sizes.
+- Add true drag/drop image upload inside the builder once the upload UX is ready to be shared with non-technical admins.
+- Move formal schema changes into Alembic before production SaaS deployment.
+- Add menu editing into the builder only after confirming whether it should replace or coexist with the current detailed restaurant editor.
+- Consider autosave for builder drafts after the create/edit UX stabilizes.
+
 ## Phase 3 - Luxury Restaurant Website Experience
 
 Scope:

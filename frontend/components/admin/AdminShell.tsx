@@ -3,6 +3,7 @@
 import {
   Building2,
   ExternalLink,
+  LayoutTemplate,
   LayoutDashboard,
   LogOut,
   PlusCircle,
@@ -51,6 +52,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     ...(user.role === "SUPER_ADMIN"
       ? [
           { href: "/admin/restaurants/new", label: "New restaurant", icon: PlusCircle },
+          { href: "/admin/builder", label: "Visual Builder", icon: LayoutTemplate },
           { href: "/admin/users", label: "Users", icon: Users },
         ]
       : []),
@@ -70,7 +72,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
               pathname === item.href ||
               (item.href === "/admin/restaurants" &&
                 pathname.startsWith("/admin/restaurants/") &&
-                pathname !== "/admin/restaurants/new");
+                pathname !== "/admin/restaurants/new") ||
+              (item.href === "/admin/builder" && pathname.startsWith("/admin/builder/"));
             return (
               <Link
                 key={item.href}
