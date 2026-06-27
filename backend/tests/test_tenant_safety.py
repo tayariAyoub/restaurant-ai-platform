@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.api import admin, public
 from app.core.database import Base
 from app.models import (
+    Conversation,
     ContactRequest,
     DeliveryAddress,
     KnowledgeChunk,
@@ -19,11 +20,24 @@ from app.models import (
     OrderItem,
     OrderStatus,
     Restaurant,
+    RestaurantFaq,
     RestaurantImage,
     User,
 )
 from app.services import chat, knowledge
-from app.schemas import ChatRequest, CategoryUpdate, DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
+from app.schemas import (
+    ChatRequest,
+    CategoryUpdate,
+    DeliveryAddressCreate,
+    ImageUrlCreate,
+    MessageReviewUpdate,
+    OrderCreate,
+    OrderItemCreate,
+    RestaurantCreate,
+    RestaurantFaqCreate,
+    RestaurantFaqFromMessageCreate,
+    RestaurantFaqUpdate,
+)
 
 
 @pytest.fixture()
@@ -436,3 +450,159 @@ def test_public_chat_response_includes_ai_sources(
     assert response.answer == "Tenant One Pasta is available."
     assert response.unanswered is False
     assert response.sources == ["menu"]
+
+
+def test_restaurant_owner_can_manage_faq_knowledge(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+
+    faq = admin.create_faq(
+        restaurant_one.id,
+        RestaurantFaqCreate(
+            question="Do you offer private dining?",
+            answer="Private dining is available by request.",
+            sort_order=0,
+        ),
+        db=db,
+        user=owner_one,
+    )
+
+    assert faq.restaurant_id == restaurant_one.id
+    assert faq.is_active is True
+    assert "Private dining is available" in "\n".join(
+        chunk.content
+        for chunk in db.query(KnowledgeChunk)
+        .filter(KnowledgeChunk.restaurant_id == restaurant_one.id)
+        .all()
+    )
+
+    updated = admin.update_faq(
+        restaurant_one.id,
+        faq.id,
+        RestaurantFaqUpdate(
+            question="Do you offer private dining?",
+            answer="Private dining is available for groups after calling the restaurant.",
+            is_active=True,
+            sort_order=1,
+        ),
+        db=db,
+        user=owner_one,
+    )
+    assert updated.sort_order == 1
+    assert "groups after calling" in updated.answer
+
+    with pytest.raises(HTTPException) as error:
+        admin.create_faq(
+            restaurant_two.id,
+            RestaurantFaqCreate(question="Private", answer="Tenant leak"),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 403
+
+    admin.delete_faq(restaurant_one.id, faq.id, db=db, user=owner_one)
+    assert db.get(RestaurantFaq, faq.id) is None
+    assert admin.faqs(restaurant_two.id, db=db, user=owner_two) == []
+
+
+def test_reviewing_unanswered_message_removes_ai_gap_count(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    conversation = Conversation(restaurant_id=restaurant_one.id)
+    db.add(conversation)
+    db.flush()
+    db.add_all(
+        [
+            Message(conversation_id=conversation.id, role="user", content="Do you have nut-free desserts?"),
+            Message(
+                conversation_id=conversation.id,
+                role="assistant",
+                content="I don't have this information.",
+                is_unanswered=True,
+            ),
+        ]
+    )
+    db.commit()
+    message = db.query(Message).filter_by(role="assistant").one()
+
+    assert admin.build_restaurant_overview(db, restaurant_one).unanswered_count == 1
+
+    reviewed = admin.review_unanswered_message(
+        restaurant_one.id,
+        message.id,
+        MessageReviewUpdate(is_reviewed=True),
+        db=db,
+        user=owner_one,
+    )
+
+    assert reviewed.is_reviewed is True
+    assert admin.build_restaurant_overview(db, restaurant_one).unanswered_count == 0
+
+
+def test_unanswered_question_can_be_converted_to_faq(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    conversation = Conversation(restaurant_id=restaurant_one.id)
+    db.add(conversation)
+    db.flush()
+    db.add_all(
+        [
+            Message(conversation_id=conversation.id, role="user", content="Can you make desserts nut-free?"),
+            Message(
+                conversation_id=conversation.id,
+                role="assistant",
+                content="I don't have this information.",
+                is_unanswered=True,
+            ),
+        ]
+    )
+    db.commit()
+    message = db.query(Message).filter_by(role="assistant").one()
+
+    faq = admin.convert_unanswered_message_to_faq(
+        restaurant_one.id,
+        message.id,
+        RestaurantFaqFromMessageCreate(
+            question="Can you make desserts nut-free?",
+            answer="Guests should call before ordering desserts with nut allergies.",
+            is_active=True,
+            sort_order=0,
+        ),
+        db=db,
+        user=owner_one,
+    )
+
+    assert faq.source_message_id == message.id
+    assert db.get(Message, message.id).is_reviewed is True
+    assert "nut allergies" in "\n".join(
+        chunk.content
+        for chunk in db.query(KnowledgeChunk)
+        .filter(KnowledgeChunk.restaurant_id == restaurant_one.id)
+        .all()
+    )
+
+
+def test_admin_ai_test_conversations_are_separate_from_public_customer_conversations(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+
+    def fake_answer(_: Session, restaurant_id: int, question: str) -> chat.ChatAnswer:
+        assert restaurant_id == restaurant_one.id
+        assert question == "What should I order?"
+        return chat.ChatAnswer("Order Tenant One Pasta.", False, ["menu"])
+
+    monkeypatch.setattr(public, "answer_question", fake_answer)
+
+    response = admin.test_ai_response(
+        restaurant_one.id,
+        ChatRequest(message="What should I order?"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert response.answer == "Order Tenant One Pasta."
+    assert db.query(Conversation).filter_by(restaurant_id=restaurant_one.id, is_test=True).count() == 1
+    assert admin.conversations(restaurant_one.id, include_test=False, db=db, user=owner_one) == []
+    assert len(admin.conversations(restaurant_one.id, include_test=True, db=db, user=owner_one)) == 1

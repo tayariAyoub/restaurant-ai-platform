@@ -93,6 +93,8 @@ def source_labels(chunks: list[KnowledgeChunk]) -> list[str]:
             label = "restaurant profile"
         elif "service" in source:
             label = "service settings"
+        elif source.startswith("faq"):
+            label = "FAQs"
         else:
             label = chunk.source or "knowledge document"
         if label not in labels:

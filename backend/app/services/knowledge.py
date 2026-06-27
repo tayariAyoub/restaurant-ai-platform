@@ -8,7 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import settings
-from app.models import KnowledgeChunk, MenuCategory, Restaurant
+from app.models import KnowledgeChunk, MenuCategory, Restaurant, RestaurantFaq
 
 
 def extract_upload_text(file: UploadFile, content: bytes) -> str:
@@ -54,7 +54,10 @@ def rebuild_structured_knowledge(db: Session, restaurant_id: int) -> None:
     restaurant = db.scalar(
         select(Restaurant)
         .where(Restaurant.id == restaurant_id)
-        .options(selectinload(Restaurant.categories).selectinload(MenuCategory.items))
+        .options(
+            selectinload(Restaurant.categories).selectinload(MenuCategory.items),
+            selectinload(Restaurant.faqs),
+        )
     )
     if not restaurant:
         return
@@ -137,6 +140,16 @@ def rebuild_structured_knowledge(db: Session, restaurant_id: int) -> None:
                     f"Availability: {'available' if item.is_available else 'currently unavailable'}.",
                 )
             )
+
+    for faq in sorted(restaurant.faqs, key=lambda item: item.sort_order):
+        if not faq.is_active:
+            continue
+        facts.append(
+            (
+                "faq",
+                f"FAQ for {restaurant.name}: Question: {faq.question} Answer: {faq.answer}",
+            )
+        )
 
     embeddings = create_embeddings([content for _, content in facts])
     db.add_all(

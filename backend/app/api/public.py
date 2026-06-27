@@ -131,13 +131,13 @@ def legacy_contact(payload: ContactCreate, db: Session = Depends(get_db)) -> Con
 
 
 def chat_for_restaurant(
-    restaurant: Restaurant, payload: ChatRequest, db: Session
+    restaurant: Restaurant, payload: ChatRequest, db: Session, is_test: bool = False
 ) -> ChatResponse:
     conversation = (
         db.get(Conversation, payload.conversation_id) if payload.conversation_id else None
     )
-    if not conversation or conversation.restaurant_id != restaurant.id:
-        conversation = Conversation(restaurant_id=restaurant.id)
+    if not conversation or conversation.restaurant_id != restaurant.id or conversation.is_test != is_test:
+        conversation = Conversation(restaurant_id=restaurant.id, is_test=is_test)
         db.add(conversation)
         db.flush()
     db.add(Message(conversation_id=conversation.id, role="user", content=payload.message))

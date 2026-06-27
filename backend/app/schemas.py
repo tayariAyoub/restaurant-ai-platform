@@ -237,6 +237,37 @@ class ChatResponse(BaseModel):
     sources: list[str] = Field(default_factory=list)
 
 
+class RestaurantFaqBase(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1)
+    is_active: bool = True
+    sort_order: int = 0
+
+
+class RestaurantFaqCreate(RestaurantFaqBase):
+    pass
+
+
+class RestaurantFaqUpdate(RestaurantFaqBase):
+    pass
+
+
+class RestaurantFaqFromMessageCreate(RestaurantFaqBase):
+    pass
+
+
+class RestaurantFaqOut(RestaurantFaqBase, ORMModel):
+    id: int
+    restaurant_id: int
+    source_message_id: int | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class MessageReviewUpdate(BaseModel):
+    is_reviewed: bool = True
+
+
 class ContactCreate(BaseModel):
     name: str
     email: EmailStr
@@ -262,6 +293,7 @@ class MessageOut(ORMModel):
     role: str
     content: str
     is_unanswered: bool
+    is_reviewed: bool = False
     created_at: datetime
 
 
@@ -270,6 +302,7 @@ class ConversationOut(ORMModel):
     restaurant_id: int
     visitor_name: str
     visitor_email: str
+    is_test: bool = False
     created_at: datetime
     updated_at: datetime
     messages: list[MessageOut]

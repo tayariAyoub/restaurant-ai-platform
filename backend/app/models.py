@@ -108,6 +108,9 @@ class Restaurant(Base):
     drivers: Mapped[list["DeliveryDriver"]] = relationship(
         back_populates="restaurant", cascade="all, delete-orphan"
     )
+    faqs: Mapped[list["RestaurantFaq"]] = relationship(
+        back_populates="restaurant", cascade="all, delete-orphan", order_by="RestaurantFaq.sort_order"
+    )
 
 
 class RestaurantImage(Base):
@@ -180,6 +183,27 @@ class KnowledgeChunk(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class RestaurantFaq(Base):
+    __tablename__ = "restaurant_faqs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    restaurant_id: Mapped[int] = mapped_column(
+        ForeignKey("restaurants.id", ondelete="CASCADE"), index=True
+    )
+    question: Mapped[str] = mapped_column(String(500))
+    answer: Mapped[str] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    source_message_id: Mapped[int | None] = mapped_column(
+        ForeignKey("messages.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    restaurant: Mapped[Restaurant] = relationship(back_populates="faqs")
+
+
 class Conversation(Base):
     __tablename__ = "conversations"
 
@@ -187,6 +211,7 @@ class Conversation(Base):
     restaurant_id: Mapped[int] = mapped_column(ForeignKey("restaurants.id", ondelete="CASCADE"))
     visitor_name: Mapped[str] = mapped_column(String(120), default="")
     visitor_email: Mapped[str] = mapped_column(String(255), default="")
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -206,6 +231,7 @@ class Message(Base):
     role: Mapped[str] = mapped_column(String(20))
     content: Mapped[str] = mapped_column(Text)
     is_unanswered: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_reviewed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
 

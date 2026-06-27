@@ -9,9 +9,12 @@ import {
   FileText,
   Loader2,
   MessageSquare,
+  Pencil,
+  Plus,
   Save,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Upload,
   UtensilsCrossed,
   type LucideIcon,
@@ -20,18 +23,27 @@ import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 import AdminShell from "@/components/admin/AdminShell";
-import request, { adminRequest } from "@/lib/api";
+import { adminRequest } from "@/lib/api";
 import { getToken } from "@/lib/auth";
-import type { ChatResponse, Conversation, Restaurant } from "@/lib/types";
+import type { ChatResponse, Conversation, Restaurant, RestaurantFaq } from "@/lib/types";
 
 type Document = { id: number; filename: string; status: string; created_at: string };
 type SaveState = "saved" | "saving" | "unsaved";
 type ToastState = { type: "success" | "error"; message: string } | null;
 type TestMessage = { role: "user" | "assistant"; content: string; sources?: string[]; unanswered?: boolean };
+type FaqDraft = { question: string; answer: string; is_active: boolean; sort_order: number };
+type UnansweredQuestion = {
+  messageId: number;
+  conversationId: string;
+  index: number;
+  question: string;
+  createdAt: string;
+};
 
 const cardClass = "rounded-3xl border border-black/5 bg-white p-5 shadow-sm sm:p-6";
 const inputClass = "mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none focus:border-slate-500";
 const textareaClass = `${inputClass} min-h-28`;
+const blankFaqDraft: FaqDraft = { question: "", answer: "", is_active: true, sort_order: 0 };
 
 const quickQuestions = [
   "What should I order for a date night?",
@@ -46,11 +58,16 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [faqs, setFaqs] = useState<RestaurantFaq[]>([]);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [knowledgeAction, setKnowledgeAction] = useState("");
   const [testText, setTestText] = useState("");
   const [testMessages, setTestMessages] = useState<TestMessage[]>([]);
+  const [faqDraft, setFaqDraft] = useState<FaqDraft>(blankFaqDraft);
+  const [editingFaqId, setEditingFaqId] = useState<number | null>(null);
+  const [conversionAnswers, setConversionAnswers] = useState<Record<number, string>>({});
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [toast, setToast] = useState<ToastState>(null);
   const [error, setError] = useState("");
@@ -68,8 +85,8 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
     [conversations],
   );
   const readiness = useMemo(
-    () => buildReadiness(restaurant, documents, unansweredQuestions.length),
-    [restaurant, documents, unansweredQuestions.length],
+    () => buildReadiness(restaurant, documents, faqs, unansweredQuestions.length),
+    [restaurant, documents, faqs, unansweredQuestions.length],
   );
 
   async function load() {
@@ -77,14 +94,16 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
     setError("");
     try {
       const token = getToken();
-      const [restaurantData, documentData, conversationData] = await Promise.all([
+      const [restaurantData, documentData, conversationData, faqData] = await Promise.all([
         adminRequest<Restaurant>(`/admin/restaurants/${restaurantId}`, token),
         adminRequest<Document[]>(`/admin/restaurants/${restaurantId}/documents`, token),
         adminRequest<Conversation[]>(`/admin/restaurants/${restaurantId}/conversations`, token),
+        adminRequest<RestaurantFaq[]>(`/admin/restaurants/${restaurantId}/faqs`, token),
       ]);
       setRestaurant(restaurantData);
       setDocuments(documentData);
       setConversations(conversationData);
+      setFaqs(faqData);
       setSaveState("saved");
       setTestMessages([
         {
@@ -137,7 +156,7 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
     setTestText("");
     setTestMessages((current) => [...current, { role: "user", content: message }]);
     try {
-      const response = await request<ChatResponse>(`/restaurants/${restaurant.slug}/chat`, {
+      const response = await adminRequest<ChatResponse>(`/admin/restaurants/${restaurant.id}/ai-test`, getToken(), {
         method: "POST",
         body: JSON.stringify({ message }),
       });
@@ -150,11 +169,6 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
           unanswered: response.unanswered,
         },
       ]);
-      const conversationData = await adminRequest<Conversation[]>(
-        `/admin/restaurants/${restaurant.id}/conversations`,
-        getToken(),
-      );
-      setConversations(conversationData);
     } catch (testError) {
       const rateLimited = testError instanceof Error && /too many requests|rate limit|429/i.test(testError.message);
       setTestMessages((current) => [
@@ -193,6 +207,150 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
       });
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function refreshKnowledge() {
+    if (!restaurant) return;
+    const token = getToken();
+    const [faqData, conversationData] = await Promise.all([
+      adminRequest<RestaurantFaq[]>(`/admin/restaurants/${restaurant.id}/faqs`, token),
+      adminRequest<Conversation[]>(`/admin/restaurants/${restaurant.id}/conversations`, token),
+    ]);
+    setFaqs(faqData);
+    setConversations(conversationData);
+  }
+
+  function startFaqEdit(faq: RestaurantFaq) {
+    setEditingFaqId(faq.id);
+    setFaqDraft({
+      question: faq.question,
+      answer: faq.answer,
+      is_active: faq.is_active,
+      sort_order: faq.sort_order,
+    });
+    setToast(null);
+  }
+
+  function resetFaqForm() {
+    setEditingFaqId(null);
+    setFaqDraft({ ...blankFaqDraft, sort_order: faqs.length });
+  }
+
+  async function saveFaq(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!restaurant) return;
+    if (!faqDraft.question.trim() || !faqDraft.answer.trim()) {
+      setToast({ type: "error", message: "FAQ question and answer are required." });
+      return;
+    }
+    setKnowledgeAction("faq");
+    setToast(null);
+    try {
+      const payload = {
+        ...faqDraft,
+        question: faqDraft.question.trim(),
+        answer: faqDraft.answer.trim(),
+      };
+      if (editingFaqId) {
+        await adminRequest(`/admin/restaurants/${restaurant.id}/faqs/${editingFaqId}`, getToken(), {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        });
+        setToast({ type: "success", message: "FAQ updated and AI knowledge refreshed." });
+      } else {
+        await adminRequest(`/admin/restaurants/${restaurant.id}/faqs`, getToken(), {
+          method: "POST",
+          body: JSON.stringify({ ...payload, sort_order: payload.sort_order || faqs.length }),
+        });
+        setToast({ type: "success", message: "FAQ added and AI knowledge refreshed." });
+      }
+      resetFaqForm();
+      await refreshKnowledge();
+    } catch (faqError) {
+      setToast({
+        type: "error",
+        message: faqError instanceof Error ? faqError.message : "Could not save FAQ.",
+      });
+    } finally {
+      setKnowledgeAction("");
+    }
+  }
+
+  async function deleteFaq(faq: RestaurantFaq) {
+    if (!restaurant) return;
+    if (!window.confirm(`Delete this FAQ?\n\n${faq.question}`)) return;
+    setKnowledgeAction(`faq-${faq.id}`);
+    setToast(null);
+    try {
+      await adminRequest(`/admin/restaurants/${restaurant.id}/faqs/${faq.id}`, getToken(), { method: "DELETE" });
+      if (editingFaqId === faq.id) resetFaqForm();
+      setToast({ type: "success", message: "FAQ deleted and AI knowledge refreshed." });
+      await refreshKnowledge();
+    } catch (deleteError) {
+      setToast({
+        type: "error",
+        message: deleteError instanceof Error ? deleteError.message : "Could not delete FAQ.",
+      });
+    } finally {
+      setKnowledgeAction("");
+    }
+  }
+
+  async function markReviewed(item: UnansweredQuestion) {
+    if (!restaurant) return;
+    setKnowledgeAction(`review-${item.messageId}`);
+    setToast(null);
+    try {
+      await adminRequest(`/admin/restaurants/${restaurant.id}/messages/${item.messageId}/review`, getToken(), {
+        method: "PATCH",
+        body: JSON.stringify({ is_reviewed: true }),
+      });
+      setToast({ type: "success", message: "Question marked as reviewed." });
+      await refreshKnowledge();
+    } catch (reviewError) {
+      setToast({
+        type: "error",
+        message: reviewError instanceof Error ? reviewError.message : "Could not mark question reviewed.",
+      });
+    } finally {
+      setKnowledgeAction("");
+    }
+  }
+
+  async function convertToFaq(item: UnansweredQuestion) {
+    if (!restaurant) return;
+    const answer = (conversionAnswers[item.messageId] || "").trim();
+    if (!answer) {
+      setToast({ type: "error", message: "Add an answer before converting this question into a FAQ." });
+      return;
+    }
+    setKnowledgeAction(`convert-${item.messageId}`);
+    setToast(null);
+    try {
+      await adminRequest(`/admin/restaurants/${restaurant.id}/messages/${item.messageId}/faq`, getToken(), {
+        method: "POST",
+        body: JSON.stringify({
+          question: item.question,
+          answer,
+          is_active: true,
+          sort_order: faqs.length,
+        }),
+      });
+      setConversionAnswers((current) => {
+        const next = { ...current };
+        delete next[item.messageId];
+        return next;
+      });
+      setToast({ type: "success", message: "Question converted into FAQ knowledge." });
+      await refreshKnowledge();
+    } catch (convertError) {
+      setToast({
+        type: "error",
+        message: convertError instanceof Error ? convertError.message : "Could not convert question.",
+      });
+    } finally {
+      setKnowledgeAction("");
     }
   }
 
@@ -262,7 +420,7 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
               <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                 <Metric label="Menu facts" value={menuItems.length} />
                 <Metric label="Documents" value={documents.length} />
-                <Metric label="Conversations" value={conversations.length} />
+                <Metric label="FAQs" value={faqs.length} />
                 <Metric label="AI gaps" value={unansweredQuestions.length} />
               </div>
             </section>
@@ -323,6 +481,73 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
             </form>
 
             <section className={cardClass}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <SectionHeader icon={FileText} title="FAQ knowledge" description="Save repeat answers as grounded restaurant knowledge the AI can reuse." />
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{faqs.length} FAQs</span>
+              </div>
+              <form onSubmit={saveFaq} className="mt-5 grid gap-4">
+                <Field
+                  label="FAQ question"
+                  value={faqDraft.question}
+                  placeholder="Do you have gluten-free options?"
+                  onChange={(question) => setFaqDraft((current) => ({ ...current, question }))}
+                />
+                <TextArea
+                  label="FAQ answer"
+                  value={faqDraft.answer}
+                  placeholder="Answer with restaurant-specific facts only."
+                  onChange={(answer) => setFaqDraft((current) => ({ ...current, answer }))}
+                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <ToggleCard
+                    label="Active FAQ"
+                    description="Active FAQs are included in AI knowledge."
+                    checked={faqDraft.is_active}
+                    onChange={(is_active) => setFaqDraft((current) => ({ ...current, is_active }))}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {editingFaqId && (
+                      <button type="button" onClick={resetFaqForm} className="min-h-11 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
+                        Cancel edit
+                      </button>
+                    )}
+                    <button disabled={knowledgeAction === "faq"} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60">
+                      {knowledgeAction === "faq" ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                      {editingFaqId ? "Save FAQ" : "Add FAQ"}
+                    </button>
+                  </div>
+                </div>
+              </form>
+              {faqs.length === 0 ? (
+                <EmptyState title="No FAQ knowledge yet" description="Convert unanswered questions or add common restaurant answers manually." />
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {faqs.map((faq) => (
+                    <article key={faq.id} className={`rounded-2xl border p-4 ${faq.is_active ? "border-slate-100 bg-slate-50" : "border-amber-100 bg-amber-50/60"}`}>
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900">{faq.question}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{faq.answer}</p>
+                          <p className="mt-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                            {faq.is_active ? "Active in AI knowledge" : "Inactive"}{faq.source_message_id ? " / converted from AI gap" : ""}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => startFaqEdit(faq)} className="grid h-10 w-10 place-items-center rounded-xl border bg-white text-slate-600" aria-label={`Edit FAQ ${faq.question}`}>
+                            <Pencil size={16} />
+                          </button>
+                          <button type="button" onClick={() => deleteFaq(faq)} className="grid h-10 w-10 place-items-center rounded-xl border bg-white text-red-600 disabled:cursor-wait disabled:opacity-60" aria-label={`Delete FAQ ${faq.question}`} disabled={knowledgeAction === `faq-${faq.id}`}>
+                            {knowledgeAction === `faq-${faq.id}` ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className={cardClass}>
               <SectionHeader icon={MessageSquare} title="Test before publishing" description="Ask customer-style questions and confirm the answer is grounded in restaurant data." />
               <div className="mt-5 rounded-3xl border border-slate-100 bg-[#f7f3ea] p-4">
                 <div className="max-h-[440px] space-y-3 overflow-y-auto pr-1">
@@ -380,7 +605,7 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
             </section>
 
             <section className={cardClass}>
-              <SectionHeader icon={AlertTriangle} title="Unanswered questions" description="Use real fallbacks to identify missing knowledge before they cost trust." />
+              <SectionHeader icon={AlertTriangle} title="Unanswered questions" description="Review real public customer gaps and turn repeat questions into FAQ knowledge." />
               {unansweredQuestions.length === 0 ? (
                 <EmptyState title="No unanswered questions" description="No AI gaps are waiting right now. Keep reviewing this after menu or hours changes." />
               ) : (
@@ -396,6 +621,35 @@ export default function AiControlPanel({ restaurantId }: { restaurantId: number 
                         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-800">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
+                      </div>
+                      <label className="mt-4 block text-sm font-medium text-amber-950">
+                        FAQ answer
+                        <textarea
+                          className="mt-2 min-h-24 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none focus:border-amber-500"
+                          value={conversionAnswers[item.messageId] || ""}
+                          placeholder="Write the exact restaurant-specific answer guests should receive next time."
+                          onChange={(event) => setConversionAnswers((current) => ({ ...current, [item.messageId]: event.target.value }))}
+                        />
+                      </label>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => convertToFaq(item)}
+                          disabled={knowledgeAction === `convert-${item.messageId}`}
+                          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60"
+                        >
+                          {knowledgeAction === `convert-${item.messageId}` ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                          Convert to FAQ
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => markReviewed(item)}
+                          disabled={knowledgeAction === `review-${item.messageId}`}
+                          className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold text-amber-900 disabled:cursor-wait disabled:opacity-60"
+                        >
+                          {knowledgeAction === `review-${item.messageId}` ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                          Mark reviewed
+                        </button>
                       </div>
                     </article>
                   ))}
@@ -434,9 +688,10 @@ function buildUnansweredQuestions(conversations: Conversation[]) {
   return conversations.flatMap((conversation) =>
     conversation.messages
       .map((message, index) => {
-        if (message.role !== "assistant" || !message.is_unanswered) return null;
+        if (message.role !== "assistant" || !message.is_unanswered || message.is_reviewed || !message.id) return null;
         const previous = conversation.messages[index - 1];
         return {
+          messageId: message.id,
           conversationId: conversation.id,
           index,
           question: previous?.role === "user" ? previous.content : message.content,
@@ -447,8 +702,9 @@ function buildUnansweredQuestions(conversations: Conversation[]) {
   );
 }
 
-function buildReadiness(restaurant: Restaurant | null, documents: Document[], unanswered: number) {
+function buildReadiness(restaurant: Restaurant | null, documents: Document[], faqs: RestaurantFaq[], unanswered: number) {
   const menuItems = restaurant?.categories.flatMap((category) => category.items) ?? [];
+  const activeFaqs = faqs.filter((faq) => faq.is_active);
   const items = [
     {
       title: "Restaurant profile",
@@ -467,8 +723,15 @@ function buildReadiness(restaurant: Restaurant | null, documents: Document[], un
     },
     {
       title: "Allergen safety",
-      description: "Menu allergens or uploaded documents support allergy questions.",
-      ready: menuItems.some((item) => item.allergens) || documents.some((doc) => /allergen/i.test(doc.filename)),
+      description: "Menu allergens, FAQs, or uploaded documents support allergy questions.",
+      ready: menuItems.some((item) => item.allergens)
+        || activeFaqs.some((faq) => /allerg|gluten|nut|milk|egg|vegan|vegetarian/i.test(`${faq.question} ${faq.answer}`))
+        || documents.some((doc) => /allergen/i.test(doc.filename)),
+    },
+    {
+      title: "FAQ answers",
+      description: `${activeFaqs.length} active FAQs are available for repeat customer questions.`,
+      ready: activeFaqs.length > 0,
     },
     {
       title: "Service modes",

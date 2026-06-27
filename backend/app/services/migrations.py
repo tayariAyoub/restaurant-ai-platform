@@ -46,7 +46,23 @@ def upgrade_existing_database() -> None:
         "ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS ai_safety_instructions TEXT NOT NULL DEFAULT ''",
         "ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+        "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_unanswered BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_reviewed BOOLEAN NOT NULL DEFAULT FALSE",
+        """
+        CREATE TABLE IF NOT EXISTS restaurant_faqs (
+            id SERIAL PRIMARY KEY,
+            restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+            question VARCHAR(500) NOT NULL,
+            answer TEXT NOT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            source_message_id INTEGER REFERENCES messages(id) ON DELETE SET NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_restaurant_faqs_restaurant_id ON restaurant_faqs(restaurant_id)",
         "UPDATE restaurants SET slug = 'restaurant-' || id WHERE slug IS NULL OR slug = ''",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_restaurants_slug ON restaurants(slug)",
         "CREATE INDEX IF NOT EXISTS ix_restaurants_owner_id ON restaurants(owner_id)",

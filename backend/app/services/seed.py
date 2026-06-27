@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import hash_password
-from app.models import MenuCategory, MenuItem, Restaurant, RestaurantImage, Theme, User
+from app.models import MenuCategory, MenuItem, Restaurant, RestaurantFaq, RestaurantImage, Theme, User
 from app.services.knowledge import rebuild_structured_knowledge
 
 THEMES = [
@@ -261,9 +261,29 @@ def seed_demo_data(db: Session) -> None:
             ]
         )
 
+    created_faqs = False
+    if not db.scalar(select(RestaurantFaq).where(RestaurantFaq.restaurant_id == restaurant.id)):
+        db.add_all(
+            [
+                RestaurantFaq(
+                    restaurant_id=restaurant.id,
+                    question="Can I reserve a table?",
+                    answer="Yes. Guests can send a reservation request through the website or call the restaurant directly for urgent table requests.",
+                    sort_order=0,
+                ),
+                RestaurantFaq(
+                    restaurant_id=restaurant.id,
+                    question="What should guests do about allergies?",
+                    answer="Guests should tell the restaurant about allergies before ordering and confirm final allergen safety with staff.",
+                    sort_order=1,
+                ),
+            ]
+        )
+        created_faqs = True
+
     db.commit()
 
     from app.models import KnowledgeChunk
 
-    if not db.scalar(select(KnowledgeChunk).where(KnowledgeChunk.restaurant_id == restaurant.id)):
+    if created_faqs or not db.scalar(select(KnowledgeChunk).where(KnowledgeChunk.restaurant_id == restaurant.id)):
         rebuild_structured_knowledge(db, restaurant.id)

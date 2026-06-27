@@ -2038,3 +2038,38 @@ No application source behavior was changed.
 ### Next Recommended Phase
 
 - Add an AI knowledge management workflow: mark unanswered questions as reviewed, convert an unanswered question into a saved FAQ/knowledge entry, and separate internal admin test conversations from public customer conversations.
+
+## Phase 4.1 - AI Knowledge Management
+
+### Implementation
+
+- Added restaurant FAQ knowledge entries with create, edit, delete, active/inactive state, sort order, and optional source unanswered message.
+- Added admin endpoints to:
+  - list FAQ entries
+  - create/edit/delete FAQ entries
+  - mark unanswered AI messages as reviewed
+  - convert unanswered public customer questions into FAQ knowledge
+  - run protected admin AI tests separately from public customer chats
+- Added `Conversation.is_test` so admin tests do not pollute real customer conversation and AI-gap metrics.
+- Added `Message.is_reviewed` so reviewed unanswered messages stop counting as open AI gaps.
+- Updated dashboard/overview AI metrics to exclude admin test conversations and reviewed gaps.
+- Updated structured AI knowledge rebuilds so active FAQ entries become restaurant-specific `KnowledgeChunk` context.
+- Updated the AI control panel with FAQ management, conversion actions, reviewed actions, FAQ coverage metrics, and protected admin test calls.
+
+### Validation
+
+- Backend tests: `python -m pytest` -> 41 passed, 75 warnings.
+- Frontend tests: `pnpm.cmd test` -> 10 files passed, 40 tests passed.
+- Frontend build: `pnpm.cmd build` -> successful production build.
+- Static checks: `python -m compileall app tests` passed; `git diff --check` clean.
+
+### Remaining Risks
+
+- FAQ entries are stored in the main database and embedded through the existing structured knowledge rebuild; there is still no dedicated vector/index lifecycle UI.
+- Admin test conversations are separated from public metrics, but there is not yet a visible admin test-history browser.
+- Reviewed unanswered messages are hidden from open gaps; there is no undo UI yet, though the backend supports setting `is_reviewed=false`.
+- Formal Alembic migrations are still recommended before production schema growth.
+
+### Next Recommended Phase
+
+- Add a lightweight knowledge quality dashboard: show stale FAQ entries, detect missing menu allergens/hours/policies, and recommend concrete owner actions before each service.

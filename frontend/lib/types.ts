@@ -147,6 +147,7 @@ export type Message = {
   role: "user" | "assistant";
   content: string;
   is_unanswered?: boolean;
+  is_reviewed?: boolean;
   sources?: string[];
   created_at?: string;
 };
@@ -165,7 +166,20 @@ export type Conversation = {
   updated_at: string;
   visitor_name: string;
   visitor_email: string;
+  is_test?: boolean;
   messages: Message[];
+};
+
+export type RestaurantFaq = {
+  id: number;
+  restaurant_id: number;
+  question: string;
+  answer: string;
+  is_active: boolean;
+  sort_order: number;
+  source_message_id: number | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ContactRequest = {

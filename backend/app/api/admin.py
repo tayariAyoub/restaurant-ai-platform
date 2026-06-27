@@ -21,6 +21,7 @@ from app.models import (
     Order,
     OrderStatus,
     Restaurant,
+    RestaurantFaq,
     RestaurantImage,
     Theme,
     User,
@@ -29,6 +30,8 @@ from app.schemas import (
     CategoryCreate,
     CategoryOut,
     CategoryUpdate,
+    ChatRequest,
+    ChatResponse,
     ContactOut,
     ConversationOut,
     DashboardStats,
@@ -45,7 +48,13 @@ from app.schemas import (
     OrderOut,
     OrderStatusUpdate,
     ReservationStatusUpdate,
+    MessageOut,
+    MessageReviewUpdate,
     RestaurantCreate,
+    RestaurantFaqCreate,
+    RestaurantFaqFromMessageCreate,
+    RestaurantFaqOut,
+    RestaurantFaqUpdate,
     RestaurantOut,
     RestaurantOverview,
     RestaurantSummary,
@@ -55,6 +64,7 @@ from app.schemas import (
     UserCreate,
     UserOut,
 )
+from app.api.public import chat_for_restaurant
 from app.services.knowledge import (
     chunk_text,
     create_embeddings,
@@ -136,7 +146,8 @@ def build_restaurant_overview(db: Session, restaurant: Restaurant) -> Restaurant
     ) or 0
     conversation_count = db.scalar(
         select(func.count(Conversation.id)).where(
-            Conversation.restaurant_id == restaurant.id
+            Conversation.restaurant_id == restaurant.id,
+            Conversation.is_test.is_(False),
         )
     ) or 0
     unanswered_count = db.scalar(
@@ -144,7 +155,9 @@ def build_restaurant_overview(db: Session, restaurant: Restaurant) -> Restaurant
         .join(Conversation)
         .where(
             Conversation.restaurant_id == restaurant.id,
+            Conversation.is_test.is_(False),
             Message.is_unanswered.is_(True),
+            Message.is_reviewed.is_(False),
         )
     ) or 0
     return RestaurantOverview(
@@ -197,7 +210,10 @@ def dashboard(
         )
         or 0,
         conversations=db.scalar(
-            select(func.count(Conversation.id)).where(Conversation.restaurant_id.in_(restaurant_ids))
+            select(func.count(Conversation.id)).where(
+                Conversation.restaurant_id.in_(restaurant_ids),
+                Conversation.is_test.is_(False),
+            )
         )
         or 0,
         unanswered=db.scalar(
@@ -205,7 +221,9 @@ def dashboard(
             .join(Conversation)
             .where(
                 Conversation.restaurant_id.in_(restaurant_ids),
+                Conversation.is_test.is_(False),
                 Message.is_unanswered.is_(True),
+                Message.is_reviewed.is_(False),
             )
         )
         or 0,
@@ -606,20 +624,168 @@ def documents(
     )
 
 
+@router.get("/restaurants/{restaurant_id}/faqs", response_model=list[RestaurantFaqOut])
+def faqs(
+    restaurant_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> list[RestaurantFaq]:
+    get_restaurant_for_user(db, restaurant_id, user)
+    return list(
+        db.scalars(
+            select(RestaurantFaq)
+            .where(RestaurantFaq.restaurant_id == restaurant_id)
+            .order_by(RestaurantFaq.sort_order, RestaurantFaq.created_at)
+        )
+    )
+
+
+@router.post("/restaurants/{restaurant_id}/faqs", response_model=RestaurantFaqOut, status_code=201)
+def create_faq(
+    restaurant_id: int,
+    payload: RestaurantFaqCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> RestaurantFaq:
+    get_restaurant_for_user(db, restaurant_id, user)
+    faq = RestaurantFaq(restaurant_id=restaurant_id, **payload.model_dump())
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    rebuild_structured_knowledge(db, restaurant_id)
+    return faq
+
+
+@router.put("/restaurants/{restaurant_id}/faqs/{faq_id}", response_model=RestaurantFaqOut)
+def update_faq(
+    restaurant_id: int,
+    faq_id: int,
+    payload: RestaurantFaqUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> RestaurantFaq:
+    get_restaurant_for_user(db, restaurant_id, user)
+    faq = db.get(RestaurantFaq, faq_id)
+    if not faq or faq.restaurant_id != restaurant_id:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    for key, value in payload.model_dump().items():
+        setattr(faq, key, value)
+    db.commit()
+    db.refresh(faq)
+    rebuild_structured_knowledge(db, restaurant_id)
+    return faq
+
+
+@router.delete("/restaurants/{restaurant_id}/faqs/{faq_id}", status_code=204)
+def delete_faq(
+    restaurant_id: int,
+    faq_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> None:
+    get_restaurant_for_user(db, restaurant_id, user)
+    faq = db.get(RestaurantFaq, faq_id)
+    if not faq or faq.restaurant_id != restaurant_id:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+    db.delete(faq)
+    db.commit()
+    rebuild_structured_knowledge(db, restaurant_id)
+
+
+def get_public_unanswered_message(
+    db: Session, restaurant_id: int, message_id: int
+) -> Message:
+    message = db.scalar(
+        select(Message)
+        .join(Conversation)
+        .where(
+            Message.id == message_id,
+            Conversation.restaurant_id == restaurant_id,
+            Conversation.is_test.is_(False),
+        )
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="Unanswered message not found")
+    if not message.is_unanswered:
+        raise HTTPException(status_code=400, detail="Message is not marked unanswered")
+    return message
+
+
+@router.patch(
+    "/restaurants/{restaurant_id}/messages/{message_id}/review",
+    response_model=MessageOut,
+)
+def review_unanswered_message(
+    restaurant_id: int,
+    message_id: int,
+    payload: MessageReviewUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Message:
+    get_restaurant_for_user(db, restaurant_id, user)
+    message = get_public_unanswered_message(db, restaurant_id, message_id)
+    message.is_reviewed = payload.is_reviewed
+    db.commit()
+    db.refresh(message)
+    return message
+
+
+@router.post(
+    "/restaurants/{restaurant_id}/messages/{message_id}/faq",
+    response_model=RestaurantFaqOut,
+    status_code=201,
+)
+def convert_unanswered_message_to_faq(
+    restaurant_id: int,
+    message_id: int,
+    payload: RestaurantFaqFromMessageCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> RestaurantFaq:
+    get_restaurant_for_user(db, restaurant_id, user)
+    message = get_public_unanswered_message(db, restaurant_id, message_id)
+    faq = RestaurantFaq(
+        restaurant_id=restaurant_id,
+        source_message_id=message.id,
+        **payload.model_dump(),
+    )
+    message.is_reviewed = True
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    rebuild_structured_knowledge(db, restaurant_id)
+    return faq
+
+
+@router.post("/restaurants/{restaurant_id}/ai-test", response_model=ChatResponse)
+def test_ai_response(
+    restaurant_id: int,
+    payload: ChatRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ChatResponse:
+    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    return chat_for_restaurant(restaurant, payload, db, is_test=True)
+
+
 @router.get("/restaurants/{restaurant_id}/conversations", response_model=list[ConversationOut])
 def conversations(
     restaurant_id: int,
+    include_test: bool = False,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Conversation]:
     get_restaurant_for_user(db, restaurant_id, user)
+    statement = (
+        select(Conversation)
+        .where(Conversation.restaurant_id == restaurant_id)
+        .options(selectinload(Conversation.messages))
+        .order_by(Conversation.updated_at.desc())
+    )
+    if not include_test:
+        statement = statement.where(Conversation.is_test.is_(False))
     return list(
-        db.scalars(
-            select(Conversation)
-            .where(Conversation.restaurant_id == restaurant_id)
-            .options(selectinload(Conversation.messages))
-            .order_by(Conversation.updated_at.desc())
-        )
+        db.scalars(statement)
     )
 
 
