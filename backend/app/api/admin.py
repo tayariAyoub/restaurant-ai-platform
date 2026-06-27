@@ -28,6 +28,7 @@ from app.models import (
 from app.schemas import (
     CategoryCreate,
     CategoryOut,
+    CategoryUpdate,
     ContactOut,
     ConversationOut,
     DashboardStats,
@@ -361,6 +362,28 @@ def add_category(
     db.add(category)
     db.commit()
     db.refresh(category)
+    return category
+
+
+@router.put(
+    "/restaurants/{restaurant_id}/categories/{category_id}", response_model=CategoryOut
+)
+def update_category(
+    restaurant_id: int,
+    category_id: int,
+    payload: CategoryUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> MenuCategory:
+    get_restaurant_for_user(db, restaurant_id, user)
+    category = db.get(MenuCategory, category_id)
+    if not category or category.restaurant_id != restaurant_id:
+        raise HTTPException(status_code=404, detail="Category not found")
+    for key, value in payload.model_dump().items():
+        setattr(category, key, value)
+    db.commit()
+    db.refresh(category)
+    rebuild_structured_knowledge(db, restaurant_id)
     return category
 
 

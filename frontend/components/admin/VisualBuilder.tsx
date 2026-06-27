@@ -19,6 +19,7 @@ import {
   Sparkles,
   Store,
   Trash2,
+  UtensilsCrossed,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -389,6 +390,15 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
                 <ArrowLeft size={16} /> Back to restaurants
               </GuardedLink>
             )}
+            {draft.id && (
+              <GuardedLink
+                href={`/admin/builder/${draft.id}/menu`}
+                hasUnsavedChanges={hasUnsavedChanges}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold shadow-sm"
+              >
+                <UtensilsCrossed size={16} /> Menu Builder
+              </GuardedLink>
+            )}
             {draft.slug && (
               <GuardedLink
                 href={`/restaurants/${draft.slug}`}
@@ -604,6 +614,9 @@ function BuilderLanding({
                 <div className="flex flex-wrap gap-2 sm:justify-end">
                   <Link href={`/admin/builder/${restaurant.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
                     <Palette size={16} /> Edit
+                  </Link>
+                  <Link href={`/admin/builder/${restaurant.id}/menu`} className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
+                    <UtensilsCrossed size={16} /> Menu
                   </Link>
                   <Link href={`/restaurants/${restaurant.slug}`} target="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-xl border bg-white px-4 py-2 text-sm font-semibold">
                     <Eye size={16} /> View

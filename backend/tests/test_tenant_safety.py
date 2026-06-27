@@ -23,7 +23,7 @@ from app.models import (
     User,
 )
 from app.services import chat
-from app.schemas import DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
+from app.schemas import CategoryUpdate, DeliveryAddressCreate, ImageUrlCreate, OrderCreate, OrderItemCreate, RestaurantCreate
 
 
 @pytest.fixture()
@@ -226,6 +226,35 @@ def test_image_url_creation_is_restaurant_scoped(db: Session) -> None:
         db=db,
         user=owner_two,
     ).url == "https://cdn.example.com/hero.jpg"
+
+
+def test_category_update_is_restaurant_scoped(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    category_one = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
+    category_two = db.query(MenuCategory).filter_by(restaurant_id=restaurant_two.id).one()
+
+    updated = admin.update_category(
+        restaurant_one.id,
+        category_one.id,
+        CategoryUpdate(name="Seasonal Pasta", description="House-made pasta", sort_order=2),
+        db=db,
+        user=owner_one,
+    )
+
+    assert updated.name == "Seasonal Pasta"
+    assert updated.description == "House-made pasta"
+    assert updated.sort_order == 2
+    with pytest.raises(HTTPException) as error:
+        admin.update_category(
+            restaurant_two.id,
+            category_two.id,
+            CategoryUpdate(name="Private Menu", description="", sort_order=1),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 403
+    assert db.get(MenuCategory, category_two.id).name == "Mains"
 
 
 def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:

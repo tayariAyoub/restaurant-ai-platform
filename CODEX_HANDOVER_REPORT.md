@@ -3,6 +3,121 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 5.5 - Visual Menu Builder
+
+Scope:
+
+- Dedicated admin Menu Builder for restaurant menus.
+- Reused existing menu category and menu item data model where possible.
+- Added only the minimal backend support needed for safe category editing.
+- No Phase 4 AI work was started.
+- Public luxury restaurant website was not redesigned or changed.
+
+Audit findings:
+
+- Existing models already support:
+  - menu categories with `name`, `description`, and `sort_order`
+  - menu items with `name`, `description`, `price`, `image_url`, `is_available`, `is_vegan`, `is_vegetarian`, `is_halal`, and `allergens`
+- Existing backend APIs already supported:
+  - category creation
+  - category deletion
+  - menu item creation
+  - menu item update
+  - menu item deletion
+  - restaurant detail retrieval with nested categories/items
+- The missing API for this milestone was category editing.
+- Existing advanced requested fields do not exist yet:
+  - gluten-free
+  - spicy
+  - chef recommendation
+  - menu item drag/drop order
+  - item-level upload workflow inside the builder
+
+Implementation summary:
+
+- Added route:
+  - `/admin/builder/[id]/menu`
+- Added `MenuBuilder` admin workspace with:
+  - category overview
+  - category creation
+  - category editing
+  - category deletion with confirmation
+  - empty states
+  - menu items grouped by category
+  - menu item creation
+  - menu item editing
+  - menu item deletion with confirmation
+  - required-field and price validation
+  - item image URL preview and broken-image fallback
+  - availability / sold-out toggle using `is_available`
+  - dietary toggles for existing fields: vegan, vegetarian, halal
+  - allergens field
+  - lightweight public menu preview
+  - `Open public site` and `Back to Visual Builder` actions
+  - premium admin styling and loading/error/success states
+- Added Visual Builder entry points:
+  - per-restaurant `Menu` button on `/admin/builder`
+  - contextual `Menu Builder` button on `/admin/builder/[id]`
+- Added backend endpoint:
+  - `PUT /admin/restaurants/{restaurant_id}/categories/{category_id}`
+  - tenant-scoped through existing `get_restaurant_for_user`
+  - preserves category items
+  - rebuilds structured menu knowledge after update
+
+Files changed:
+
+- `backend/app/api/admin.py`
+- `backend/app/schemas.py`
+- `backend/tests/test_tenant_safety.py`
+- `frontend/app/admin/builder/[id]/menu/page.tsx`
+- `frontend/components/admin/MenuBuilder.tsx`
+- `frontend/components/admin/MenuBuilder.test.tsx`
+- `frontend/components/admin/VisualBuilder.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Existing APIs used:
+
+- `GET /admin/restaurants/{id}`
+- `POST /admin/restaurants/{id}/categories`
+- `PUT /admin/restaurants/{id}/categories/{category_id}`
+- `DELETE /admin/restaurants/{id}/categories/{category_id}`
+- `POST /admin/restaurants/{id}/menu-items`
+- `PUT /admin/restaurants/{id}/menu-items/{item_id}`
+- `DELETE /admin/restaurants/{id}/menu-items/{item_id}`
+
+Validation:
+
+```powershell
+cd frontend
+pnpm.cmd test
+pnpm.cmd build
+
+cd backend
+python -m pytest
+```
+
+Results:
+
+- Frontend tests: `9` test files passed, `36` tests passed.
+- Frontend build: passed, including `/admin/builder/[id]/menu`.
+- Backend tests: `34 passed, 68 warnings`.
+
+Deferred fields / future work:
+
+- Gluten-free badge requires a backend field such as `is_gluten_free`.
+- Spicy badge requires a backend field such as `is_spicy` or `spice_level`.
+- Chef recommendation requires a backend field such as `is_signature` or `is_chef_recommended`.
+- Drag/drop dish ordering requires an item-level `sort_order` field and reorder endpoint.
+- Item upload inside Menu Builder should reuse the storage abstraction and upload safety rules before being added.
+- Category drag/drop ordering can use existing `sort_order`, but needs a reorder UX and batch update endpoint for a polished workflow.
+
+Remaining risks:
+
+- Menu Builder does not autosave drafts; changes are explicit save/create actions.
+- Category deletion cascades to items by existing backend behavior, so the confirmation copy is important.
+- The preview is intentionally lightweight; final visual truth remains the public restaurant page.
+- Formal migrations are still needed before production schema evolution.
+
 ## Phase 5.1 - Visual Builder Polish And Menu Builder Preparation
 
 Scope:

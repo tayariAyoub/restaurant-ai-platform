@@ -86,6 +86,10 @@ class CategoryCreate(CategoryBase):
     pass
 
 
+class CategoryUpdate(CategoryBase):
+    pass
+
+
 class CategoryOut(CategoryBase, ORMModel):
     id: int
     items: list[MenuItemOut] = Field(default_factory=list)
