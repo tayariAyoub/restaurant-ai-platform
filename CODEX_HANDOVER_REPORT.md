@@ -100,6 +100,48 @@ Remaining SEO recommendations:
 - Add Search Console/Bing Webmaster validation after deployment.
 - Add E2E checks for `/sitemap.xml`, `/robots.txt`, and selected restaurant metadata once Playwright is introduced.
 
+## Task 1.2 - Cart Persistence Verification
+
+Status:
+
+- Cart persistence was already implemented in `frontend/lib/cartStorage.ts` and wired into `frontend/components/RestaurantSite.tsx`.
+- No backend schema changes were made.
+- No UI/UX changes were made.
+
+Implementation verified:
+
+- Cart state is persisted in `localStorage`.
+- Storage is scoped per restaurant using `restaurant.slug || restaurant.id`.
+- Storage key format is versioned: `restaurantai.cart.{restaurant-slug-or-id}.v1`.
+- Cart restore runs only after client hydration through `useEffect`, avoiding hydration mismatch risk.
+- Corrupted JSON is caught safely, removed from `localStorage`, and treated as an empty cart.
+- Old or unsupported storage versions are ignored.
+- Successful order submission clears React cart state and removes the persisted cart.
+- Failed order submission leaves the persisted cart intact.
+
+Frontend tests updated:
+
+- Existing restore-after-remount test remains in place.
+- Added coverage for clearing persisted cart only after successful order.
+- Added coverage for preserving persisted cart when order submission fails.
+- Added coverage for corrupted persisted cart JSON.
+
+Validation:
+
+```powershell
+cd frontend
+pnpm test
+```
+
+Result: 4 test files passed, 17 tests passed.
+
+```powershell
+cd frontend
+pnpm build
+```
+
+Result: passed.
+
 ## Phase 1.5 - Frontend Testing Foundation
 
 Files changed:

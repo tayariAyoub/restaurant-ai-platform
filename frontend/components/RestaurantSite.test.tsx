@@ -2,7 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import RestaurantSite from "./RestaurantSite";
-import { bellaNapoli } from "@/test/fixtures";
+import { cartStorageKey } from "@/lib/cartStorage";
+import { bellaNapoli, orderResponse } from "@/test/fixtures";
 import { renderWithUser } from "@/test/test-utils";
 
 const requestMock = vi.hoisted(() => vi.fn());
@@ -69,6 +70,53 @@ describe("restaurant page", () => {
 
     expect(await screen.findByRole("button", { name: /view order/i })).toBeVisible();
     expect(screen.getByText(/1 item/i)).toBeVisible();
+  });
+
+  it("clears the persisted cart only after a successful order", async () => {
+    requestMock.mockResolvedValueOnce(orderResponse);
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
+
+    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
+    await user.click(screen.getByRole("button", { name: /view order/i }));
+    await user.type(screen.getAllByPlaceholderText(/your name/i).at(-1) as HTMLElement, "Giulia");
+    await user.type(screen.getAllByPlaceholderText(/phone number/i).at(-1) as HTMLElement, "123456");
+    await user.click(screen.getByRole("button", { name: /confirm order/i }));
+
+    await waitFor(() => {
+      expect(requestMock).toHaveBeenCalledWith(
+        "/restaurants/bella-napoli/orders",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(await screen.findByText(/order received/i)).toBeVisible();
+    expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toBeNull();
+  });
+
+  it("keeps the persisted cart when order submission fails", async () => {
+    requestMock.mockRejectedValueOnce(new Error("Kitchen is closed"));
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
+
+    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
+    await user.click(screen.getByRole("button", { name: /view order/i }));
+    await user.type(screen.getAllByPlaceholderText(/your name/i).at(-1) as HTMLElement, "Giulia");
+    await user.type(screen.getAllByPlaceholderText(/phone number/i).at(-1) as HTMLElement, "123456");
+    await user.click(screen.getByRole("button", { name: /confirm order/i }));
+
+    expect(await screen.findByText("Kitchen is closed")).toBeVisible();
+    expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toContain("\"itemId\":201");
+  });
+
+  it("ignores corrupted persisted cart JSON safely", async () => {
+    localStorage.setItem(cartStorageKey(bellaNapoli.slug), "{not-valid-json");
+
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    });
+    expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toBeNull();
   });
 
   it("keeps the restaurant page usable at a mobile width", () => {
