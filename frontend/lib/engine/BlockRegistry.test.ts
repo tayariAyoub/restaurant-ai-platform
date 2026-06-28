@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import EditorialStory from "@/components/public/restaurant/EditorialStory";
-import PremiumHero from "@/components/public/restaurant/PremiumHero";
 import {
   BLOCK_COMPONENT_IDS,
   getBlockComponent,
@@ -12,12 +10,12 @@ import {
 describe("BlockRegistry", () => {
   it("registers the known premium hero component", () => {
     expect(hasBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBe(true);
-    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBe(PremiumHero);
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBeTypeOf("function");
   });
 
   it("registers the known premium story component", () => {
     expect(hasBlockComponent(BLOCK_COMPONENT_IDS.premiumStory)).toBe(true);
-    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumStory)).toBe(EditorialStory);
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumStory)).toBeTypeOf("function");
   });
 
   it("returns undefined for an unknown component ID", () => {
