@@ -1,4 +1,5 @@
 import { createElement, type ComponentType } from "react";
+import { CalendarDays, MessageCircle, Utensils } from "lucide-react";
 
 import EditorialStory, { type EditorialStoryProps } from "@/components/public/restaurant/EditorialStory";
 import PremiumHero, { type PremiumHeroProps } from "@/components/public/restaurant/PremiumHero";
@@ -36,7 +37,7 @@ export type BlockComponentByType = {
 
 const PremiumHeroBlock: HeroBlockComponent = (props) => createElement(PremiumHero, {
   restaurantName: props.headline,
-  eyebrow: "",
+  eyebrow: "Restaurant experience",
   headline: props.subheadline,
   image: props.image_url,
   imageAlt: props.headline,
@@ -50,14 +51,34 @@ const PremiumHeroBlock: HeroBlockComponent = (props) => createElement(PremiumHer
     href: props.cta_href,
   },
   buttonClass: "rounded-full",
-  accentColor: "#ffffff",
-  trustTitle: "",
-  metrics: [],
-  trustLines: [],
+  accentColor: "var(--color-brand-primary)",
+  trustTitle: "Why guests trust this page",
+  metrics: [
+    { value: "Fresh", label: "Menu" },
+    { value: "Direct", label: "Paths" },
+    { value: "Table", label: "Requests" },
+  ],
+  trustLines: [
+    {
+      icon: Utensils,
+      title: "Menu clarity",
+      copy: "Guests can explore the restaurant story before choosing the full menu.",
+    },
+    {
+      icon: CalendarDays,
+      title: "Clear next step",
+      copy: "Reservation and menu paths stay close to the first impression.",
+    },
+    {
+      icon: MessageCircle,
+      title: "AI Maitre d'",
+      copy: "The digital host can stay connected to the restaurant experience.",
+    },
+  ],
 } satisfies PremiumHeroProps);
 
 const EditorialStoryBlock: StoryBlockComponent = (props) => createElement(EditorialStory, {
-  kicker: "Story",
+  kicker: "The experience",
   title: props.title,
   body: props.body_text,
   image: props.image_url,
@@ -65,10 +86,10 @@ const EditorialStoryBlock: StoryBlockComponent = (props) => createElement(Editor
   imageTreatment: "",
   caption: props.body_text,
   cta: {
-    label: "Continue",
+    label: "Back to the beginning",
     href: "#top",
   },
-  accentColor: "#ffffff",
+  accentColor: "var(--color-brand-primary)",
 } satisfies EditorialStoryProps);
 
 const blockRegistry: Record<string, BlockComponentRegistration> = {

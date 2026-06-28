@@ -46,8 +46,8 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
-  it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
-    renderWithUser(
+  it("renders the homepage through the engine without full menu or reservation form", () => {
+    const { container } = renderWithUser(
       <RestaurantSite
         restaurant={{
           ...bellaNapoli,
@@ -76,11 +76,13 @@ describe("restaurant page", () => {
       />,
     );
 
+    expect(container.querySelector("[data-engine-homepage]")).not.toBeNull();
+    expect(container.querySelector("[data-page-block-id='home-hero']")).not.toBeNull();
+    expect(container.querySelector("style[data-restaurantai-theme]")).not.toBeNull();
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
     expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
-    expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /some evenings need more than a table/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /a room where light, aroma, and timing become part of the menu/i })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /opening hours/i })).not.toBeInTheDocument();

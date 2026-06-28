@@ -4,6 +4,7 @@ import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, Wine }
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
+import EngineHomepagePreview from "@/components/engine/EngineHomepagePreview";
 import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
 import ImmersiveRestaurantExperience from "@/components/public/restaurant/ImmersiveRestaurantExperience";
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
@@ -204,7 +205,18 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
       />
       <main id="top">
-        {immersiveTheme ? (
+        {page === "home" ? (
+          <EngineHomepagePreview
+            restaurant={restaurant}
+            themeIdentity={themeIdentity}
+            heroVisual={heroVisual}
+            gallery={gallery}
+            reservationsEnabled={reservationsEnabled}
+            mobileOpen={mobile}
+            onToggleMobile={() => setMobile((current) => !current)}
+            onCloseMobile={() => setMobile(false)}
+          />
+        ) : immersiveTheme ? (
           <ImmersiveRestaurantExperience
             page={page}
             restaurant={restaurant}
