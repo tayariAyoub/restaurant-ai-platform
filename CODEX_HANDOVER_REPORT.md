@@ -2206,3 +2206,72 @@ No application source behavior was changed.
 - The old bridge still exists for local/demo compatibility and should be removed only after all active environments have been stamped or migrated with Alembic.
 - The initial migration is a baseline; the next schema change should be a small reviewed Alembic revision generated from model changes.
 - Production still needs a formal backup/restore procedure and a deployment step that runs migrations before the API starts.
+
+## Phase 1.3 - Backend Production Reliability
+
+### Audit Summary
+
+- `backend/app/main.py` owned app creation, CORS, startup checks, startup schema preparation, and the original `/health` endpoint.
+- API routes raised many direct `HTTPException`s across auth, public, admin, storage, dependencies, and rate limiting.
+- Existing error responses used FastAPI defaults and were not centrally formatted.
+- Rate limiting already returned friendly JSON and `Retry-After`.
+- There was no request ID propagation, no centralized request logging, and no readiness endpoint that checked database/migration state.
+- Phase 1.2 had already made startup safer by adding Alembic and disabling legacy schema mutation in production.
+
+### Implementation
+
+- Added centralized exception handling in `backend/app/core/errors.py`.
+  - Preserves existing `detail` for frontend compatibility.
+  - Adds a consistent `error` envelope with `code`, `message`, `status_code`, and `request_id`.
+  - Hides internal exception details from public 500 responses.
+  - Keeps existing rate-limit `detail` payloads and headers intact.
+- Added request ID and request logging middleware in `backend/app/core/request_logging.py`.
+  - Accepts safe `X-Request-ID` headers or generates a new request ID.
+  - Adds `X-Request-ID` to responses.
+  - Logs method, path, status, duration, client IP, and request ID.
+  - Does not log request bodies or query strings.
+- Added production-ready health helpers in `backend/app/core/health.py`.
+  - `/health` remains backward compatible: `{"status": "ok"}`.
+  - `/health/live` returns liveness plus app version.
+  - `/health/ready` checks database connectivity and Alembic revision state.
+  - Local legacy startup mode can return readiness `warning`.
+  - Production missing/stale migration state returns `503`.
+- Improved environment validation.
+  - Added `LOG_LEVEL`.
+  - Rejects invalid log levels.
+  - Rejects SQLite in production.
+  - Warns when production `FRONTEND_URL` points to localhost.
+- Updated `.env.example`, Docker Compose, README, and production readiness docs.
+- Added reliability tests for error envelopes, validation errors, hidden 500 details, request logging, request IDs, and readiness behavior.
+
+### Files Changed
+
+- `.env.example`
+- `README.md`
+- `backend/app/core/config.py`
+- `backend/app/core/errors.py`
+- `backend/app/core/health.py`
+- `backend/app/core/request_logging.py`
+- `backend/app/main.py`
+- `backend/tests/test_config_validation.py`
+- `backend/tests/test_reliability.py`
+- `docker-compose.yml`
+- `docs/PRODUCTION_READINESS.md`
+
+### Validation
+
+- Targeted backend tests: `python -m pytest tests\test_reliability.py tests\test_config_validation.py` -> 16 passed.
+- Backend compile check: `python -m compileall app tests alembic` -> successful.
+- Backend tests: `python -m pytest` -> 60 passed, 91 warnings.
+- Frontend tests: `pnpm.cmd test` -> 10 test files passed, 40 tests passed.
+- Frontend build: `pnpm.cmd build` -> successful production build.
+- Docker build: `docker compose build` -> backend and frontend images built successfully.
+- Backend container Alembic smoke: `docker compose run --rm --no-deps backend python -m alembic heads` -> `20260627_0001 (head)`.
+- `git diff --check` -> no whitespace errors; Git reported Windows line-ending normalization for `.env.example`.
+- Secret scan for high-confidence OpenAI key patterns -> no matches.
+
+### Remaining Risks
+
+- Request logs are plain structured `extra` fields through standard Python logging; production may still want JSON log formatting and centralized log shipping.
+- `/health/ready` checks database and migration state only. Future production checks could include object storage, OpenAI availability for AI-enabled tenants, and queue/worker health once those systems exist.
+- Centralized error envelopes are additive and backward-compatible, but frontend code can later be simplified to consistently read the new `error` object.

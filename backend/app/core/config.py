@@ -11,7 +11,9 @@ MIN_PRODUCTION_SECRET_LENGTH = 32
 
 class Settings(BaseSettings):
     app_name: str = "RestaurantAI API"
+    app_version: str = "0.1.0"
     app_env: str = "development"
+    log_level: str = "INFO"
     api_prefix: str = "/api"
     database_url: str
     jwt_secret: str
@@ -86,6 +88,14 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
         if not _clean(getattr(config, attr_name, "")):
             errors.append(f"{env_name} is required.")
 
+    log_level = _clean(getattr(config, "log_level", "INFO")).upper()
+    if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
+        errors.append("LOG_LEVEL must be DEBUG, INFO, WARNING, ERROR, or CRITICAL.")
+
+    database_url = _clean(getattr(config, "database_url", ""))
+    if _is_production(config) and database_url.startswith("sqlite"):
+        errors.append("DATABASE_URL must not use SQLite in production.")
+
     jwt_secret = _clean(getattr(config, "jwt_secret", ""))
     if jwt_secret:
         if len(jwt_secret) < MIN_PRODUCTION_SECRET_LENGTH:
@@ -121,6 +131,8 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
         frontend_url = _clean(getattr(config, "frontend_url", ""))
         if frontend_url and not frontend_url.lower().startswith("https://"):
             warnings.append("FRONTEND_URL should use HTTPS in production.")
+        if "localhost" in frontend_url or "127.0.0.1" in frontend_url:
+            warnings.append("FRONTEND_URL should not point to localhost in production.")
 
         auth_cookie_enabled = bool(getattr(config, "auth_cookie_enabled", False))
         auth_cookie_secure = bool(getattr(config, "auth_cookie_secure", False))

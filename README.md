@@ -184,6 +184,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `POSTGRES_USER` | PostgreSQL user |
 | `POSTGRES_PASSWORD` | Local/production database password |
 | `APP_ENV` | Runtime environment; set to `production` for stricter startup validation |
+| `LOG_LEVEL` | Backend log level, usually `INFO` |
 | `DATABASE_URL` | SQLAlchemy PostgreSQL connection URL |
 | `JWT_SECRET` | Long random secret used to sign access tokens |
 | `OPENAI_API_KEY` | Optional OpenAI key for embeddings and chat |

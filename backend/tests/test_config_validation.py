@@ -10,6 +10,7 @@ from app.core.config import (
 def make_config(**overrides):
     values = {
         "app_env": "development",
+        "log_level": "INFO",
         "database_url": "sqlite://",
         "jwt_secret": "development-secret",
         "admin_password": "safe-development-admin-password",
@@ -64,6 +65,24 @@ def test_unknown_storage_provider_is_rejected():
     report = collect_configuration_issues(make_config(storage_provider="s3"))
 
     assert "STORAGE_PROVIDER" in " ".join(report.errors)
+
+
+def test_invalid_log_level_is_rejected():
+    report = collect_configuration_issues(make_config(log_level="VERBOSE"))
+
+    assert "LOG_LEVEL" in " ".join(report.errors)
+
+
+def test_production_rejects_sqlite_database():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="production-secret-with-enough-length",
+            database_url="sqlite://",
+        )
+    )
+
+    assert "DATABASE_URL" in " ".join(report.errors)
 
 
 def test_legacy_startup_migrations_run_by_default_outside_production():

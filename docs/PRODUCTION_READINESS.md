@@ -76,6 +76,7 @@ The backend requires these values:
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `APP_ENV` | Yes | Use `development`, `test`, or `production`. Production enables stricter safety checks. |
+| `LOG_LEVEL` | Yes | Use `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Default is `INFO`. |
 | `DATABASE_URL` | Yes | SQLAlchemy database URL. Docker uses PostgreSQL with pgvector. |
 | `JWT_SECRET` | Yes | Must be long, random, and private. Never use the local demo value in production. |
 | `ADMIN_PASSWORD` | Yes | Initial super-admin password. Replace before pilots. |
@@ -136,6 +137,42 @@ Checks:
 - `backend`: Python 3.12 dependency install, `python -m pytest`
 
 Pull Requests should not be merged unless CI passes.
+
+## Health Checks
+
+RestaurantAI exposes three health endpoints:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `/health` | Backward-compatible liveness check. Returns `{"status": "ok"}`. |
+| `/health/live` | Liveness check with application version. |
+| `/health/ready` | Readiness check for database connectivity and Alembic migration state. |
+
+Production load balancers should use `/health/ready` for readiness and `/health/live` for liveness.
+
+`/health/ready` returns:
+
+- `200` when the database is reachable and migration revision is current.
+- `200` with `status: "warning"` in local legacy startup mode when the Alembic version table is missing.
+- `503` when the database is unreachable or production migration state is missing/stale.
+
+## Error Responses and Request IDs
+
+API errors keep the existing FastAPI `detail` field for frontend compatibility and add a normalized `error` object:
+
+```json
+{
+  "detail": "Restaurant not found",
+  "error": {
+    "code": "not_found",
+    "message": "Restaurant not found",
+    "status_code": 404,
+    "request_id": "..."
+  }
+}
+```
+
+Every HTTP response includes `X-Request-ID`. Clients may send a safe `X-Request-ID`; otherwise the backend generates one. Request logs include method, path, status, duration, client IP, and request ID, but not request bodies or secrets.
 
 ## Database Migrations
 

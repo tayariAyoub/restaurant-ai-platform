@@ -1,18 +1,34 @@
 from contextlib import asynccontextmanager
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.api import admin, auth, public
-from app.core.config import collect_configuration_issues, settings, should_run_legacy_startup_migrations
+from app.core.config import (
+    collect_configuration_issues,
+    settings,
+    should_run_legacy_startup_migrations,
+)
 from app.core.database import Base, SessionLocal, engine
+from app.core.errors import register_exception_handlers
+from app.core.health import readiness
+from app.core.request_logging import request_logging_middleware
 from app.services.migrations import upgrade_existing_database
 from app.services.seed import seed_demo_data
 
 logger = logging.getLogger("restaurantai.config")
+
+
+def configure_logging() -> None:
+    level = getattr(logging, settings.log_level.upper(), logging.INFO)
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    )
+    logging.getLogger("restaurantai").setLevel(level)
 
 
 def validate_environment_configuration() -> None:
@@ -51,10 +67,12 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.1.0",
+    version=settings.app_version,
     description="API for premium restaurant websites, admin operations, and a grounded AI Maitre d'.",
     lifespan=lifespan,
 )
+configure_logging()
+app.middleware("http")(request_logging_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url],
@@ -62,6 +80,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+register_exception_handlers(app)
 app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(public.router, prefix=settings.api_prefix)
 app.include_router(admin.router, prefix=settings.api_prefix)
@@ -71,3 +90,15 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir, check_dir=False
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health/live")
+def health_live() -> dict[str, str]:
+    return {"status": "ok", "version": settings.app_version}
+
+
+@app.get("/health/ready")
+def health_ready(response: Response) -> dict:
+    result = readiness()
+    response.status_code = result.status_code
+    return result.payload
