@@ -4,6 +4,10 @@ export type { ThemeConfig };
 
 type ThemeVariable = [name: string, value: string];
 
+function sanitizeCssSelector(selector: string): string {
+  return selector.replace(/[{};]/g, "").trim() || ":root";
+}
+
 function sanitizeCssVariableValue(value: string): string {
   return value.replace(/[;{}<>]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -24,7 +28,7 @@ function toFontFamilyValue(value: string): string {
   return JSON.stringify(sanitized);
 }
 
-export function generateThemeCss(theme: ThemeConfig): string {
+export function generateThemeCss(theme: ThemeConfig, selector = ":root"): string {
   const variables: ThemeVariable[] = [
     ["--color-brand-primary", theme.colors.brand.primary],
     ["--color-brand-secondary", theme.colors.brand.secondary],
@@ -46,5 +50,5 @@ export function generateThemeCss(theme: ThemeConfig): string {
     .map(([name, value]) => `  ${name}: ${sanitizeCssVariableValue(value)};`)
     .join("\n");
 
-  return `:root {\n${declarations}\n}`;
+  return `${sanitizeCssSelector(selector)} {\n${declarations}\n}`;
 }

@@ -10,6 +10,10 @@ describe("ThemeMapper", () => {
     expect(css).toContain(":root");
   });
 
+  it("can scope generated CSS to a selector", () => {
+    expect(generateThemeCss(mockRestaurantConfig.theme, "#preview-card")).toContain("#preview-card");
+  });
+
   it("maps brand primary correctly", () => {
     expect(css).toContain("--color-brand-primary: #a6422b;");
   });
