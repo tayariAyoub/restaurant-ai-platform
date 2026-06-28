@@ -22,6 +22,11 @@ describe("BlockRegistry", () => {
     expect(getBlockComponent("unknown_component")).toBeUndefined();
   });
 
+  it("returns undefined when a known component ID is requested for the wrong block type", () => {
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumHero, "story")).toBeUndefined();
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumStory, "hero")).toBeUndefined();
+  });
+
   it("includes expected component IDs in the registered ID list", () => {
     expect(getRegisteredBlockIds()).toEqual(expect.arrayContaining([
       BLOCK_COMPONENT_IDS.premiumHero,

@@ -2,9 +2,11 @@ import PageRenderer from "@/components/engine/PageRenderer";
 import ThemeProvider from "@/components/engine/ThemeProvider";
 import PremiumFooter from "@/components/public/restaurant/PremiumFooter";
 import PremiumNavigation from "@/components/public/restaurant/PremiumNavigation";
+import { BLOCK_COMPONENT_IDS } from "@/lib/engine/BlockRegistry";
 import { loadRestaurantConfig } from "@/lib/engine/ConfigLoader";
 import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import { mockRestaurantConfig } from "@/lib/schema/mockRestaurantConfig";
+import type { HeroBlock, RestaurantConfig, StoryBlock } from "@/lib/schema/PlatformSchema";
 import type { Restaurant, RestaurantImage } from "@/lib/types";
 
 type EngineHomepagePreviewProps = {
@@ -18,6 +20,14 @@ type EngineHomepagePreviewProps = {
   onCloseMobile: () => void;
 };
 
+type EngineHomepageConfigInput = {
+  restaurant: Restaurant;
+  themeIdentity: RestaurantThemeIdentity;
+  heroVisual: string;
+  gallery: RestaurantImage[];
+  basePath: string;
+};
+
 export default function EngineHomepagePreview({
   restaurant,
   themeIdentity,
@@ -29,7 +39,7 @@ export default function EngineHomepagePreview({
   onCloseMobile,
 }: EngineHomepagePreviewProps) {
   const basePath = `/restaurants/${restaurant.slug}`;
-  const config = loadRestaurantConfig(buildHomepageConfig({
+  const config = loadRestaurantConfig(buildEngineHomepageConfig({
     restaurant,
     themeIdentity,
     heroVisual,
@@ -81,21 +91,17 @@ export default function EngineHomepagePreview({
   );
 }
 
-function buildHomepageConfig({
+export function buildEngineHomepageConfig({
   restaurant,
   themeIdentity,
   heroVisual,
   gallery,
   basePath,
-}: {
-  restaurant: Restaurant;
-  themeIdentity: RestaurantThemeIdentity;
-  heroVisual: string;
-  gallery: RestaurantImage[];
-  basePath: string;
-}) {
-  const imageUrl = toSchemaImageUrl(heroVisual || gallery[0]?.url, mockRestaurantConfig.pages.home.blocks[0].props.image_url);
-  const storyImageUrl = toSchemaImageUrl(gallery[0]?.url || heroVisual, mockRestaurantConfig.pages.home.blocks[1]?.props.image_url || imageUrl);
+}: EngineHomepageConfigInput): RestaurantConfig {
+  const heroBlock = getMockHomeHeroBlock();
+  const storyBlock = getMockHomeStoryBlock();
+  const imageUrl = toSchemaImageUrl(heroVisual || gallery[0]?.url, heroBlock.props.image_url);
+  const storyImageUrl = toSchemaImageUrl(gallery[0]?.url || heroVisual, storyBlock.props.image_url);
   const headline = restaurant.tagline || restaurant.description || themeIdentity.personality.momentTitle;
 
   return {
@@ -164,8 +170,8 @@ function buildHomepageConfig({
         },
         blocks: [
           {
-            ...mockRestaurantConfig.pages.home.blocks[0],
-            component_id: "platform.hero.cinematic",
+            ...heroBlock,
+            component_id: BLOCK_COMPONENT_IDS.platformHeroCinematic,
             props: {
               headline: restaurant.name,
               subheadline: headline,
@@ -175,8 +181,8 @@ function buildHomepageConfig({
             },
           },
           {
-            ...mockRestaurantConfig.pages.home.blocks[1],
-            component_id: "platform.story.editorial",
+            ...storyBlock,
+            component_id: BLOCK_COMPONENT_IDS.platformStoryEditorial,
             props: {
               title: themeIdentity.personality.momentTitle,
               body_text: restaurant.story || themeIdentity.personality.momentCopy || restaurant.description,
@@ -188,6 +194,26 @@ function buildHomepageConfig({
       },
     },
   };
+}
+
+function getMockHomeHeroBlock(): HeroBlock {
+  const block = mockRestaurantConfig.pages.home.blocks.find((candidate): candidate is HeroBlock => candidate.type === "hero");
+
+  if (!block) {
+    throw new Error("mockRestaurantConfig.pages.home is missing a hero block.");
+  }
+
+  return block;
+}
+
+function getMockHomeStoryBlock(): StoryBlock {
+  const block = mockRestaurantConfig.pages.home.blocks.find((candidate): candidate is StoryBlock => candidate.type === "story");
+
+  if (!block) {
+    throw new Error("mockRestaurantConfig.pages.home is missing a story block.");
+  }
+
+  return block;
 }
 
 function toSchemaImageUrl(value: string | undefined, fallback: string) {

@@ -124,4 +124,13 @@ describe("PageRenderer", () => {
     expect(screen.getByText("Missing block: missing.hero")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Story Title" })).toBeInTheDocument();
   });
+
+  it("uses MissingBlock when a component ID is registered for another block type", () => {
+    render(<PageRenderer page={createPage([
+      createStoryBlock({ component_id: BLOCK_COMPONENT_IDS.premiumHero }),
+    ])} />);
+
+    expect(screen.getByText(`Missing block: ${BLOCK_COMPONENT_IDS.premiumHero}`)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Story Title" })).not.toBeInTheDocument();
+  });
 });
