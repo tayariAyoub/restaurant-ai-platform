@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { getLocalDevelopmentRestaurantFallback } from "@/lib/mockRestaurants";
 import {
   absolutePublicUrl,
   backendUrl,
@@ -36,11 +37,28 @@ export async function fetchPublicRestaurant(slug: string): Promise<Restaurant | 
     const response = await fetch(`${backendUrl()}/api/restaurants/${encodeURIComponent(slug)}`, {
       cache: "no-store",
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      if (response.status >= 500) {
+        return getLocalFallback(slug, `backend responded with ${response.status}`);
+      }
+      return null;
+    }
     return response.json() as Promise<Restaurant>;
-  } catch {
-    return null;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "request failed";
+    return getLocalFallback(slug, reason);
   }
+}
+
+function getLocalFallback(slug: string, reason: string): Restaurant | null {
+  const fallback = getLocalDevelopmentRestaurantFallback(slug);
+
+  if (!fallback) return null;
+
+  console.warn(
+    `[RestaurantAI] Using local development fallback for /restaurants/${slug}: ${reason}`,
+  );
+  return fallback;
 }
 
 export async function generateRestaurantPageMetadata(
