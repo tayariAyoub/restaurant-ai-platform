@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-import { RestaurantConfigSchema, type RestaurantConfig } from "@/lib/schema/PlatformSchema";
+import { RestaurantConfigSchema, ThemeSchema, type RestaurantConfig, type Theme as ThemeConfig } from "@/lib/schema/PlatformSchema";
+import { resolveThemePreset } from "@/lib/theme/resolveThemePreset";
+import { getThemePreset } from "@/lib/theme/presets";
 
 const SUPPORTED_SCHEMA_VERSION = "1.0.0";
 
@@ -135,13 +137,47 @@ export function loadRestaurantConfig(rawData: unknown): RestaurantConfig {
   const normalizedData = deepMerge(DEFAULT_RESTAURANT_CONFIG, versionedInput);
 
   try {
-    return RestaurantConfigSchema.parse(normalizedData);
+    const parsedConfig = RestaurantConfigSchema.parse(normalizedData);
+    const themeInput = buildThemeInputForPresetResolution(parsedConfig.theme, versionedInput);
+    const resolvedConfig = {
+      ...parsedConfig,
+      theme: resolveThemePreset(themeInput),
+    };
+
+    return RestaurantConfigSchema.parse(resolvedConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(formatConfigError(error));
     }
     throw error;
   }
+}
+
+function buildThemeInputForPresetResolution(parsedTheme: ThemeConfig, rawData: unknown): ThemeConfig {
+  const rawTheme = getRawTheme(rawData);
+  const presetName = isPlainRecord(rawTheme) && typeof rawTheme.preset === "string" ? rawTheme.preset : undefined;
+  const presetTheme = presetName ? getThemePreset(presetName) : undefined;
+
+  if (!presetTheme || !isPlainRecord(rawTheme)) {
+    return parsedTheme;
+  }
+
+  try {
+    return ThemeSchema.parse(deepMerge(presetTheme, rawTheme));
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new Error(formatConfigError(error, "theme"));
+    }
+    throw error;
+  }
+}
+
+function getRawTheme(rawData: unknown): unknown {
+  if (!isPlainRecord(rawData)) {
+    return undefined;
+  }
+
+  return rawData.theme;
 }
 
 function applySchemaVersionDefaults(rawData: unknown): unknown {
@@ -202,9 +238,10 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function formatConfigError(error: z.ZodError): string {
+function formatConfigError(error: z.ZodError, pathPrefix?: string): string {
   const details = error.issues.map((issue) => {
-    const path = issue.path.length > 0 ? issue.path.join(".") : "root";
+    const issuePath = issue.path.length > 0 ? issue.path.join(".") : "root";
+    const path = pathPrefix && issuePath !== "root" ? `${pathPrefix}.${issuePath}` : pathPrefix || issuePath;
     return `${path}: ${issue.message}`;
   });
 

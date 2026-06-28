@@ -50,6 +50,74 @@ describe("ConfigLoader", () => {
     expect(loadedConfig.pages.home.blocks.length).toBeGreaterThan(0);
   });
 
+  it("resolves a known theme preset into preset theme tokens", () => {
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+      },
+    });
+
+    expect(loadedConfig.theme.preset).toBe("modern_japanese");
+    expect(loadedConfig.theme.colors.surface.default).toBe("#f8f6f1");
+    expect(loadedConfig.theme.colors.brand.primary).toBe("#b3261e");
+    expect(loadedConfig.theme.typography.heading_font).toBe("Inter");
+    expect(loadedConfig.theme.geometry.radius_button).toBe("12px");
+  });
+
+  it("keeps custom theme overrides above preset values", () => {
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+        colors: {
+          brand: {
+            primary: "#123456",
+          },
+        },
+        geometry: {
+          section_spacing: "144px",
+        },
+      },
+    });
+
+    expect(loadedConfig.theme.colors.brand.primary).toBe("#123456");
+    expect(loadedConfig.theme.colors.brand.secondary).toBe("#2b2b27");
+    expect(loadedConfig.theme.geometry.section_spacing).toBe("144px");
+    expect(loadedConfig.theme.geometry.radius_button).toBe("12px");
+  });
+
+  it("leaves unknown preset themes unchanged after normal loading", () => {
+    const customTheme = {
+      ...DEFAULT_RESTAURANT_CONFIG.theme,
+      preset: "private_custom_theme",
+      colors: {
+        ...DEFAULT_RESTAURANT_CONFIG.theme.colors,
+        brand: {
+          ...DEFAULT_RESTAURANT_CONFIG.theme.colors.brand,
+          primary: "#abcdef",
+        },
+      },
+    };
+
+    const loadedConfig = loadRestaurantConfig({
+      theme: customTheme,
+    });
+
+    expect(loadedConfig.theme).toEqual(customTheme);
+  });
+
+  it("throws a useful error for invalid preset overrides", () => {
+    expect(() => loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+        colors: {
+          brand: {
+            primary: "",
+          },
+        },
+      },
+    })).toThrow(/Invalid restaurant configuration:\ntheme\.colors\.brand\.primary:/);
+  });
+
   it("throws a useful error for invalid configs", () => {
     expect(() => loadRestaurantConfig({
       pages: {
@@ -87,6 +155,24 @@ describe("ConfigLoader", () => {
     expect(rawConfig).toEqual(beforeLoad);
     expect(rawConfig).not.toHaveProperty("schema_version");
     expect(rawConfig).not.toHaveProperty("theme");
+  });
+
+  it("does not mutate theme preset input objects", () => {
+    const rawConfig = {
+      theme: {
+        preset: "modern_japanese",
+        colors: {
+          brand: {
+            primary: "#123456",
+          },
+        },
+      },
+    };
+    const beforeLoad = structuredClone(rawConfig);
+
+    loadRestaurantConfig(rawConfig);
+
+    expect(rawConfig).toEqual(beforeLoad);
   });
 
   it("replaces arrays instead of deeply merging them", () => {
