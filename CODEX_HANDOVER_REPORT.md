@@ -3,6 +3,66 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 2.1 Redesign Follow-Up - Cinematic Luxury Restaurant Experience
+
+Scope:
+
+- Public restaurant presentation layer for immersive/luxury themes.
+- No backend, database, auth, payments, ordering API, reservation API, AI API, SEO, or admin data-model changes.
+- `.github/workflows/` was not touched.
+
+Reason for redesign:
+
+- The first Ultraviolet Luxury pass still felt like a polished one-page restaurant template.
+- The new direction is a digital restaurant experience: darker, more emotional, more image-led, fewer white cards, fewer grids, and stronger chapter pacing.
+
+Implementation summary:
+
+- Replaced the old normal-page add-on `CinematicExperience` with `ImmersiveRestaurantExperience`.
+- Immersive themes now render through a dedicated chaptered presentation:
+  - fullscreen cinematic opening scene
+  - experience chapter
+  - kitchen ritual / chef craft chapter
+  - atmosphere gallery chapter
+  - menu-as-sequence chapter
+  - orderable menu below the editorial sequence
+  - AI Maitre d' host chapter
+  - reservation finale with a dark translucent reservation form
+- Kept existing product behavior:
+  - cart persistence
+  - order drawer
+  - menu add-to-cart actions
+  - reservation submission
+  - AI chat widget
+  - SEO JSON-LD injection
+  - theme registry resolution
+- Adjusted immersive menu copy so it reads like available courses rather than a generic product grid.
+- Added cinematic motion/surface CSS with reduced-motion support.
+
+Files changed:
+
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/public/restaurant/ImmersiveRestaurantExperience.tsx`
+- `frontend/components/public/restaurant/CinematicExperience.tsx` removed
+- `frontend/components/public/restaurant/MenuShowcase.tsx`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/app/globals.css`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+- Frontend tests: `cd frontend && pnpm.cmd test` -> 10 test files passed, 43 tests passed.
+- Frontend build: `cd frontend && pnpm.cmd build` -> successful production build.
+- Public preview smoke check: `http://127.0.0.1:3000/restaurants/bella-napoli` returned 200.
+- Whitespace check: `git diff --check` -> passed; Git reported Windows line-ending normalization warning for `frontend/app/globals.css`.
+- Backend tests: not run because no backend files were changed.
+
+Remaining recommendations:
+
+- Do browser-level visual QA on mobile and desktop with a restaurant assigned to `Ultraviolet Luxury`.
+- Add future screenshot regression coverage for immersive themes once the visual direction is approved.
+- If the owner wants all themes to become chaptered experiences, extend the same component with theme-specific chapter copy rather than creating separate one-off templates.
+
 ## Phase 2.1 - Premium Theme Engine And Ultraviolet Luxury Theme
 
 Scope:

@@ -4,8 +4,8 @@ import { ShoppingBag } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
-import CinematicExperience from "@/components/public/restaurant/CinematicExperience";
 import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
+import ImmersiveRestaurantExperience from "@/components/public/restaurant/ImmersiveRestaurantExperience";
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
 import OrderCartDrawer from "@/components/public/restaurant/OrderCartDrawer";
 import ReservationPanel from "@/components/public/restaurant/ReservationPanel";
@@ -208,53 +208,68 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
       />
       <main id="top">
-        <RestaurantHero
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          heroVisual={heroVisual}
-          heroGallery={heroGallery}
-          availableItems={availableItems}
-          reservationsEnabled={reservationsEnabled}
-          orderingEnabled={orderingEnabled}
-          deliveryEnabled={deliveryEnabled}
-          pickupEnabled={pickupEnabled}
-          dineInEnabled={dineInEnabled}
-          mobileOpen={mobile}
-          onToggleMobile={() => setMobile((current) => !current)}
-          onCloseMobile={() => setMobile(false)}
-        />
-        <TrustAndStory
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          storyMoments={storyMoments}
-        />
-        <CinematicExperience
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          featuredItems={featuredItems}
-          gallery={gallery}
-          reservationsEnabled={reservationsEnabled}
-          orderingEnabled={orderingEnabled}
-          chatbotEnabled={chatbotEnabled}
-        />
-        <MenuShowcase
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          menuItems={menuItems}
-          featuredItems={featuredItems}
-          quantities={quantities}
-          orderingEnabled={orderingEnabled}
-          onAdd={(item) => changeCart(item, 1)}
-        />
-        <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
-        {reservationsEnabled && (
-          <ReservationPanel
+        {immersiveTheme ? (
+          <ImmersiveRestaurantExperience
             restaurant={restaurant}
             themeIdentity={themeIdentity}
+            heroVisual={heroVisual}
+            gallery={gallery}
+            menuItems={menuItems}
+            featuredItems={featuredItems}
+            quantities={quantities}
             hours={hours}
+            reservationsEnabled={reservationsEnabled}
+            orderingEnabled={orderingEnabled}
+            deliveryEnabled={deliveryEnabled}
+            pickupEnabled={pickupEnabled}
+            dineInEnabled={dineInEnabled}
+            chatbotEnabled={chatbotEnabled}
             reservationStatus={reservationStatus}
             onReserve={reserve}
+            onAdd={(item) => changeCart(item, 1)}
           />
+        ) : (
+          <>
+            <RestaurantHero
+              restaurant={restaurant}
+              themeIdentity={themeIdentity}
+              heroVisual={heroVisual}
+              heroGallery={heroGallery}
+              availableItems={availableItems}
+              reservationsEnabled={reservationsEnabled}
+              orderingEnabled={orderingEnabled}
+              deliveryEnabled={deliveryEnabled}
+              pickupEnabled={pickupEnabled}
+              dineInEnabled={dineInEnabled}
+              mobileOpen={mobile}
+              onToggleMobile={() => setMobile((current) => !current)}
+              onCloseMobile={() => setMobile(false)}
+            />
+            <TrustAndStory
+              restaurant={restaurant}
+              themeIdentity={themeIdentity}
+              storyMoments={storyMoments}
+            />
+            <MenuShowcase
+              restaurant={restaurant}
+              themeIdentity={themeIdentity}
+              menuItems={menuItems}
+              featuredItems={featuredItems}
+              quantities={quantities}
+              orderingEnabled={orderingEnabled}
+              onAdd={(item) => changeCart(item, 1)}
+            />
+            <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
+            {reservationsEnabled && (
+              <ReservationPanel
+                restaurant={restaurant}
+                themeIdentity={themeIdentity}
+                hours={hours}
+                reservationStatus={reservationStatus}
+                onReserve={reserve}
+              />
+            )}
+          </>
         )}
       </main>
 

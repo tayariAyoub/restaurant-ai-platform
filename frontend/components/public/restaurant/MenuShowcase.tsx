@@ -36,6 +36,11 @@ export default function MenuShowcase({
   const buttonClass = themeIdentity.buttonClass;
   const personality = themeIdentity.personality;
   const immersive = themeIdentity.homepageStyle === "immersive";
+  const sectionKicker = immersive ? "Orderable courses" : "Fresh from the kitchen";
+  const sectionTitle = immersive ? "The dishes available tonight." : "A menu that feels curated, not listed.";
+  const sectionCopy = immersive
+    ? "After the experience comes the practical menu: browse dishes, check dietary notes, and add what the kitchen can prepare."
+    : "Browse dishes by craving, ingredients, and dietary needs, then reserve or order without losing your place in the menu.";
 
   const filteredCategories = useMemo(
     () =>
@@ -56,10 +61,10 @@ export default function MenuShowcase({
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
-          <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>Fresh from the kitchen</p>
-          <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">A menu that feels curated, not listed.</h2>
+          <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>{sectionKicker}</p>
+          <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">{sectionTitle}</h2>
           <p className="mx-auto mt-5 max-w-2xl leading-7 opacity-65">
-            Browse dishes by craving, ingredients, and dietary needs, then reserve or order without losing your place in the menu.
+            {sectionCopy}
           </p>
         </div>
         {restaurant.categories.length === 0 || menuItems.length === 0 ? (

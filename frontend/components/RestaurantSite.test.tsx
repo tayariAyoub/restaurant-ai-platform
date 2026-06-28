@@ -67,7 +67,9 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a cinematic evening/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /private evenings and special tables/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /fire, timing, texture/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /not a list/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /reserve the table/i })).toBeVisible();
     expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
   });
 
