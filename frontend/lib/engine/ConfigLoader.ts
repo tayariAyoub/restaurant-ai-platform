@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { RestaurantConfigSchema, ThemeSchema, type RestaurantConfig, type Theme as ThemeConfig } from "@/lib/schema/PlatformSchema";
+import { RestaurantConfigSchema, ThemeSchema, type Block, type RestaurantConfig, type Theme as ThemeConfig } from "@/lib/schema/PlatformSchema";
 import { resolveThemePreset } from "@/lib/theme/resolveThemePreset";
-import { getThemePreset } from "@/lib/theme/presets";
+import { getThemeHeroVariantPreference, getThemePreset } from "@/lib/theme/presets";
 
 const SUPPORTED_SCHEMA_VERSION = "1.0.0";
 
@@ -143,14 +143,49 @@ export function loadRestaurantConfig(rawData: unknown): RestaurantConfig {
       ...parsedConfig,
       theme: resolveThemePreset(themeInput),
     };
+    const variantResolvedConfig = applyThemeVariantPreferences(resolvedConfig);
 
-    return RestaurantConfigSchema.parse(resolvedConfig);
+    return RestaurantConfigSchema.parse(variantResolvedConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new Error(formatConfigError(error));
     }
     throw error;
   }
+}
+
+function applyThemeVariantPreferences(config: RestaurantConfig): RestaurantConfig {
+  const heroVariantPreference = getThemeHeroVariantPreference(config.theme.preset);
+
+  if (!heroVariantPreference) {
+    return config;
+  }
+
+  return {
+    ...config,
+    pages: {
+      ...config.pages,
+      home: {
+        ...config.pages.home,
+        blocks: config.pages.home.blocks.map((block) => applyHeroVariantPreference(block, heroVariantPreference)),
+      },
+    },
+  };
+}
+
+function applyHeroVariantPreference(block: Block, preferredVariant: string): Block {
+  if (block.type !== "hero" || !shouldFillHeroVariant(block.variant)) {
+    return block;
+  }
+
+  return {
+    ...block,
+    variant: preferredVariant,
+  };
+}
+
+function shouldFillHeroVariant(variant: string): boolean {
+  return ["default", "fallback"].includes(variant);
 }
 
 function buildThemeInputForPresetResolution(parsedTheme: ThemeConfig, rawData: unknown): ThemeConfig {

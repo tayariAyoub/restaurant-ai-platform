@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ThemeSchema } from "@/lib/schema/PlatformSchema";
 import {
+  getThemeHeroVariantPreference,
   getThemePreset,
   isThemePresetName,
   THEME_PRESET_NAMES,
@@ -27,6 +28,14 @@ describe("theme presets", () => {
   it("checks theme preset names", () => {
     expect(isThemePresetName("french_bistro")).toBe(true);
     expect(isThemePresetName("not_a_preset")).toBe(false);
+  });
+
+  it("returns hero variant preferences for known presets", () => {
+    expect(getThemeHeroVariantPreference("luxury_italian")).toBe("editorial");
+    expect(getThemeHeroVariantPreference("modern_japanese")).toBe("minimal");
+    expect(getThemeHeroVariantPreference("french_bistro")).toBe("editorial");
+    expect(getThemeHeroVariantPreference("classic_steakhouse")).toBe("split");
+    expect(getThemeHeroVariantPreference("unknown_theme")).toBeUndefined();
   });
 
   it("returns a clone so callers cannot mutate the preset library", () => {

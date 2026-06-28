@@ -8,6 +8,7 @@ export const THEME_PRESET_NAMES = [
 ] as const;
 
 export type ThemePresetName = typeof THEME_PRESET_NAMES[number];
+export type HeroVariantPreference = "editorial" | "minimal" | "split";
 
 export const THEME_PRESETS = {
   luxury_italian: ThemeSchema.parse({
@@ -136,6 +137,13 @@ export const THEME_PRESETS = {
   }),
 } satisfies Record<ThemePresetName, ThemeConfig>;
 
+export const THEME_HERO_VARIANT_PREFERENCES = {
+  luxury_italian: "editorial",
+  modern_japanese: "minimal",
+  french_bistro: "editorial",
+  classic_steakhouse: "split",
+} satisfies Record<ThemePresetName, HeroVariantPreference>;
+
 export function isThemePresetName(name: string): name is ThemePresetName {
   return Object.prototype.hasOwnProperty.call(THEME_PRESETS, name);
 }
@@ -146,6 +154,14 @@ export function getThemePreset(name: string): ThemeConfig | undefined {
   }
 
   return cloneTheme(THEME_PRESETS[name]);
+}
+
+export function getThemeHeroVariantPreference(name: string): HeroVariantPreference | undefined {
+  if (!isThemePresetName(name)) {
+    return undefined;
+  }
+
+  return THEME_HERO_VARIANT_PREFERENCES[name];
 }
 
 function cloneTheme(theme: ThemeConfig): ThemeConfig {

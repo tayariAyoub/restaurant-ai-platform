@@ -39,7 +39,7 @@ function HeroBlockRenderer({ block }: { block: HeroBlock }) {
     return <MissingBlock componentId={block.component_id} />;
   }
 
-  return <Component {...block.props} />;
+  return <Component block={block} />;
 }
 
 function StoryBlockRenderer({ block }: { block: StoryBlock }) {

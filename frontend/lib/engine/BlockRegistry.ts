@@ -1,24 +1,25 @@
 import { createElement, type ComponentType } from "react";
-import { CalendarDays, MessageCircle, Utensils } from "lucide-react";
 
+import HeroBlock from "@/components/blocks/hero/HeroBlock";
 import EditorialStory, { type EditorialStoryProps } from "@/components/public/restaurant/EditorialStory";
-import PremiumHero, { type PremiumHeroProps } from "@/components/public/restaurant/PremiumHero";
-import type { Block, HeroBlock, StoryBlock } from "@/lib/schema/PlatformSchema";
+import type { Block, HeroBlock as HeroBlockConfig, StoryBlock } from "@/lib/schema/PlatformSchema";
 
 export const BLOCK_COMPONENT_IDS = {
   premiumHero: "premium_hero",
   premiumStory: "premium_story",
   platformHeroCinematic: "platform.hero.cinematic",
+  platformHeroEditorial: "platform.hero.editorial",
+  platformHeroMinimal: "platform.hero.minimal",
+  platformHeroSplit: "platform.hero.split",
   platformStoryEditorial: "platform.story.editorial",
 } as const;
 
-type HeroBlockProps = HeroBlock["props"];
 type StoryBlockProps = StoryBlock["props"];
-type HeroBlockComponent = ComponentType<HeroBlockProps>;
+type HeroBlockComponent = ComponentType<{ block: HeroBlockConfig }>;
 type StoryBlockComponent = ComponentType<StoryBlockProps>;
 
 type HeroBlockRegistration = {
-  blockType: HeroBlock["type"];
+  blockType: HeroBlockConfig["type"];
   component: HeroBlockComponent;
 };
 
@@ -34,48 +35,6 @@ export type BlockComponentByType = {
   hero: HeroBlockComponent;
   story: StoryBlockComponent;
 };
-
-const PremiumHeroBlock: HeroBlockComponent = (props) => createElement(PremiumHero, {
-  restaurantName: props.headline,
-  eyebrow: "Restaurant experience",
-  headline: props.subheadline,
-  image: props.image_url,
-  imageAlt: props.headline,
-  imageTreatment: "",
-  primaryCta: {
-    label: props.cta_text,
-    href: props.cta_href,
-  },
-  secondaryCta: {
-    label: props.cta_text,
-    href: props.cta_href,
-  },
-  buttonClass: "rounded-full",
-  accentColor: "var(--color-brand-primary)",
-  trustTitle: "Why guests trust this page",
-  metrics: [
-    { value: "Fresh", label: "Menu" },
-    { value: "Direct", label: "Paths" },
-    { value: "Table", label: "Requests" },
-  ],
-  trustLines: [
-    {
-      icon: Utensils,
-      title: "Menu clarity",
-      copy: "Guests can explore the restaurant story before choosing the full menu.",
-    },
-    {
-      icon: CalendarDays,
-      title: "Clear next step",
-      copy: "Reservation and menu paths stay close to the first impression.",
-    },
-    {
-      icon: MessageCircle,
-      title: "AI Maitre d'",
-      copy: "The digital host can stay connected to the restaurant experience.",
-    },
-  ],
-} satisfies PremiumHeroProps);
 
 const EditorialStoryBlock: StoryBlockComponent = (props) => createElement(EditorialStory, {
   kicker: "The experience",
@@ -95,11 +54,23 @@ const EditorialStoryBlock: StoryBlockComponent = (props) => createElement(Editor
 const blockRegistry: Record<string, BlockComponentRegistration> = {
   [BLOCK_COMPONENT_IDS.premiumHero]: {
     blockType: "hero",
-    component: PremiumHeroBlock,
+    component: HeroBlock,
   },
   [BLOCK_COMPONENT_IDS.platformHeroCinematic]: {
     blockType: "hero",
-    component: PremiumHeroBlock,
+    component: HeroBlock,
+  },
+  [BLOCK_COMPONENT_IDS.platformHeroEditorial]: {
+    blockType: "hero",
+    component: HeroBlock,
+  },
+  [BLOCK_COMPONENT_IDS.platformHeroMinimal]: {
+    blockType: "hero",
+    component: HeroBlock,
+  },
+  [BLOCK_COMPONENT_IDS.platformHeroSplit]: {
+    blockType: "hero",
+    component: HeroBlock,
   },
   [BLOCK_COMPONENT_IDS.premiumStory]: {
     blockType: "story",

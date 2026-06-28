@@ -109,7 +109,7 @@ export const mockRestaurantConfig: RestaurantConfig = RestaurantConfigSchema.par
           id: "home-hero",
           component_id: "platform.hero.cinematic",
           type: "hero",
-          variant: "cinematic",
+          variant: "default",
           enabled: true,
           order: 0,
           settings: defaultBlockSettings,

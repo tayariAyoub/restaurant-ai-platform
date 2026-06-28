@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { mockRestaurantConfig } from "@/lib/schema/mockRestaurantConfig";
+import type { HeroBlock } from "@/lib/schema/PlatformSchema";
 import { DEFAULT_RESTAURANT_CONFIG, loadRestaurantConfig } from "./ConfigLoader";
 
 describe("ConfigLoader", () => {
@@ -64,6 +65,48 @@ describe("ConfigLoader", () => {
     expect(loadedConfig.theme.geometry.radius_button).toBe("12px");
   });
 
+  it("applies known theme preset hero variant preferences to fallback hero blocks", () => {
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+      },
+    });
+
+    expect(loadedConfig.pages.home.blocks[0].variant).toBe("minimal");
+  });
+
+  it("keeps explicit hero block variants above theme preset preferences", () => {
+    const heroBlock = createDefaultHeroBlock({ variant: "split" });
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+      },
+      pages: {
+        home: {
+          blocks: [heroBlock],
+        },
+      },
+    });
+
+    expect(loadedConfig.pages.home.blocks[0].variant).toBe("split");
+  });
+
+  it("keeps legacy cinematic hero variants explicit", () => {
+    const heroBlock = createDefaultHeroBlock({ variant: "cinematic" });
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        preset: "modern_japanese",
+      },
+      pages: {
+        home: {
+          blocks: [heroBlock],
+        },
+      },
+    });
+
+    expect(loadedConfig.pages.home.blocks[0].variant).toBe("cinematic");
+  });
+
   it("keeps custom theme overrides above preset values", () => {
     const loadedConfig = loadRestaurantConfig({
       theme: {
@@ -103,6 +146,23 @@ describe("ConfigLoader", () => {
     });
 
     expect(loadedConfig.theme).toEqual(customTheme);
+  });
+
+  it("does not apply hero variant preferences for unknown presets", () => {
+    const heroBlock = createDefaultHeroBlock({ variant: "default" });
+    const loadedConfig = loadRestaurantConfig({
+      theme: {
+        ...DEFAULT_RESTAURANT_CONFIG.theme,
+        preset: "private_custom_theme",
+      },
+      pages: {
+        home: {
+          blocks: [heroBlock],
+        },
+      },
+    });
+
+    expect(loadedConfig.pages.home.blocks[0].variant).toBe("default");
   });
 
   it("throws a useful error for invalid preset overrides", () => {
@@ -213,3 +273,16 @@ describe("ConfigLoader", () => {
     expect(loadedConfig.pages.home.blocks[0].id).toBe("custom-home-story");
   });
 });
+
+function createDefaultHeroBlock(overrides: Partial<HeroBlock> = {}): HeroBlock {
+  const block = DEFAULT_RESTAURANT_CONFIG.pages.home.blocks[0];
+
+  if (!block || block.type !== "hero") {
+    throw new Error("Expected the default home block to be a hero block.");
+  }
+
+  return {
+    ...block,
+    ...overrides,
+  };
+}

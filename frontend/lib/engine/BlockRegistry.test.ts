@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import HeroBlock from "@/components/blocks/hero/HeroBlock";
 import {
   BLOCK_COMPONENT_IDS,
   getBlockComponent,
@@ -10,7 +11,14 @@ import {
 describe("BlockRegistry", () => {
   it("registers the known premium hero component", () => {
     expect(hasBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBe(true);
-    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBeTypeOf("function");
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.premiumHero)).toBe(HeroBlock);
+  });
+
+  it("registers hero variant IDs through the hero router", () => {
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.platformHeroCinematic)).toBe(HeroBlock);
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.platformHeroEditorial)).toBe(HeroBlock);
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.platformHeroMinimal)).toBe(HeroBlock);
+    expect(getBlockComponent(BLOCK_COMPONENT_IDS.platformHeroSplit)).toBe(HeroBlock);
   });
 
   it("registers the known premium story component", () => {
@@ -32,6 +40,9 @@ describe("BlockRegistry", () => {
       BLOCK_COMPONENT_IDS.premiumHero,
       BLOCK_COMPONENT_IDS.premiumStory,
       BLOCK_COMPONENT_IDS.platformHeroCinematic,
+      BLOCK_COMPONENT_IDS.platformHeroEditorial,
+      BLOCK_COMPONENT_IDS.platformHeroMinimal,
+      BLOCK_COMPONENT_IDS.platformHeroSplit,
       BLOCK_COMPONENT_IDS.platformStoryEditorial,
     ]));
   });
