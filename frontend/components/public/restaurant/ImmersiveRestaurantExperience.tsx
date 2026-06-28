@@ -11,7 +11,6 @@ import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import type { MenuItem, Restaurant, RestaurantImage } from "@/lib/types";
 import MenuShowcase from "./MenuShowcase";
 import PremiumHomepage from "./PremiumHomepage";
-import { formatPrice } from "./experience";
 
 type ImmersivePage = "home" | "menu" | "reservations" | "gallery" | "contact" | "events";
 
@@ -121,36 +120,18 @@ function ImmersiveHeader({ restaurant, currentPage }: { restaurant: Restaurant; 
 }
 
 function MenuPage(props: ImmersiveRestaurantExperienceProps & { visual: string }) {
-  const { restaurant, themeIdentity, visual, featuredItems, menuItems, quantities, orderingEnabled, onAdd } = props;
+  const { restaurant, themeIdentity, featuredItems, menuItems, quantities, orderingEnabled, onAdd } = props;
   return (
-    <>
-      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Menu" title="Not a list. A path through appetite." copy="The full menu lives here: courses, dietary notes, prices, and direct ordering." />
-      <section className="cinematic-chapter px-4 py-16 sm:px-6 lg:py-24">
-        <div className="mx-auto max-w-5xl">
-          {featuredItems.length > 0 ? featuredItems.slice(0, 4).map((item, index) => (
-            <a key={item.id} href={`#category-${item.category_id}`} className="cinematic-menu-line group grid gap-3 border-b border-white/10 py-5 sm:grid-cols-[auto_1fr_auto] sm:items-center">
-              <span className="text-xs font-bold uppercase tracking-[0.28em] text-white/34">Course {String(index + 1).padStart(2, "0")}</span>
-              <span>
-                <span className="block text-2xl font-semibold leading-tight text-white">{item.name}</span>
-                <span className="mt-1 line-clamp-2 block text-sm leading-6 text-white/48">{item.description || "Prepared by the kitchen tonight."}</span>
-              </span>
-              <span className="text-sm font-bold" style={{ color: themeIdentity.primary }}>{formatPrice(item.price)}</span>
-            </a>
-          )) : (
-            <p className="border-y border-white/10 py-8 text-sm leading-7 text-white/54">The kitchen has not published online courses yet.</p>
-          )}
-        </div>
-      </section>
-      <MenuShowcase
-        restaurant={restaurant}
-        themeIdentity={themeIdentity}
-        menuItems={menuItems}
-        featuredItems={featuredItems}
-        quantities={quantities}
-        orderingEnabled={orderingEnabled}
-        onAdd={onAdd}
-      />
-    </>
+    <MenuShowcase
+      restaurant={restaurant}
+      themeIdentity={themeIdentity}
+      menuItems={menuItems}
+      featuredItems={featuredItems}
+      quantities={quantities}
+      orderingEnabled={orderingEnabled}
+      onAdd={onAdd}
+      showHeroNavigation={false}
+    />
   );
 }
 

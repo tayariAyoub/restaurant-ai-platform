@@ -21,9 +21,11 @@ describe("restaurant page", () => {
   it("renders restaurant information, menu, gallery, tags, sold-out state, and chatbot trigger", async () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
-    expect(screen.getByRole("heading", { name: "Menu" })).toBeVisible();
-    expect(screen.getByRole("link", { name: bellaNapoli.name })).toHaveAttribute("href", "/restaurants/bella-napoli");
-    expect(screen.getByRole("heading", { name: /a menu that feels curated/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /authentic neapolitan pizza/i })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /bella napoli/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli")).toBe(true);
+    expect(screen.getByRole("heading", { name: /a menu built around appetite/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: /view menu/i })).toHaveAttribute("href", "#menu");
+    expect(screen.getByRole("link", { name: /reserve a table/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
     expect(screen.getByRole("heading", { name: "Antipasti" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Wood-fired Pizza" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Margherita" })).toBeVisible();

@@ -375,18 +375,15 @@ function renderClassicPage({
 }) {
   if (page === "menu") {
     return (
-      <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} title="Menu" copy="Explore tonight's dishes, dietary notes, and ordering options." />
-        <MenuShowcase
-          restaurant={restaurant}
-          themeIdentity={themeIdentity}
-          menuItems={menuItems}
-          featuredItems={featuredItems}
-          quantities={quantities}
-          orderingEnabled={orderingEnabled}
-          onAdd={add}
-        />
-      </>
+      <MenuShowcase
+        restaurant={restaurant}
+        themeIdentity={themeIdentity}
+        menuItems={menuItems}
+        featuredItems={featuredItems}
+        quantities={quantities}
+        orderingEnabled={orderingEnabled}
+        onAdd={add}
+      />
     );
   }
 
