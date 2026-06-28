@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import RestaurantPageSkeleton from "@/components/RestaurantPageSkeleton";
 import RestaurantSite from "@/components/RestaurantSite";
 import { getRestaurantBySlug } from "@/lib/api";
+import { getLocalDevelopmentRestaurantFallbackForError } from "@/lib/mockRestaurants";
 import type { Restaurant } from "@/lib/types";
 import type { PublicRestaurantPage } from "./restaurantPageData";
 
@@ -22,7 +23,16 @@ export default function RestaurantWebsiteClient({
 
   useEffect(() => {
     if (initialRestaurant) return;
-    getRestaurantBySlug(slug).then(setRestaurant).catch((reason) => setError(reason.message));
+    getRestaurantBySlug(slug).then(setRestaurant).catch((reason) => {
+      const fallback = getLocalDevelopmentRestaurantFallbackForError(slug, reason);
+
+      if (fallback) {
+        setRestaurant(fallback);
+        return;
+      }
+
+      setError(reason instanceof Error ? reason.message : "Restaurant could not be loaded.");
+    });
   }, [initialRestaurant, slug]);
 
   if (error) {

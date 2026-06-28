@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
-import { getLocalDevelopmentRestaurantFallback } from "@/lib/mockRestaurants";
+import {
+  getLocalDevelopmentRestaurantFallbackForError,
+  getLocalDevelopmentRestaurantFallbackForStatus,
+} from "@/lib/mockRestaurants";
 import {
   absolutePublicUrl,
   backendUrl,
@@ -38,23 +41,34 @@ export async function fetchPublicRestaurant(slug: string): Promise<Restaurant | 
       cache: "no-store",
     });
     if (!response.ok) {
-      if (response.status >= 500) {
-        return getLocalFallback(slug, `backend responded with ${response.status}`);
+      if ([500, 502, 503, 504].includes(response.status)) {
+        return getLocalFallbackForStatus(slug, response.status);
       }
       return null;
     }
     return response.json() as Promise<Restaurant>;
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "request failed";
-    return getLocalFallback(slug, reason);
+    return getLocalFallbackForError(slug, error);
   }
 }
 
-function getLocalFallback(slug: string, reason: string): Restaurant | null {
-  const fallback = getLocalDevelopmentRestaurantFallback(slug);
+function getLocalFallbackForStatus(slug: string, status: number): Restaurant | null {
+  const fallback = getLocalDevelopmentRestaurantFallbackForStatus(slug, status);
 
   if (!fallback) return null;
 
+  console.warn(
+    `[RestaurantAI] Using local development fallback for /restaurants/${slug}: backend responded with ${status}`,
+  );
+  return fallback;
+}
+
+function getLocalFallbackForError(slug: string, error: unknown): Restaurant | null {
+  const fallback = getLocalDevelopmentRestaurantFallbackForError(slug, error);
+
+  if (!fallback) return null;
+
+  const reason = error instanceof Error ? error.message : "request failed";
   console.warn(
     `[RestaurantAI] Using local development fallback for /restaurants/${slug}: ${reason}`,
   );

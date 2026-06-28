@@ -43,11 +43,14 @@ describe("restaurant page", () => {
 
     expect(screen.getByRole("heading", { name: "Gallery" })).toBeVisible();
     expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
-  it("renders the homepage through the engine without full menu or reservation form", () => {
-    const { container } = renderWithUser(
+  it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
+    renderWithUser(
       <RestaurantSite
         restaurant={{
           ...bellaNapoli,
@@ -76,17 +79,28 @@ describe("restaurant page", () => {
       />,
     );
 
-    expect(container.querySelector("[data-engine-homepage]")).not.toBeNull();
-    expect(container.querySelector("[data-page-block-id='home-hero']")).not.toBeNull();
-    expect(container.querySelector("style[data-restaurantai-theme]")).not.toBeNull();
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
     expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
-    expect(screen.getByRole("heading", { name: /a room where light, aroma, and timing become part of the menu/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /some evenings need more than a table/i })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /opening hours/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the default homepage as a premium gateway without menu, order, or reservation form", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+
+    expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
+    expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
@@ -196,6 +210,9 @@ describe("restaurant page", () => {
 
     expect(screen.getByRole("heading", { name: /request a table/i })).toBeVisible();
     expect(screen.queryByText(bellaNapoli.address)).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
   });
 
   it("renders contact details without a reservation form", () => {
@@ -203,6 +220,9 @@ describe("restaurant page", () => {
 
     expect(screen.getAllByText(/Sonnenallee 42/).length).toBeGreaterThan(0);
     expect(screen.getByText(/opening hours/i)).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
@@ -212,6 +232,27 @@ describe("restaurant page", () => {
     expect(screen.getByRole("heading", { name: /private dining/i })).toBeVisible();
     expect(screen.getByText(/special tables/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /contact the restaurant/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
+  it("does not mount cart or order controls outside the menu route", () => {
+    for (const page of ["home", "reservations", "gallery", "contact", "events"] as const) {
+      localStorage.setItem(cartStorageKey(bellaNapoli.slug), JSON.stringify({
+        version: 1,
+        items: [{ itemId: 201, quantity: 2 }],
+      }));
+
+      const result = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page={page} />);
+
+      expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /confirm order/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/payment is handled by the restaurant/i)).not.toBeInTheDocument();
+
+      result.unmount();
+      localStorage.clear();
+    }
   });
 });

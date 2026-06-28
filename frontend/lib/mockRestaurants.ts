@@ -1,6 +1,7 @@
 import type { Restaurant } from "./types";
 
 const LOCAL_FALLBACK_SLUG = "bella-napoli";
+const LOCAL_FALLBACK_STATUSES = new Set([500, 502, 503, 504]);
 
 export const localBellaNapoliRestaurant: Restaurant = {
   id: 1,
@@ -164,6 +165,51 @@ export function getLocalDevelopmentRestaurantFallback(slug: string): Restaurant 
   return cloneRestaurant(localBellaNapoliRestaurant);
 }
 
+export function getLocalDevelopmentRestaurantFallbackForStatus(
+  slug: string,
+  status: number,
+): Restaurant | null {
+  if (!LOCAL_FALLBACK_STATUSES.has(status)) {
+    return null;
+  }
+
+  return getLocalDevelopmentRestaurantFallback(slug);
+}
+
+export function getLocalDevelopmentRestaurantFallbackForError(
+  slug: string,
+  error: unknown,
+): Restaurant | null {
+  const status = statusFromError(error);
+
+  if (status !== null) {
+    return getLocalDevelopmentRestaurantFallbackForStatus(slug, status);
+  }
+
+  if (!isNetworkFetchError(error)) {
+    return null;
+  }
+
+  return getLocalDevelopmentRestaurantFallback(slug);
+}
+
 function cloneRestaurant(restaurant: Restaurant): Restaurant {
   return JSON.parse(JSON.stringify(restaurant)) as Restaurant;
+}
+
+function statusFromError(error: unknown): number | null {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const match = error.message.match(/\((\d{3})\)/);
+  return match ? Number(match[1]) : null;
+}
+
+function isNetworkFetchError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /failed to fetch|fetch failed|network|econnrefused|econnreset|connection refused/i.test(error.message);
 }

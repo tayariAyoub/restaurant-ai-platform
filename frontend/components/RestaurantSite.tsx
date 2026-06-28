@@ -4,7 +4,6 @@ import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, Wine }
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
-import EngineHomepagePreview from "@/components/engine/EngineHomepagePreview";
 import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
 import ImmersiveRestaurantExperience from "@/components/public/restaurant/ImmersiveRestaurantExperience";
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
@@ -66,6 +65,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
   const cartScope = restaurant.slug || restaurant.id;
   const reservationsEnabled = restaurant.reservations_enabled !== false;
   const orderingEnabled = restaurant.ordering_enabled !== false;
+  const cartEnabled = page === "menu" && orderingEnabled;
   const deliveryEnabled = restaurant.delivery_enabled !== false;
   const pickupEnabled = restaurant.pickup_enabled !== false;
   const dineInEnabled = restaurant.dine_in_enabled !== false;
@@ -101,18 +101,25 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
   }, [orderModes, orderType]);
 
   useEffect(() => {
+    if (page !== "menu") {
+      setCartHydrated(false);
+      setCart({});
+      return;
+    }
+
     setCartHydrated(false);
     setCart(loadCart(cartScope, menuItems));
     setCartHydrated(true);
-  }, [cartScope, menuItems]);
+  }, [cartScope, menuItems, page]);
 
   useEffect(() => {
+    if (page !== "menu") return;
     if (!cartHydrated) return;
     saveCart(cartScope, cart);
-  }, [cart, cartHydrated, cartScope]);
+  }, [cart, cartHydrated, cartScope, page]);
 
   function changeCart(item: MenuItem, change: number) {
-    if (!orderingEnabled) return;
+    if (!cartEnabled) return;
     setCart((current) => {
       const quantity = (current[item.id]?.quantity || 0) + change;
       if (quantity <= 0) {
@@ -205,18 +212,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
       />
       <main id="top">
-        {page === "home" ? (
-          <EngineHomepagePreview
-            restaurant={restaurant}
-            themeIdentity={themeIdentity}
-            heroVisual={heroVisual}
-            gallery={gallery}
-            reservationsEnabled={reservationsEnabled}
-            mobileOpen={mobile}
-            onToggleMobile={() => setMobile((current) => !current)}
-            onCloseMobile={() => setMobile(false)}
-          />
-        ) : immersiveTheme ? (
+        {immersiveTheme ? (
           <ImmersiveRestaurantExperience
             page={page}
             restaurant={restaurant}
@@ -290,11 +286,11 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
           primaryColor={primary}
           menuHighlights={featuredItems.map((item) => item.name)}
           dietaryPrompts={dietaryPrompts}
-          bottomOffsetClass={cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
+          bottomOffsetClass={cartEnabled && cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
         />
       )}
 
-      {orderingEnabled && cartCount > 0 && (
+      {cartEnabled && cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
           className="luxury-button fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/15 px-4 py-3 text-left text-sm font-bold text-white shadow-2xl backdrop-blur sm:left-1/2 sm:right-auto sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
@@ -311,25 +307,27 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         </button>
       )}
 
-      <OrderCartDrawer
-        restaurant={restaurant}
-        cartOpen={cartOpen}
-        setCartOpen={setCartOpen}
-        cartLines={cartLines}
-        subtotal={subtotal}
-        orderType={orderType}
-        setOrderType={setOrderType}
-        orderStatus={orderStatus}
-        orderSubmitting={orderSubmitting}
-        completedOrder={completedOrder}
-        setCompletedOrder={setCompletedOrder}
-        orderModes={orderModes}
-        primary={primary}
-        buttonClass={buttonClass}
-        changeCart={changeCart}
-        removeItem={removeCartItem}
-        submitOrder={submitOrder}
-      />
+      {page === "menu" && (
+        <OrderCartDrawer
+          restaurant={restaurant}
+          cartOpen={cartOpen}
+          setCartOpen={setCartOpen}
+          cartLines={cartLines}
+          subtotal={subtotal}
+          orderType={orderType}
+          setOrderType={setOrderType}
+          orderStatus={orderStatus}
+          orderSubmitting={orderSubmitting}
+          completedOrder={completedOrder}
+          setCompletedOrder={setCompletedOrder}
+          orderModes={orderModes}
+          primary={primary}
+          buttonClass={buttonClass}
+          changeCart={changeCart}
+          removeItem={removeCartItem}
+          submitOrder={submitOrder}
+        />
+      )}
     </div>
   );
 }

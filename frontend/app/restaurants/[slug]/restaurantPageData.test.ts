@@ -28,7 +28,7 @@ describe("public restaurant data loading", () => {
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("local development fallback"));
   });
 
-  it("falls back to Bella Napoli in development when the backend returns 5xx", async () => {
+  it("falls back to Bella Napoli in development when the backend returns 500", async () => {
     vi.stubEnv("NODE_ENV", "development");
     fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
 
@@ -36,6 +36,19 @@ describe("public restaurant data loading", () => {
 
     expect(restaurant?.name).toBe("Bella Napoli");
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("backend responded with 500"));
+  });
+
+  it("falls back to Bella Napoli in development when the backend returns 502, 503, or 504", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    for (const status of [502, 503, 504]) {
+      fetchMock.mockResolvedValueOnce(mockFetchResponse(status));
+
+      const restaurant = await fetchPublicRestaurant("bella-napoli");
+
+      expect(restaurant?.name).toBe("Bella Napoli");
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining(`backend responded with ${status}`));
+    }
   });
 
   it("does not fall back on 404", async () => {
@@ -56,7 +69,7 @@ describe("public restaurant data loading", () => {
 
   it("keeps production strict", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    fetchMock.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+    fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
 
     await expect(fetchPublicRestaurant("bella-napoli")).resolves.toBeNull();
     expect(console.warn).not.toHaveBeenCalled();
