@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  Bot,
   CalendarDays,
   ChefHat,
   MapPin,
@@ -11,6 +10,7 @@ import type { FormEvent } from "react";
 import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import type { MenuItem, Restaurant, RestaurantImage } from "@/lib/types";
 import MenuShowcase from "./MenuShowcase";
+import PremiumHomepage from "./PremiumHomepage";
 import { formatPrice } from "./experience";
 
 type ImmersivePage = "home" | "menu" | "reservations" | "gallery" | "contact" | "events";
@@ -23,6 +23,7 @@ type ImmersiveRestaurantExperienceProps = {
   gallery: RestaurantImage[];
   menuItems: MenuItem[];
   featuredItems: MenuItem[];
+  availableItems: number;
   quantities: Record<number, number>;
   hours: Record<string, string>;
   reservationsEnabled: boolean;
@@ -31,6 +32,9 @@ type ImmersiveRestaurantExperienceProps = {
   pickupEnabled: boolean;
   dineInEnabled: boolean;
   chatbotEnabled: boolean;
+  mobileOpen: boolean;
+  onToggleMobile: () => void;
+  onCloseMobile: () => void;
   reservationStatus: string;
   onReserve: (event: FormEvent<HTMLFormElement>) => void;
   onAdd: (item: MenuItem) => void;
@@ -41,6 +45,29 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
   const visuals = [heroVisual, ...gallery.map((image) => image.url)].filter(Boolean);
   const primaryVisual = visuals[0] || "";
 
+  if (page === "home") {
+    return (
+      <PremiumHomepage
+        restaurant={restaurant}
+        themeIdentity={themeIdentity}
+        heroVisual={primaryVisual}
+        gallery={gallery}
+        featuredItems={props.featuredItems}
+        availableItems={props.availableItems}
+        hours={props.hours}
+        reservationsEnabled={props.reservationsEnabled}
+        orderingEnabled={props.orderingEnabled}
+        deliveryEnabled={props.deliveryEnabled}
+        pickupEnabled={props.pickupEnabled}
+        dineInEnabled={props.dineInEnabled}
+        chatbotEnabled={props.chatbotEnabled}
+        mobileOpen={props.mobileOpen}
+        onToggleMobile={props.onToggleMobile}
+        onCloseMobile={props.onCloseMobile}
+      />
+    );
+  }
+
   return (
     <div className="cinematic-experience min-h-screen bg-[#020108] text-white">
       <ImmersiveHeader restaurant={restaurant} currentPage={page} />
@@ -49,7 +76,6 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
       {page === "gallery" && <GalleryPage {...props} visual={primaryVisual} />}
       {page === "contact" && <ContactPage {...props} visual={primaryVisual} />}
       {page === "events" && <EventsPage {...props} visual={primaryVisual} />}
-      {page === "home" && <HomePage {...props} visual={primaryVisual} />}
       <MinimalFooter restaurant={restaurant} themeIdentity={themeIdentity} />
     </div>
   );
@@ -91,68 +117,6 @@ function ImmersiveHeader({ restaurant, currentPage }: { restaurant: Restaurant; 
         </a>
       </div>
     </header>
-  );
-}
-
-function HomePage(props: ImmersiveRestaurantExperienceProps & { visual: string }) {
-  const { restaurant, themeIdentity, visual, featuredItems, gallery, reservationsEnabled, orderingEnabled, chatbotEnabled } = props;
-  const firstDish = featuredItems[0];
-  const experience = themeIdentity.experience;
-
-  return (
-    <>
-      <section id="top" className="cinematic-opening relative flex min-h-[100svh] items-end overflow-hidden">
-        <SceneImage src={visual} alt={restaurant.name} treatment={themeIdentity.imageTreatmentClass} priority />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_24%,rgba(183,140,255,.22),transparent_25rem),linear-gradient(90deg,rgba(2,1,8,.98),rgba(3,2,10,.78)_42%,rgba(2,1,8,.35))]" />
-        <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-[#020108] via-[#020108]/76 to-transparent" />
-        <div className="cinematic-grain" />
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-10 pt-32 sm:px-6 sm:pb-14 lg:pb-20">
-          <div className="max-w-5xl">
-            <p className="luxury-kicker text-[10px] font-bold text-white/54">
-              {restaurant.city || "Tonight"} / {themeIdentity.personality.guestKicker}
-            </p>
-            <h1 className="mt-5 text-balance text-[clamp(4.4rem,18vw,10.5rem)] font-semibold leading-[0.78] text-white">
-              {restaurant.name}
-            </h1>
-            <p className="mt-7 max-w-2xl font-display text-2xl leading-tight text-white/78 sm:text-4xl">
-              {restaurant.tagline || restaurant.description || themeIdentity.personality.momentTitle}
-            </p>
-            <div className="mt-9 flex max-w-xl flex-col gap-3 sm:flex-row">
-              <a href="#experience" className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center gap-2 bg-white px-6 py-3 text-sm font-bold text-[#070411]`}>
-                Enter the experience <ArrowRight size={17} />
-              </a>
-              {reservationsEnabled && (
-                <a href={`/restaurants/${restaurant.slug}/reservations`} className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center border border-white/22 bg-white/[.08] px-6 py-3 text-sm font-bold text-white backdrop-blur`}>
-                  Reserve
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="experience" className="cinematic-chapter relative grid min-h-[88svh] items-center overflow-hidden px-4 py-20 sm:px-6 lg:py-28">
-        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[.82fr_1.18fr] lg:items-center">
-          <div className="max-w-xl">
-            <p className="luxury-kicker text-[10px] font-bold" style={{ color: themeIdentity.primary }}>{experience?.kicker || "Experience"}</p>
-            <h2 className="mt-5 text-balance text-5xl font-semibold leading-[0.92] sm:text-7xl">
-              {experience?.title || themeIdentity.personality.momentTitle}
-            </h2>
-            <p className="mt-6 text-sm leading-7 text-white/58">{experience?.copy || restaurant.story || restaurant.description}</p>
-          </div>
-          <FeatureImage src={gallery[0]?.url || visual} alt={restaurant.name} themeIdentity={themeIdentity} />
-        </div>
-      </section>
-
-      <section className="cinematic-chapter px-4 py-20 sm:px-6 lg:py-28">
-        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-4">
-          <TeaserCard title="Menu" copy={firstDish ? `${firstDish.name} begins the sequence.` : "Discover tonight's dishes."} href={`/restaurants/${restaurant.slug}/menu`} kicker={orderingEnabled ? "Courses / order" : "Courses"} themeIdentity={themeIdentity} />
-          <TeaserCard title="Reservations" copy="A focused booking experience for table requests." href={`/restaurants/${restaurant.slug}/reservations`} kicker="Book the room" themeIdentity={themeIdentity} />
-          <TeaserCard title="AI Maitre d'" copy={chatbotEnabled ? "Ask about menu, allergies, timing, or pairings." : "The digital host can be enabled by the restaurant."} href="#chat" kicker="Digital host" themeIdentity={themeIdentity} />
-          <TeaserCard title={gallery.length > 0 ? "Gallery" : "Private dining"} copy={gallery.length > 0 ? "Move through the room before arrival." : "Plan a special evening."} href={gallery.length > 0 ? `/restaurants/${restaurant.slug}/gallery` : `/restaurants/${restaurant.slug}/events`} kicker="Atmosphere" themeIdentity={themeIdentity} />
-        </div>
-      </section>
-    </>
   );
 }
 
@@ -319,38 +283,6 @@ function PageHero({
         <p className="mt-6 max-w-2xl text-sm leading-7 text-white/62 sm:text-base">{copy}</p>
       </div>
     </section>
-  );
-}
-
-function FeatureImage({ src, alt, themeIdentity }: { src: string; alt: string; themeIdentity: RestaurantThemeIdentity }) {
-  return (
-    <div className="relative min-h-[65svh] overflow-hidden rounded-[2rem] border border-white/10">
-      <SceneImage src={src} alt={alt} treatment={themeIdentity.imageTreatmentClass} />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/62 via-black/18 to-transparent" />
-    </div>
-  );
-}
-
-function TeaserCard({
-  title,
-  kicker,
-  copy,
-  href,
-  themeIdentity,
-}: {
-  title: string;
-  kicker: string;
-  copy: string;
-  href: string;
-  themeIdentity: RestaurantThemeIdentity;
-}) {
-  return (
-    <a href={href} className="cinematic-host-panel group min-h-72 rounded-[2rem] border border-white/10 p-6 transition hover:-translate-y-1">
-      <p className="text-[10px] font-bold uppercase tracking-[0.24em]" style={{ color: themeIdentity.primary }}>{kicker}</p>
-      <h3 className="mt-8 text-3xl font-semibold leading-tight">{title}</h3>
-      <p className="mt-4 text-sm leading-7 text-white/58">{copy}</p>
-      <span className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-white/70">Open <ArrowRight size={15} /></span>
-    </a>
   );
 }
 

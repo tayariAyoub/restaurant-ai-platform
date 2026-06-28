@@ -8,8 +8,7 @@ import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
 import ImmersiveRestaurantExperience from "@/components/public/restaurant/ImmersiveRestaurantExperience";
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
 import OrderCartDrawer from "@/components/public/restaurant/OrderCartDrawer";
-import RestaurantHero from "@/components/public/restaurant/RestaurantHero";
-import TrustAndStory from "@/components/public/restaurant/TrustAndStory";
+import PremiumHomepage from "@/components/public/restaurant/PremiumHomepage";
 import request from "@/lib/api";
 import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
 import { buildRestaurantJsonLd } from "@/lib/restaurantSeo";
@@ -17,10 +16,8 @@ import { resolveRestaurantTheme, type RestaurantThemeIdentity } from "@/lib/rest
 import type { MenuItem, Restaurant, RestaurantImage, RestaurantOrder } from "@/lib/types";
 import {
   buildDietaryPrompts,
-  buildStoryMoments,
   formatPrice,
   parseOpeningHours,
-  type StoryMoment,
 } from "./public/restaurant/experience";
 
 type CartLine = StoredCart[number];
@@ -46,7 +43,6 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
 
   const hours = useMemo(() => parseOpeningHours(restaurant.opening_hours), [restaurant.opening_hours]);
   const gallery = restaurant.images.filter((image) => ["gallery", "food"].includes(image.image_type));
-  const heroGallery = gallery.slice(0, 3);
   const menuItems = useMemo(
     () => restaurant.categories.flatMap((category) => category.items),
     [restaurant.categories],
@@ -54,7 +50,6 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
   const availableItems = menuItems.filter((item) => item.is_available).length;
   const featuredItems = menuItems.filter((item) => item.is_available).slice(0, 4);
   const heroVisual = restaurant.hero_image || gallery[0]?.url || "";
-  const storyMoments = buildStoryMoments(restaurant, featuredItems, themeIdentity.personality);
   const dietaryPrompts = buildDietaryPrompts(menuItems);
   const cartLines = Object.values(cart);
   const cartCount = cartLines.reduce((total, line) => total + line.quantity, 0);
@@ -226,6 +221,10 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
             pickupEnabled={pickupEnabled}
             dineInEnabled={dineInEnabled}
             chatbotEnabled={chatbotEnabled}
+            availableItems={availableItems}
+            mobileOpen={mobile}
+            onToggleMobile={() => setMobile((current) => !current)}
+            onCloseMobile={() => setMobile(false)}
             reservationStatus={reservationStatus}
             onReserve={reserve}
             onAdd={(item) => changeCart(item, 1)}
@@ -236,7 +235,6 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
             restaurant,
             themeIdentity,
             heroVisual,
-            heroGallery,
             availableItems,
             reservationsEnabled,
             orderingEnabled,
@@ -246,11 +244,11 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
             mobile,
             toggleMobile: () => setMobile((current) => !current),
             closeMobile: () => setMobile(false),
-            storyMoments,
             menuItems,
             featuredItems,
             quantities,
             gallery,
+            chatbotEnabled,
             hours,
             reservationStatus,
             reserve,
@@ -259,7 +257,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         )}
       </main>
 
-      {!immersiveTheme && (
+      {!immersiveTheme && page !== "home" && (
         <footer
           className="px-6 py-12 text-center text-sm"
           style={footerStyle}
@@ -333,7 +331,6 @@ function renderClassicPage({
   restaurant,
   themeIdentity,
   heroVisual,
-  heroGallery,
   availableItems,
   reservationsEnabled,
   orderingEnabled,
@@ -343,11 +340,11 @@ function renderClassicPage({
   mobile,
   toggleMobile,
   closeMobile,
-  storyMoments,
   menuItems,
   featuredItems,
   quantities,
   gallery,
+  chatbotEnabled,
   hours,
   reservationStatus,
   reserve,
@@ -357,7 +354,6 @@ function renderClassicPage({
   restaurant: Restaurant;
   themeIdentity: RestaurantThemeIdentity;
   heroVisual: string;
-  heroGallery: RestaurantImage[];
   availableItems: number;
   reservationsEnabled: boolean;
   orderingEnabled: boolean;
@@ -367,11 +363,11 @@ function renderClassicPage({
   mobile: boolean;
   toggleMobile: () => void;
   closeMobile: () => void;
-  storyMoments: StoryMoment[];
   menuItems: MenuItem[];
   featuredItems: MenuItem[];
   quantities: Record<number, number>;
   gallery: RestaurantImage[];
+  chatbotEnabled: boolean;
   hours: Record<string, string>;
   reservationStatus: string;
   reserve: (event: FormEvent<HTMLFormElement>) => void;
@@ -431,29 +427,24 @@ function renderClassicPage({
   }
 
   return (
-    <>
-      <RestaurantHero
-        restaurant={restaurant}
-        themeIdentity={themeIdentity}
-        heroVisual={heroVisual}
-        heroGallery={heroGallery}
-        availableItems={availableItems}
-        reservationsEnabled={reservationsEnabled}
-        orderingEnabled={orderingEnabled}
-        deliveryEnabled={deliveryEnabled}
-        pickupEnabled={pickupEnabled}
-        dineInEnabled={dineInEnabled}
-        mobileOpen={mobile}
-        onToggleMobile={toggleMobile}
-        onCloseMobile={closeMobile}
-      />
-      <TrustAndStory
-        restaurant={restaurant}
-        themeIdentity={themeIdentity}
-        storyMoments={storyMoments}
-      />
-      <ClassicRouteTeasers restaurant={restaurant} themeIdentity={themeIdentity} reservationsEnabled={reservationsEnabled} orderingEnabled={orderingEnabled} gallery={gallery} />
-    </>
+    <PremiumHomepage
+      restaurant={restaurant}
+      themeIdentity={themeIdentity}
+      heroVisual={heroVisual}
+      gallery={gallery}
+      featuredItems={featuredItems}
+      availableItems={availableItems}
+      hours={hours}
+      reservationsEnabled={reservationsEnabled}
+      orderingEnabled={orderingEnabled}
+      deliveryEnabled={deliveryEnabled}
+      pickupEnabled={pickupEnabled}
+      dineInEnabled={dineInEnabled}
+      chatbotEnabled={chatbotEnabled}
+      mobileOpen={mobile}
+      onToggleMobile={toggleMobile}
+      onCloseMobile={closeMobile}
+    />
   );
 }
 
@@ -475,39 +466,6 @@ function ClassicPageHero({
         <a href={`/restaurants/${restaurant.slug}`} className="text-xs font-bold uppercase tracking-[0.24em] text-white/58">{restaurant.name}</a>
         <h1 className="mt-5 text-5xl font-semibold leading-tight sm:text-7xl">{title}</h1>
         <p className="mt-5 max-w-2xl text-lg leading-8 text-white/72">{copy}</p>
-      </div>
-    </section>
-  );
-}
-
-function ClassicRouteTeasers({
-  restaurant,
-  themeIdentity,
-  reservationsEnabled,
-  orderingEnabled,
-  gallery,
-}: {
-  restaurant: Restaurant;
-  themeIdentity: RestaurantThemeIdentity;
-  reservationsEnabled: boolean;
-  orderingEnabled: boolean;
-  gallery: RestaurantImage[];
-}) {
-  const cards = [
-    orderingEnabled && ["Menu", "Browse dishes and order directly.", `/restaurants/${restaurant.slug}/menu`],
-    reservationsEnabled && ["Reservations", "Request a table with occasion and allergy notes.", `/restaurants/${restaurant.slug}/reservations`],
-    gallery.length > 0 && ["Gallery", "See the room, food, and atmosphere.", `/restaurants/${restaurant.slug}/gallery`],
-    ["Contact", "Find hours, address, phone, and map.", `/restaurants/${restaurant.slug}/contact`],
-  ].filter(Boolean) as string[][];
-  return (
-    <section className="px-4 pb-20 sm:px-6 lg:pb-28">
-      <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-4">
-        {cards.map(([title, copy, href]) => (
-          <a key={title} href={href} className="premium-lift rounded-[1.75rem] border border-black/10 bg-white/75 p-6 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-[.24em]" style={{ color: themeIdentity.primary }}>{title}</p>
-            <p className="mt-4 text-lg leading-7 opacity-70">{copy}</p>
-          </a>
-        ))}
       </div>
     </section>
   );

@@ -74,11 +74,14 @@ describe("restaurant page", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /a cinematic evening/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Menu" })).toBeVisible();
-    expect(screen.getAllByRole("link", { name: /reserve/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
-    expect(screen.queryByRole("heading", { name: /the dishes available tonight/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
+    expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /some evenings need more than a table/i })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /opening hours/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
   });
 
