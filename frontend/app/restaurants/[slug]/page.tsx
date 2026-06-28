@@ -24,7 +24,7 @@ type RestaurantPageProps = {
 async function fetchRestaurant(slug: string): Promise<Restaurant | null> {
   try {
     const response = await fetch(`${backendUrl()}/api/restaurants/${encodeURIComponent(slug)}`, {
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
     if (!response.ok) return null;
     return response.json() as Promise<Restaurant>;

@@ -29,6 +29,7 @@ import { type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "r
 import AdminShell from "@/components/admin/AdminShell";
 import { adminRequest } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { resolveRestaurantTheme } from "@/lib/restaurantTheme";
 import type { Restaurant, RestaurantImage, RestaurantOverview, Theme, User } from "@/lib/types";
 
 type BuilderMode = "list" | "create" | "edit";
@@ -549,7 +550,7 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
                   </button>
                 </div>
               </div>
-              <WebsitePreview draft={draft} previewMode={previewMode} />
+              <WebsitePreview draft={draft} selectedTheme={selectedTheme} previewMode={previewMode} />
             </aside>
           </div>
         )}
@@ -1321,7 +1322,18 @@ function ToggleCard({
   );
 }
 
-function WebsitePreview({ draft, previewMode }: { draft: BuilderDraft; previewMode: PreviewMode }) {
+function WebsitePreview({
+  draft,
+  selectedTheme,
+  previewMode,
+}: {
+  draft: BuilderDraft;
+  selectedTheme?: Theme;
+  previewMode: PreviewMode;
+}) {
+  const previewRestaurant = restaurantFromDraft(draft, selectedTheme);
+  const themeIdentity = resolveRestaurantTheme(previewRestaurant);
+  const immersive = themeIdentity.homepageStyle === "immersive";
   const serviceLine = [
     draft.reservations_enabled && "Reserve",
     draft.ordering_enabled && "Order",
@@ -1329,17 +1341,27 @@ function WebsitePreview({ draft, previewMode }: { draft: BuilderDraft; previewMo
   ].filter(Boolean).join(" / ");
 
   return (
-    <div className={`mx-auto overflow-hidden rounded-[1.75rem] border border-black/10 shadow-2xl ${previewMode === "mobile" ? "max-w-[285px]" : "w-full"}`}>
+    <div
+      className={`mx-auto overflow-hidden rounded-[1.75rem] border shadow-2xl ${previewMode === "mobile" ? "max-w-[285px]" : "w-full"} ${
+        immersive ? "border-white/10 text-white" : "border-black/10"
+      }`}
+      style={{
+        background: themeIdentity.shellBackground,
+        color: themeIdentity.text,
+        fontFamily: themeIdentity.fontFamily,
+      }}
+    >
       <div
         className="relative min-h-80 bg-cover bg-center p-5 text-white"
         style={{
-          backgroundColor: draft.background_color || "#11110f",
+          backgroundColor: themeIdentity.background,
           backgroundImage: draft.hero_image
-            ? `linear-gradient(135deg, rgba(0,0,0,.78), rgba(0,0,0,.28)), url(${draft.hero_image})`
-            : "linear-gradient(135deg, rgba(0,0,0,.92), rgba(30,25,18,.72))",
+            ? `${themeIdentity.heroOverlay}, url(${draft.hero_image})`
+            : themeIdentity.heroFallback,
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_74%_18%,rgba(255,255,255,.12),transparent_12rem)]" />
+        <div className="relative z-10 flex items-center gap-3">
           {draft.logo_url ? (
             <img src={draft.logo_url} alt="" className="h-11 w-11 rounded-full border border-white/35 object-cover" loading="lazy" decoding="async" />
           ) : (
@@ -1352,34 +1374,44 @@ function WebsitePreview({ draft, previewMode }: { draft: BuilderDraft; previewMo
             <p className="truncate text-xs text-white/58">{draft.city || "City"} / {serviceLine || "Menu and contact"}</p>
           </div>
         </div>
-        <div className="absolute inset-x-5 bottom-5">
+        <div className="absolute inset-x-5 bottom-5 z-10">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/50">{draft.tagline || "Premium restaurant website"}</p>
           <h3 className="mt-2 text-4xl font-semibold leading-none">{draft.name || "Your restaurant"}</h3>
           <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/75">{draft.description || "A polished first impression for guests before they reserve, order, or visit."}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {draft.reservations_enabled && <span className="rounded-full px-3 py-2 text-xs font-bold text-white" style={{ backgroundColor: draft.primary_color || "#c6a15b" }}>Reserve</span>}
-            {draft.ordering_enabled && <span className="rounded-full border border-white/35 bg-white/10 px-3 py-2 text-xs font-bold">View menu</span>}
+            {draft.reservations_enabled && (
+              <span className={`${themeIdentity.buttonClass} px-3 py-2 text-xs font-bold text-white`} style={{ backgroundColor: themeIdentity.primary }}>
+                Reserve
+              </span>
+            )}
+            {draft.ordering_enabled && <span className={`${themeIdentity.buttonClass} border border-white/35 bg-white/10 px-3 py-2 text-xs font-bold`}>View menu</span>}
           </div>
         </div>
       </div>
-      <div className="space-y-3 bg-white p-4 text-slate-900">
-        <div className="rounded-2xl border border-slate-100 p-4">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Signature menu</p>
+      <div className={`space-y-3 p-4 ${immersive ? "bg-[#05030b]/90 text-white" : "bg-white text-slate-900"}`}>
+        {themeIdentity.experience && (
+          <div className="ultraviolet-panel rounded-2xl p-4">
+            <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: themeIdentity.primary }}>Experience</p>
+            <p className="mt-2 text-sm leading-6 text-white/68">{themeIdentity.experience.title}</p>
+          </div>
+        )}
+        <div className={`rounded-2xl border p-4 ${immersive ? "border-white/10 bg-white/[.05]" : "border-slate-100"}`}>
+          <p className={`text-xs font-bold uppercase tracking-[0.18em] ${immersive ? "text-white/40" : "text-slate-400"}`}>Signature menu</p>
           <p className="mt-2 font-semibold">Premium menu cards inherit this brand style.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <PreviewPill label="Theme" value={draft.homepage_style || "editorial"} />
-          <PreviewPill label="Menu" value={draft.menu_style || "refined"} />
+          <PreviewPill label="Theme" value={themeIdentity.name} immersive={immersive} />
+          <PreviewPill label="Menu" value={themeIdentity.menuStyle || "refined"} immersive={immersive} />
         </div>
       </div>
     </div>
   );
 }
 
-function PreviewPill({ label, value }: { label: string; value: string }) {
+function PreviewPill({ label, value, immersive }: { label: string; value: string; immersive: boolean }) {
   return (
-    <div className="rounded-2xl bg-slate-50 p-3">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+    <div className={`rounded-2xl p-3 ${immersive ? "bg-white/[.06]" : "bg-slate-50"}`}>
+      <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${immersive ? "text-white/40" : "text-slate-400"}`}>{label}</p>
       <p className="mt-1 truncate font-semibold capitalize">{value}</p>
     </div>
   );
@@ -1396,6 +1428,62 @@ function BuilderSkeleton() {
       </div>
     </div>
   );
+}
+
+function restaurantFromDraft(draft: BuilderDraft, selectedTheme?: Theme): Restaurant {
+  const now = new Date(0).toISOString();
+  return {
+    id: draft.id || 0,
+    owner_id: draft.owner_id,
+    theme_id: draft.theme_id,
+    name: draft.name || "Your restaurant",
+    slug: draft.slug || "preview",
+    tagline: draft.tagline,
+    description: draft.description,
+    story: draft.story,
+    address: draft.address,
+    city: draft.city,
+    postal_code: draft.postal_code,
+    phone: draft.phone,
+    email: draft.email,
+    google_maps_url: draft.google_maps_url,
+    facebook_url: draft.facebook_url,
+    instagram_url: draft.instagram_url,
+    tiktok_url: draft.tiktok_url,
+    opening_hours: draft.opening_hours,
+    logo_url: draft.logo_url,
+    hero_image: draft.hero_image,
+    reservation_url: draft.reservation_url,
+    primary_color: draft.primary_color,
+    secondary_color: draft.secondary_color,
+    background_color: draft.background_color,
+    text_color: draft.text_color,
+    font_family: draft.font_family,
+    button_style: draft.button_style,
+    homepage_style: draft.homepage_style,
+    menu_style: draft.menu_style,
+    gallery_style: draft.gallery_style,
+    reservations_enabled: draft.reservations_enabled,
+    ordering_enabled: draft.ordering_enabled,
+    delivery_enabled: draft.delivery_enabled,
+    pickup_enabled: draft.pickup_enabled,
+    dine_in_enabled: draft.dine_in_enabled,
+    chatbot_enabled: draft.chatbot_enabled,
+    ai_name: draft.ai_name,
+    ai_welcome_message: draft.ai_welcome_message,
+    ai_tone: draft.ai_tone,
+    ai_allowed_topics: draft.ai_allowed_topics,
+    ai_fallback_message: draft.ai_fallback_message,
+    ai_escalation_message: draft.ai_escalation_message,
+    ai_language: draft.ai_language,
+    ai_safety_instructions: draft.ai_safety_instructions,
+    is_published: draft.is_published,
+    created_at: now,
+    theme: selectedTheme || null,
+    owner: null,
+    categories: [],
+    images: draft.images,
+  };
 }
 
 function draftFromRestaurant(restaurant: Restaurant): BuilderDraft {

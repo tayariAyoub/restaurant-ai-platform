@@ -69,6 +69,21 @@ const themes = [
     menu_style: "minimal",
     gallery_style: "filmstrip",
   },
+  {
+    id: 3,
+    key: "ultraviolet-luxury",
+    name: "Ultraviolet Luxury",
+    description: "Dark cinematic fine dining",
+    primary_color: "#b78cff",
+    secondary_color: "#20d6d2",
+    background_color: "#05030b",
+    text_color: "#f7f2ff",
+    font_family: "Cormorant Garamond",
+    button_style: "pill",
+    homepage_style: "immersive",
+    menu_style: "refined",
+    gallery_style: "masonry",
+  },
 ];
 
 const restaurantOverview = [{
@@ -203,6 +218,47 @@ describe("visual restaurant builder", () => {
       );
     });
     expect(await screen.findByText(/website saved/i)).toBeVisible();
+  });
+
+  it("uses the shared public theme registry for the live preview and persisted theme payload", async () => {
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    expect(await screen.findByDisplayValue(bellaNapoli.name)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /brand/i }));
+    await user.click(screen.getByRole("button", { name: /ultraviolet luxury/i }));
+
+    expect(screen.getByText("Cinematic nocturne")).toBeVisible();
+    expect(screen.getByText(/A cinematic evening, staged around taste/i)).toBeVisible();
+    expect(screen.getAllByText("Ultraviolet Luxury", { selector: "p" }).length).toBeGreaterThan(1);
+
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(adminRequestMock).toHaveBeenCalledWith(
+        "/admin/restaurants/1",
+        "token-123",
+        expect.objectContaining({
+          method: "PUT",
+          body: expect.stringContaining('"theme_id":3'),
+        }),
+      );
+    });
+
+    const saveCall = adminRequestMock.mock.calls.find(
+      ([path, , options]) => path === "/admin/restaurants/1" && options?.method === "PUT",
+    );
+    expect(saveCall).toBeDefined();
+    const payload = JSON.parse(String(saveCall?.[2]?.body));
+    expect(payload).toMatchObject({
+      theme_id: 3,
+      primary_color: "#b78cff",
+      secondary_color: "#20d6d2",
+      background_color: "#05030b",
+      text_color: "#f7f2ff",
+      homepage_style: "immersive",
+      menu_style: "refined",
+      gallery_style: "masonry",
+    });
   });
 
   it("shows image previews, broken-image fallback, and clear controls", async () => {

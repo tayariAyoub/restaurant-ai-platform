@@ -71,6 +71,35 @@ Remaining recommendations:
 - Add screenshot regression checks later for premium themes at mobile and desktop sizes.
 - Keep future cinematic themes data-driven through the same registry instead of adding page-level forks.
 
+### Phase 2.1 Follow-Up - Visual Builder/Public Theme Consistency
+
+Issue found:
+
+- The public restaurant page used the shared `resolveRestaurantTheme` registry.
+- The Visual Builder live preview used local preview-only background/button/color logic, so it could look different from the saved public site.
+- Public restaurant data was fetched with `next: { revalidate: 300 }`, so theme changes could remain stale on the public page for up to five minutes after saving.
+
+Implementation summary:
+
+- Updated the Visual Builder preview to construct a preview `Restaurant` from the draft and resolve it through `resolveRestaurantTheme`.
+- Passed the selected backend theme record into the live preview so the preview has the same theme key, theme name, style modes, color tokens, button style, hero overlay, and immersive theme copy as the public page.
+- Removed preview-only theme painting for the hero/button/menu preview areas.
+- Updated `/restaurants/[slug]` restaurant fetches to use `cache: "no-store"` so saved theme/color/typography changes are visible immediately after refresh.
+- Added a regression test that selects `Ultraviolet Luxury`, verifies the live preview reflects the shared theme registry, and confirms the save payload persists the theme id and expected style tokens.
+
+Files changed:
+
+- `frontend/app/restaurants/[slug]/page.tsx`
+- `frontend/components/admin/VisualBuilder.tsx`
+- `frontend/components/admin/VisualBuilder.test.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+- Frontend tests: `cd frontend && pnpm.cmd test` -> 10 test files passed, 43 tests passed.
+- Frontend build: `cd frontend && pnpm.cmd build` -> successful production build.
+- Backend tests: not run for this follow-up because no backend code was changed.
+
 ## Phase 5.5 - Visual Menu Builder
 
 Scope:
