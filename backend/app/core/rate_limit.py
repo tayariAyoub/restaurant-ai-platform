@@ -98,3 +98,7 @@ def orders_rule() -> RateLimitRule:
 
 def public_rule() -> RateLimitRule:
     return RateLimitRule("public_general", settings.rate_limit_public_per_minute)
+
+
+def auth_rule() -> RateLimitRule:
+    return RateLimitRule("auth_login", settings.rate_limit_auth_per_minute)

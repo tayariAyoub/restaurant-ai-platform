@@ -9,6 +9,7 @@ from sqlalchemy import text
 from app.api import admin, auth, public
 from app.core.config import (
     collect_configuration_issues,
+    cors_origins,
     settings,
     should_run_legacy_startup_migrations,
 )
@@ -16,6 +17,7 @@ from app.core.database import Base, SessionLocal, engine
 from app.core.errors import register_exception_handlers
 from app.core.health import readiness
 from app.core.request_logging import request_logging_middleware
+from app.core.security_headers import security_headers_middleware
 from app.services.migrations import upgrade_existing_database
 from app.services.seed import seed_demo_data
 
@@ -73,9 +75,10 @@ app = FastAPI(
 )
 configure_logging()
 app.middleware("http")(request_logging_middleware)
+app.middleware("http")(security_headers_middleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=cors_origins(settings),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

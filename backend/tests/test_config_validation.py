@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from app.core.config import (
     LOCAL_DEMO_JWT_SECRET,
     collect_configuration_issues,
+    cors_origins,
     should_run_legacy_startup_migrations,
 )
 
@@ -13,14 +14,20 @@ def make_config(**overrides):
         "log_level": "INFO",
         "database_url": "sqlite://",
         "jwt_secret": "development-secret",
+        "jwt_algorithm": "HS256",
+        "access_token_minutes": 720,
         "admin_password": "safe-development-admin-password",
         "demo_owner_password": "safe-development-owner-password",
         "storage_provider": "local",
         "auto_migrate_on_startup": None,
         "openai_api_key": "",
+        "frontend_origin": None,
         "frontend_url": "http://localhost:3000",
         "auth_cookie_enabled": False,
+        "auth_cookie_name": "restaurant_ai_access_token",
         "auth_cookie_secure": False,
+        "auth_cookie_samesite": "lax",
+        "auth_cookie_max_age_seconds": 43200,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -83,6 +90,81 @@ def test_production_rejects_sqlite_database():
     )
 
     assert "DATABASE_URL" in " ".join(report.errors)
+
+
+def test_frontend_origin_is_preferred_for_cors():
+    config = make_config(
+        frontend_origin="https://app.restaurantai.example",
+        frontend_url="http://localhost:3000",
+    )
+
+    assert cors_origins(config) == ["https://app.restaurantai.example"]
+
+
+def test_production_rejects_wildcard_frontend_origin():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="production-secret-with-enough-length",
+            frontend_origin="*",
+            database_url="postgresql+psycopg://user:pass@db:5432/app",
+        )
+    )
+
+    assert "FRONTEND_ORIGIN" in " ".join(report.errors)
+
+
+def test_production_rejects_insecure_frontend_origin():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="production-secret-with-enough-length",
+            frontend_origin="http://example.com",
+            database_url="postgresql+psycopg://user:pass@db:5432/app",
+        )
+    )
+
+    assert "FRONTEND_ORIGIN must use HTTPS" in " ".join(report.errors)
+
+
+def test_frontend_origin_must_not_include_path():
+    report = collect_configuration_issues(
+        make_config(frontend_origin="https://example.com/admin")
+    )
+
+    assert "origin only" in " ".join(report.errors)
+
+
+def test_invalid_jwt_algorithm_is_rejected():
+    report = collect_configuration_issues(make_config(jwt_algorithm="none"))
+
+    assert "JWT_ALGORITHM" in " ".join(report.errors)
+
+
+def test_placeholder_jwt_secret_is_rejected_in_production():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="replace-me-with-a-long-production-secret",
+            database_url="postgresql+psycopg://user:pass@db:5432/app",
+        )
+    )
+
+    assert "JWT_SECRET looks like" in " ".join(report.errors)
+
+
+def test_cookie_samesite_none_requires_secure_cookie():
+    report = collect_configuration_issues(
+        make_config(auth_cookie_samesite="none", auth_cookie_secure=False)
+    )
+
+    assert "AUTH_COOKIE_SECURE" in " ".join(report.errors)
+
+
+def test_invalid_cookie_name_is_rejected():
+    report = collect_configuration_issues(make_config(auth_cookie_name="bad cookie name"))
+
+    assert "AUTH_COOKIE_NAME" in " ".join(report.errors)
 
 
 def test_legacy_startup_migrations_run_by_default_outside_production():

@@ -2275,3 +2275,73 @@ No application source behavior was changed.
 - Request logs are plain structured `extra` fields through standard Python logging; production may still want JSON log formatting and centralized log shipping.
 - `/health/ready` checks database and migration state only. Future production checks could include object storage, OpenAI availability for AI-enabled tenants, and queue/worker health once those systems exist.
 - Centralized error envelopes are additive and backward-compatible, but frontend code can later be simplified to consistently read the new `error` object.
+
+## Phase 1.4 - Security Hardening
+
+### Audit Summary
+
+- CORS previously used a single `FRONTEND_URL` value directly in `CORSMiddleware`.
+- There was no dedicated `FRONTEND_ORIGIN` setting or production validation for wildcard, localhost, path/query, or non-HTTPS origins.
+- Backend responses did not include common security headers.
+- JWT handling used signed bearer tokens with configurable cookie support already in place, but validation could be stricter around algorithms, placeholder secrets, token lifetime, and cookie attributes.
+- Public chat, reservations, orders, and general public API routes already had endpoint-level IP rate limiting.
+- Login did not yet have its own configurable auth rate-limit bucket.
+- Upload validation already rejected invalid image types, dangerous image extensions, extension/content-type mismatch, and oversize images/documents.
+
+### Implementation
+
+- Added `FRONTEND_ORIGIN` as the preferred CORS setting while keeping `FRONTEND_URL` as a backward-compatible fallback.
+- Added CORS validation:
+  - rejects wildcard origins in production
+  - rejects production `http://` origins
+  - rejects production localhost origins
+  - rejects origins with paths, query strings, or fragments
+- Added common security headers through `backend/app/core/security_headers.py`:
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `Referrer-Policy: no-referrer`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - `X-Permitted-Cross-Domain-Policies: none`
+  - production-only `Strict-Transport-Security`
+- Hardened auth/token configuration validation:
+  - restricts JWT algorithms to HMAC algorithms currently supported by the app
+  - rejects non-positive token lifetimes
+  - rejects overly long production token lifetimes
+  - rejects weak/placeholder JWT secret markers in production
+  - validates cookie name, SameSite, max age, and Secure requirements
+- Added `RATE_LIMIT_AUTH_PER_MINUTE` and protected `/auth/login` with a separate `auth_login` rate-limit bucket.
+- Added test-level rate-limit reset in `backend/tests/conftest.py` so shared in-memory limiter state remains deterministic.
+- Added upload safety regression tests for dangerous document extensions and oversized documents.
+- Updated `.env.example`, Docker Compose, README, and production readiness docs.
+
+### Files Changed
+
+- `.env.example`
+- `README.md`
+- `backend/app/api/auth.py`
+- `backend/app/core/config.py`
+- `backend/app/core/rate_limit.py`
+- `backend/app/core/security_headers.py`
+- `backend/app/main.py`
+- `backend/tests/conftest.py`
+- `backend/tests/test_config_validation.py`
+- `backend/tests/test_rate_limit.py`
+- `backend/tests/test_security_hardening.py`
+- `backend/tests/test_storage.py`
+- `docker-compose.yml`
+- `docs/PRODUCTION_READINESS.md`
+
+### Validation
+
+- Targeted backend tests: `python -m pytest tests\test_config_validation.py tests\test_security_hardening.py tests\test_rate_limit.py tests\test_storage.py` -> 37 passed, 15 warnings.
+- Backend compile check: `python -m compileall app tests` -> successful.
+- Backend tests: `python -m pytest` -> 74 passed, 96 warnings.
+- Frontend tests: `pnpm.cmd test` -> 10 test files passed, 40 tests passed.
+- Frontend build: `pnpm.cmd build` -> successful production build.
+- Docker build: `docker compose build` -> backend and frontend images built successfully.
+
+### Remaining Risks
+
+- Rate limiting is still in-memory and per-process; production multi-instance deployments should move to Redis or another shared store.
+- Security headers are intentionally conservative and API-safe. A frontend Content Security Policy should be handled separately by the Next.js app when deployment domains are final.
+- Upload validation trusts the browser/client-reported image content type plus extension. Deeper server-side image sniffing can be added before public multi-tenant launch.

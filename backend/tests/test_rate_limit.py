@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.core.rate_limit import (
     RateLimitRule,
+    auth_rule,
     chat_rule,
     client_ip,
     limiter,
@@ -89,6 +90,10 @@ def test_public_default_limit_is_demo_friendly() -> None:
 
 def test_chat_default_limit_protects_openai_usage_without_blocking_demo() -> None:
     assert chat_rule().limit == 10
+
+
+def test_auth_default_limit_protects_login_without_blocking_demo() -> None:
+    assert auth_rule().limit == 10
 
 
 def test_chat_and_general_public_limits_use_separate_buckets() -> None:

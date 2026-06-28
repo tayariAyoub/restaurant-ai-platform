@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import auth_rule, rate_limit
 from app.core.security import create_access_token, verify_password
 from app.models import User
 from app.dependencies import get_current_user
@@ -40,7 +41,7 @@ def clear_auth_cookie(response: Response) -> None:
     )
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, dependencies=[rate_limit(auth_rule)])
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)) -> Token:
     prevent_auth_response_caching(response)
     user = db.scalar(select(User).where(User.email == payload.email))

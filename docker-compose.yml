@@ -21,6 +21,7 @@ services:
       APP_ENV: ${APP_ENV:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://restaurant_ai:restaurant_ai_demo_password@db:5432/restaurant_ai}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:-restaurant_ai_local_demo_secret_change_before_production}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@restaurantai.com}
@@ -36,6 +37,7 @@ services:
       RATE_LIMIT_RESERVATIONS_PER_MINUTE: ${RATE_LIMIT_RESERVATIONS_PER_MINUTE:-5}
       RATE_LIMIT_ORDERS_PER_MINUTE: ${RATE_LIMIT_ORDERS_PER_MINUTE:-10}
       RATE_LIMIT_PUBLIC_PER_MINUTE: ${RATE_LIMIT_PUBLIC_PER_MINUTE:-100}
+      RATE_LIMIT_AUTH_PER_MINUTE: ${RATE_LIMIT_AUTH_PER_MINUTE:-10}
       TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       AUTH_COOKIE_ENABLED: ${AUTH_COOKIE_ENABLED:-false}
       AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-restaurant_ai_access_token}

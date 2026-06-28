@@ -194,6 +194,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `ADMIN_PASSWORD` | Initial super-admin password |
 | `DEMO_OWNER_EMAIL` | Demo restaurant-owner email |
 | `DEMO_OWNER_PASSWORD` | Demo restaurant-owner password |
+| `FRONTEND_ORIGIN` | Preferred backend CORS origin; use one explicit origin such as `https://app.example.com` |
 | `FRONTEND_URL` | Allowed frontend origin |
 | `NEXT_PUBLIC_SITE_URL` | Public frontend URL used for canonical SEO metadata |
 | `BACKEND_INTERNAL_URL` | Backend URL used by the Next.js proxy |
@@ -203,6 +204,7 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `RATE_LIMIT_RESERVATIONS_PER_MINUTE` | Public reservation requests allowed per minute per IP |
 | `RATE_LIMIT_ORDERS_PER_MINUTE` | Public order submissions allowed per minute per IP |
 | `RATE_LIMIT_PUBLIC_PER_MINUTE` | General public API requests allowed per minute per IP |
+| `RATE_LIMIT_AUTH_PER_MINUTE` | Login attempts allowed per minute per IP |
 | `TRUST_PROXY_HEADERS` | Set to `true` only behind a trusted reverse proxy that controls forwarded IP headers |
 | `AUTH_COOKIE_ENABLED` | Enables additive HttpOnly cookie auth support while Bearer auth remains supported |
 | `AUTH_COOKIE_SECURE` | Set to `true` in production when cookie auth is enabled |

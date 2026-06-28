@@ -81,7 +81,8 @@ The backend requires these values:
 | `JWT_SECRET` | Yes | Must be long, random, and private. Never use the local demo value in production. |
 | `ADMIN_PASSWORD` | Yes | Initial super-admin password. Replace before pilots. |
 | `DEMO_OWNER_PASSWORD` | Yes | Initial demo owner password. Replace before pilots or disable demo seed data later. |
-| `FRONTEND_URL` | Yes | Frontend origin allowed by CORS, for example `https://your-domain.com`. |
+| `FRONTEND_ORIGIN` | Yes | Preferred CORS origin, for example `https://your-domain.com`. Do not use `*` in production. |
+| `FRONTEND_URL` | Compatible fallback | Existing deployments can keep using this, but `FRONTEND_ORIGIN` is preferred for new production config. |
 | `STORAGE_PROVIDER` | Yes | Currently supports `local` only. |
 | `AUTO_MIGRATE_ON_STARTUP` | Local only | Keep `true` for local demos. Set `false` in production and run Alembic explicitly. |
 
@@ -101,8 +102,58 @@ Optional but recommended:
 | `OPENAI_EMBEDDING_MODEL` | Embedding model, default `text-embedding-3-small`. |
 | `RATE_LIMIT_CHAT_PER_MINUTE` | Chat abuse protection, default `10`. |
 | `RATE_LIMIT_PUBLIC_PER_MINUTE` | General public API limit, default `100`. |
+| `RATE_LIMIT_AUTH_PER_MINUTE` | Login attempt protection, default `10`. |
 | `AUTH_COOKIE_ENABLED` | Optional cookie-auth support. Bearer auth still works. |
 | `AUTH_COOKIE_SECURE` | Must be `true` if cookie auth is enabled in production. |
+
+## CORS Configuration
+
+Local development should use:
+
+```text
+FRONTEND_ORIGIN=http://localhost:3000
+```
+
+Production should use one explicit HTTPS origin:
+
+```text
+FRONTEND_ORIGIN=https://your-domain.com
+```
+
+Security rules:
+
+- Do not use `FRONTEND_ORIGIN=*` in production.
+- Do not include a path, query string, or fragment.
+- Do not point production CORS at `localhost`.
+- Keep `FRONTEND_URL` only as a compatibility fallback for older environments.
+
+## Security Headers
+
+The backend adds safe API security headers on every response:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+- `X-Permitted-Cross-Domain-Policies: none`
+
+In production, the backend also adds:
+
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+
+No strict Content Security Policy is added yet so FastAPI docs remain usable in development.
+
+## Auth and Rate Limiting
+
+Production validation rejects weak/default JWT secrets, unsupported JWT algorithms, unsafe cookie settings, SQLite production databases, and automatic startup schema mutation.
+
+Current rate-limited buckets:
+
+- public AI chat
+- public reservations
+- public orders
+- general public API
+- auth login
 
 ## OpenAI Setup
 

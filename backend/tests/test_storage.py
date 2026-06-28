@@ -87,3 +87,25 @@ def test_document_upload_uses_safe_unique_filename(local_storage) -> None:
     assert stored.filename.endswith("-reservation-policy.txt")
     assert ".." not in stored.filename
     assert Path(stored.path).exists()
+
+
+def test_document_upload_rejects_dangerous_extension(local_storage) -> None:
+    with pytest.raises(HTTPException) as error:
+        local_storage.save_document(
+            restaurant_id=7,
+            content=b"dangerous",
+            original_filename="policy.php",
+        )
+
+    assert error.value.status_code == 400
+
+
+def test_document_upload_rejects_oversized_file(local_storage) -> None:
+    with pytest.raises(HTTPException) as error:
+        local_storage.save_document(
+            restaurant_id=7,
+            content=b"x" * (10 * 1024 * 1024 + 1),
+            original_filename="policy.txt",
+        )
+
+    assert error.value.status_code == 413

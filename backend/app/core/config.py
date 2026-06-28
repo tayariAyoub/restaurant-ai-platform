@@ -1,12 +1,28 @@
 from dataclasses import dataclass
 from functools import lru_cache
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 LOCAL_DEMO_JWT_SECRET = "restaurant_ai_local_demo_secret_change_before_production"
 LOCAL_DEMO_PASSWORDS = {"admin12345", "owner12345"}
 MIN_PRODUCTION_SECRET_LENGTH = 32
+ALLOWED_JWT_ALGORITHMS = {"HS256", "HS384", "HS512"}
+ALLOWED_COOKIE_SAMESITE = {"lax", "strict", "none"}
+COOKIE_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
+WEAK_SECRET_MARKERS = {
+    "changeme",
+    "change-me",
+    "change_before_production",
+    "development-secret",
+    "local_demo",
+    "password",
+    "replace-me",
+    "replace_me",
+    "test-secret",
+}
 
 
 class Settings(BaseSettings):
@@ -22,6 +38,7 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_chat_model: str = "gpt-4.1-mini"
     openai_embedding_model: str = "text-embedding-3-small"
+    frontend_origin: str | None = None
     frontend_url: str = "http://localhost:3000"
     admin_email: str = "admin@example.com"
     admin_password: str
@@ -34,6 +51,7 @@ class Settings(BaseSettings):
     rate_limit_reservations_per_minute: int = 5
     rate_limit_orders_per_minute: int = 10
     rate_limit_public_per_minute: int = 100
+    rate_limit_auth_per_minute: int = 10
     trust_proxy_headers: bool = False
     auth_cookie_enabled: bool = False
     auth_cookie_name: str = "restaurant_ai_access_token"
@@ -74,6 +92,77 @@ def should_run_legacy_startup_migrations(config: Any) -> bool:
     return True
 
 
+def configured_frontend_origin(config: Any) -> str:
+    return _clean(getattr(config, "frontend_origin", "")) or _clean(
+        getattr(config, "frontend_url", "")
+    )
+
+
+def cors_origins(config: Any) -> list[str]:
+    origin = configured_frontend_origin(config)
+    return [origin] if origin else []
+
+
+def _is_localhost(hostname: str | None) -> bool:
+    return hostname in {"localhost", "127.0.0.1", "::1"}
+
+
+def _validate_frontend_origin(config: Any, errors: list[str], warnings: list[str]) -> None:
+    origin = configured_frontend_origin(config)
+    if not origin:
+        errors.append("FRONTEND_ORIGIN or FRONTEND_URL is required.")
+        return
+    if origin == "*":
+        if _is_production(config):
+            errors.append("FRONTEND_ORIGIN must not be '*' in production.")
+        else:
+            warnings.append("FRONTEND_ORIGIN='*' is not recommended; use an explicit local origin.")
+        return
+
+    parsed = urlparse(origin)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        errors.append("FRONTEND_ORIGIN must be a valid http(s) origin, for example https://example.com.")
+        return
+    if parsed.path not in {"", "/"} or parsed.params or parsed.query or parsed.fragment:
+        errors.append("FRONTEND_ORIGIN must be an origin only; do not include path, query, or fragment.")
+    if _is_production(config):
+        if parsed.scheme != "https":
+            errors.append("FRONTEND_ORIGIN must use HTTPS in production.")
+        if _is_localhost(parsed.hostname):
+            errors.append("FRONTEND_ORIGIN must not point to localhost in production.")
+
+
+def _validate_auth_settings(config: Any, errors: list[str], warnings: list[str]) -> None:
+    jwt_algorithm = _clean(getattr(config, "jwt_algorithm", "HS256")).upper()
+    if jwt_algorithm not in ALLOWED_JWT_ALGORITHMS:
+        errors.append("JWT_ALGORITHM must be HS256, HS384, or HS512.")
+
+    access_token_minutes = int(getattr(config, "access_token_minutes", 0) or 0)
+    if access_token_minutes <= 0:
+        errors.append("ACCESS_TOKEN_MINUTES must be greater than zero.")
+    elif _is_production(config) and access_token_minutes > 1440:
+        errors.append("ACCESS_TOKEN_MINUTES must be 1440 or less in production.")
+
+    cookie_name = _clean(getattr(config, "auth_cookie_name", ""))
+    if cookie_name and not COOKIE_NAME_PATTERN.fullmatch(cookie_name):
+        errors.append("AUTH_COOKIE_NAME may only contain letters, numbers, dots, underscores, and hyphens.")
+
+    same_site = _clean(getattr(config, "auth_cookie_samesite", "lax")).lower()
+    if same_site not in ALLOWED_COOKIE_SAMESITE:
+        errors.append("AUTH_COOKIE_SAMESITE must be lax, strict, or none.")
+
+    max_age = int(getattr(config, "auth_cookie_max_age_seconds", 0) or 0)
+    if max_age <= 0:
+        errors.append("AUTH_COOKIE_MAX_AGE_SECONDS must be greater than zero.")
+
+    auth_cookie_enabled = bool(getattr(config, "auth_cookie_enabled", False))
+    auth_cookie_secure = bool(getattr(config, "auth_cookie_secure", False))
+    if _is_production(config) and auth_cookie_enabled and not auth_cookie_secure:
+        errors.append("AUTH_COOKIE_SECURE must be true when cookie auth is enabled in production.")
+    if same_site == "none" and not auth_cookie_secure:
+        errors.append("AUTH_COOKIE_SECURE must be true when AUTH_COOKIE_SAMESITE=none.")
+
+
 def collect_configuration_issues(config: Any) -> ConfigurationReport:
     errors: list[str] = []
     warnings: list[str] = []
@@ -107,6 +196,11 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
             )
         if jwt_secret == LOCAL_DEMO_JWT_SECRET:
             _add_security_issue(config, errors, warnings, "JWT_SECRET is using the local demo value.")
+        lowered_secret = jwt_secret.lower()
+        if any(marker in lowered_secret for marker in WEAK_SECRET_MARKERS):
+            _add_security_issue(config, errors, warnings, "JWT_SECRET looks like a weak or placeholder value.")
+
+    _validate_auth_settings(config, errors, warnings)
 
     for env_name, attr_name in {
         "ADMIN_PASSWORD": "admin_password",
@@ -129,15 +223,12 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
 
     if _is_production(config):
         frontend_url = _clean(getattr(config, "frontend_url", ""))
-        if frontend_url and not frontend_url.lower().startswith("https://"):
+        if frontend_url and (not frontend_url.lower().startswith("https://")):
             warnings.append("FRONTEND_URL should use HTTPS in production.")
         if "localhost" in frontend_url or "127.0.0.1" in frontend_url:
             warnings.append("FRONTEND_URL should not point to localhost in production.")
 
-        auth_cookie_enabled = bool(getattr(config, "auth_cookie_enabled", False))
-        auth_cookie_secure = bool(getattr(config, "auth_cookie_secure", False))
-        if auth_cookie_enabled and not auth_cookie_secure:
-            errors.append("AUTH_COOKIE_SECURE must be true when cookie auth is enabled in production.")
+    _validate_frontend_origin(config, errors, warnings)
 
     return ConfigurationReport(errors=errors, warnings=warnings)
 
