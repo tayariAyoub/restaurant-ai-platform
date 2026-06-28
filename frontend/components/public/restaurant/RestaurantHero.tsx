@@ -49,6 +49,7 @@ export default function RestaurantHero({
   const primary = themeIdentity.primary;
   const buttonClass = themeIdentity.buttonClass;
   const personality = themeIdentity.personality;
+  const immersive = themeIdentity.homepageStyle === "immersive";
   const heroTitle = restaurant.name;
   const heroSubtitle =
     restaurant.tagline || restaurant.description || "A restaurant experience prepared with care.";
@@ -172,7 +173,7 @@ export default function RestaurantHero({
                   {serviceModeLabel({ deliveryEnabled, pickupEnabled, dineInEnabled })}
                 </span>
               )}
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">AI Maître d' menu guidance</span>
+              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-2 backdrop-blur">AI Maitre d' menu guidance</span>
             </div>
           </div>
           <div className="art-frame luxury-hero-shadow hidden rounded-[2rem] border border-white/15 bg-white/10 p-4 backdrop-blur-xl lg:block">
@@ -210,7 +211,7 @@ export default function RestaurantHero({
         </div>
       </section>
 
-      <section className="border-b border-black/10 bg-white/85 shadow-sm backdrop-blur">
+      <section className={`${immersive ? "border-y border-white/10 bg-[#05030b]/92 text-white" : "border-b border-black/10 bg-white/85"} shadow-sm backdrop-blur`}>
         <div className="mx-auto grid max-w-7xl divide-y px-4 sm:px-6 md:grid-cols-3 md:divide-x md:divide-y-0">
           <QuickFact icon={MapPin} color={primary} text={`${restaurant.address}, ${restaurant.city}`} />
           <QuickFact icon={Phone} color={primary} text={restaurant.phone || "Phone coming soon"} />
@@ -222,7 +223,7 @@ export default function RestaurantHero({
         </div>
       </section>
 
-      <section className="bg-white/65 px-4 py-5 sm:px-6">
+      <section className={`${immersive ? "bg-[#070411]/92 text-white" : "bg-white/65"} px-4 py-5 sm:px-6`}>
         <div className="mx-auto grid max-w-7xl gap-3 text-sm sm:grid-cols-3">
           {[
             [
@@ -239,7 +240,12 @@ export default function RestaurantHero({
                 : "Browse the menu and contact the restaurant without extra steps.",
             ],
           ].map(([title, copy]) => (
-            <div key={title} className="flex gap-3 rounded-2xl border border-black/5 bg-white/70 p-4 shadow-sm">
+            <div
+              key={title}
+              className={`flex gap-3 rounded-2xl border p-4 shadow-sm ${
+                immersive ? "border-white/10 bg-white/[.05]" : "border-black/5 bg-white/70"
+              }`}
+            >
               <ShieldCheck size={18} style={{ color: primary }} />
               <span>
                 <b className="block">{title}</b>

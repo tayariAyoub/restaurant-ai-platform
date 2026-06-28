@@ -13,9 +13,10 @@ export default function GalleryShowcase({
   gallery,
 }: GalleryShowcaseProps) {
   if (gallery.length === 0) return null;
+  const immersive = themeIdentity.homepageStyle === "immersive";
 
   return (
-    <section id="gallery" className="sensory-section px-3 py-16 sm:px-6 lg:py-24">
+    <section id="gallery" className={`sensory-section px-3 py-16 sm:px-6 lg:py-24 ${immersive ? "bg-[#070411]/88 text-white" : ""}`}>
       <div className="mx-auto mb-10 grid max-w-7xl gap-6 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
         <div>
           <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Atmosphere</p>
@@ -29,7 +30,7 @@ export default function GalleryShowcase({
         {gallery.map((image, index) => (
           <figure
             key={image.id}
-            className={`group art-frame overflow-hidden rounded-[1.5rem] shadow-sm ${index === 0 ? "md:col-span-2" : ""}`}
+            className={`group art-frame overflow-hidden rounded-[1.5rem] shadow-sm ${immersive ? "border border-white/10 bg-white/[.04]" : ""} ${index === 0 ? "md:col-span-2" : ""}`}
           >
             <img
               src={image.url}

@@ -36,6 +36,41 @@ describe("restaurant page", () => {
     expect(screen.getByRole("button", { name: /open ai maitre d/i })).toBeVisible();
   });
 
+  it("renders immersive theme sections for Ultraviolet Luxury restaurants", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...bellaNapoli,
+          theme: bellaNapoli.theme
+            ? {
+                ...bellaNapoli.theme,
+                key: "ultraviolet-luxury",
+                name: "Ultraviolet Luxury",
+                primary_color: "#b78cff",
+                secondary_color: "#20d6d2",
+                background_color: "#05030b",
+                text_color: "#f7f2ff",
+                homepage_style: "immersive",
+                menu_style: "refined",
+                gallery_style: "masonry",
+              }
+            : null,
+          primary_color: "#b78cff",
+          secondary_color: "#20d6d2",
+          background_color: "#05030b",
+          text_color: "#f7f2ff",
+          homepage_style: "immersive",
+          menu_style: "refined",
+          gallery_style: "masonry",
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /a cinematic evening/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /private evenings and special tables/i })).toBeVisible();
+    expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
+  });
+
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
 

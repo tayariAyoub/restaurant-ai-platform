@@ -35,6 +35,7 @@ export default function MenuShowcase({
   const secondary = themeIdentity.secondary;
   const buttonClass = themeIdentity.buttonClass;
   const personality = themeIdentity.personality;
+  const immersive = themeIdentity.homepageStyle === "immersive";
 
   const filteredCategories = useMemo(
     () =>
@@ -47,7 +48,12 @@ export default function MenuShowcase({
   const visibleMenuItems = filteredCategories.reduce((total, category) => total + category.items.length, 0);
 
   return (
-    <section id="menu" className="sensory-section bg-white/75 px-4 py-16 sm:px-6 lg:py-28">
+    <section
+      id="menu"
+      className={`sensory-section px-4 py-16 sm:px-6 lg:py-28 ${
+        immersive ? "bg-[#05030b]/90 text-white" : "bg-white/75"
+      }`}
+    >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-4xl text-center">
           <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>Fresh from the kitchen</p>
@@ -57,7 +63,7 @@ export default function MenuShowcase({
           </p>
         </div>
         {restaurant.categories.length === 0 || menuItems.length === 0 ? (
-          <div className="mt-12 rounded-3xl border border-dashed bg-white p-10 text-center shadow-sm">
+          <div className={`mt-12 rounded-3xl border border-dashed p-10 text-center shadow-sm ${immersive ? "border-white/15 bg-white/[.05]" : "bg-white"}`}>
             <ChefHat className="mx-auto opacity-35" size={42} />
             <h3 className="mt-4 text-2xl font-semibold">Menu coming soon</h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 opacity-60">
@@ -66,14 +72,20 @@ export default function MenuShowcase({
           </div>
         ) : (
           <>
-            <div className="sticky top-0 z-20 -mx-4 mt-10 border-y border-black/10 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:top-2 sm:mx-0 sm:rounded-[1.5rem] sm:border">
+            <div
+              className={`sticky top-0 z-20 -mx-4 mt-10 border-y px-4 py-3 shadow-sm backdrop-blur sm:top-2 sm:mx-0 sm:rounded-[1.5rem] sm:border ${
+                immersive ? "border-white/10 bg-[#070411]/95" : "border-black/10 bg-white/95"
+              }`}
+            >
               <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
                 <label className="relative block">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 opacity-45" size={18} />
                   <input
                     value={menuQuery}
                     onChange={(event) => setMenuQuery(event.target.value)}
-                    className="min-h-12 w-full rounded-full border border-black/10 bg-white py-3 pl-11 pr-4 text-base shadow-sm sm:text-sm"
+                    className={`min-h-12 w-full rounded-full border py-3 pl-11 pr-4 text-base shadow-sm sm:text-sm ${
+                      immersive ? "border-white/10 bg-white/[.08] text-white placeholder:text-white/42" : "border-black/10 bg-white"
+                    }`}
                     placeholder="Search dishes, ingredients, allergens..."
                     autoComplete="off"
                   />
@@ -83,7 +95,13 @@ export default function MenuShowcase({
                     <button
                       key={filter}
                       onClick={() => setDietaryFilter(filter)}
-                      className={`luxury-button min-h-11 shrink-0 snap-start rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-wider ${dietaryFilter === filter ? "text-white shadow-md" : "bg-white"}`}
+                      className={`luxury-button min-h-11 shrink-0 snap-start rounded-full border px-4 py-3 text-xs font-bold uppercase tracking-wider ${
+                        dietaryFilter === filter
+                          ? "text-white shadow-md"
+                          : immersive
+                            ? "border-white/10 bg-white/[.06] text-white/76"
+                            : "bg-white"
+                      }`}
                       style={dietaryFilter === filter ? { backgroundColor: primary, borderColor: primary } : undefined}
                     >
                       {filter}
@@ -96,7 +114,9 @@ export default function MenuShowcase({
                   <a
                     key={category.id}
                     href={`#category-${category.id}`}
-                    className="luxury-button flex min-h-11 shrink-0 snap-start items-center rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm font-bold shadow-sm hover:border-black/20"
+                    className={`luxury-button flex min-h-11 shrink-0 snap-start items-center rounded-full border px-4 py-2.5 text-sm font-bold shadow-sm ${
+                      immersive ? "border-white/10 bg-white/[.06] text-white/80 hover:border-white/30" : "border-black/10 bg-white hover:border-black/20"
+                    }`}
                   >
                     {category.name}
                   </a>
@@ -125,7 +145,9 @@ export default function MenuShowcase({
                         if (orderingEnabled) onAdd(item);
                       }}
                       disabled={!orderingEnabled}
-                      className="premium-lift w-60 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-white text-left text-slate-950 shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+                      className={`premium-lift w-60 shrink-0 overflow-hidden rounded-2xl border text-left shadow-sm disabled:cursor-not-allowed disabled:opacity-70 ${
+                        immersive ? "border-white/10 bg-white/[.08] text-white" : "border-white/10 bg-white text-slate-950"
+                      }`}
                     >
                       {item.image_url ? (
                         <img src={item.image_url} alt={item.name} className={`h-28 w-full object-cover ${themeIdentity.imageTreatmentClass}`} loading="lazy" decoding="async" />
@@ -148,18 +170,18 @@ export default function MenuShowcase({
             <div className="mt-14 space-y-16">
               {filteredCategories.map((category) => (
                 <section id={`category-${category.id}`} key={category.id} className="scroll-mt-32">
-                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-black/15 pb-5">
+                  <div className={`flex flex-wrap items-end justify-between gap-4 border-b pb-5 ${immersive ? "border-white/12" : "border-black/15"}`}>
                     <div>
                       <p className="luxury-kicker text-[10px] font-bold opacity-40">Course {String(category.sort_order || category.id).padStart(2, "0")}</p>
                       <h3 className="mt-1 text-3xl font-semibold sm:text-4xl">{category.name}</h3>
                       <p className="mt-2 max-w-2xl leading-7 opacity-60">{category.description || "Prepared fresh by the kitchen."}</p>
                     </div>
-                    <span className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-sm">
+                    <span className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider shadow-sm ${immersive ? "border-white/10 bg-white/[.06]" : "border-black/10 bg-white/70"}`}>
                       {category.items.filter((item) => item.is_available).length} available
                     </span>
                   </div>
                   {category.items.length === 0 ? (
-                    <div className="mt-6 rounded-2xl border border-dashed bg-white p-8 text-center text-sm opacity-60">
+                    <div className={`mt-6 rounded-2xl border border-dashed p-8 text-center text-sm opacity-60 ${immersive ? "border-white/12 bg-white/[.05]" : "bg-white"}`}>
                       No dishes match the current search or filter.
                     </div>
                   ) : (
@@ -174,6 +196,7 @@ export default function MenuShowcase({
                           secondary={secondary}
                           buttonClass={buttonClass}
                           themeIdentity={themeIdentity}
+                          immersive={immersive}
                           orderingEnabled={orderingEnabled}
                           onAdd={() => onAdd(item)}
                         />
@@ -213,6 +236,7 @@ function MenuItemCard({
   secondary,
   buttonClass,
   themeIdentity,
+  immersive,
   orderingEnabled,
   onAdd,
 }: {
@@ -223,6 +247,7 @@ function MenuItemCard({
   secondary: string;
   buttonClass: string;
   themeIdentity: RestaurantThemeIdentity;
+  immersive: boolean;
   orderingEnabled: boolean;
   onAdd: () => void;
 }) {
@@ -230,7 +255,7 @@ function MenuItemCard({
   const pairing = pairingSuggestion(item);
 
   return (
-    <article className={`premium-lift ${themeIdentity.menuCardClass} group grid overflow-hidden rounded-[1.5rem] border border-black/10 shadow-sm sm:block ${themeIdentity.menuStyle === "minimal" ? "rounded-none shadow-none" : ""} ${!item.is_available ? "opacity-70 grayscale-[.25]" : ""}`}>
+    <article className={`premium-lift ${themeIdentity.menuCardClass} group grid overflow-hidden rounded-[1.5rem] border shadow-sm sm:block ${immersive ? "border-white/10" : "border-black/10"} ${themeIdentity.menuStyle === "minimal" ? "rounded-none shadow-none" : ""} ${!item.is_available ? "opacity-70 grayscale-[.25]" : ""}`}>
       <div className="relative">
         {item.image_url ? (
           <img
@@ -270,19 +295,19 @@ function MenuItemCard({
           </div>
         </div>
         <p className="mt-3 text-sm leading-6 opacity-65">{item.description || "Ask the restaurant what pairs well with this dish."}</p>
-        <p className="mt-4 rounded-2xl border border-black/5 bg-white/70 px-3 py-3 text-xs leading-5 opacity-75">
+        <p className={`mt-4 rounded-2xl border px-3 py-3 text-xs leading-5 opacity-75 ${immersive ? "border-white/10 bg-white/[.06]" : "border-black/5 bg-white/70"}`}>
           {pairing}
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-wider" style={{ color: secondary }}>
-          {item.is_vegan && <span className="flex items-center gap-1 rounded-full bg-black/[.04] px-2.5 py-1"><Leaf size={13} /> Vegan</span>}
-          {!item.is_vegan && item.is_vegetarian && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Vegetarian</span>}
-          {item.is_halal && <span className="rounded-full bg-black/[.04] px-2.5 py-1">Halal</span>}
+          {item.is_vegan && <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 ${immersive ? "bg-white/10" : "bg-black/[.04]"}`}><Leaf size={13} /> Vegan</span>}
+          {!item.is_vegan && item.is_vegetarian && <span className={`rounded-full px-2.5 py-1 ${immersive ? "bg-white/10" : "bg-black/[.04]"}`}>Vegetarian</span>}
+          {item.is_halal && <span className={`rounded-full px-2.5 py-1 ${immersive ? "bg-white/10" : "bg-black/[.04]"}`}>Halal</span>}
           {!item.is_available && <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">Unavailable</span>}
         </div>
         {item.allergens ? (
-          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900">Allergens: {item.allergens}</p>
+          <p className={`mt-3 rounded-xl px-3 py-2 text-xs ${immersive ? "bg-amber-400/10 text-amber-100" : "bg-amber-50 text-amber-900"}`}>Allergens: {item.allergens}</p>
         ) : (
-          <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">Ask staff about allergens before ordering.</p>
+          <p className={`mt-3 rounded-xl px-3 py-2 text-xs ${immersive ? "bg-white/[.06] text-white/50" : "bg-slate-50 text-slate-500"}`}>Ask staff about allergens before ordering.</p>
         )}
         <button
           disabled={!orderingEnabled || !item.is_available}

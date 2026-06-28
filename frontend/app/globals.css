@@ -124,6 +124,45 @@ select:focus {
   color: #2b1b13;
 }
 
+.ultraviolet-panel {
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(183, 140, 255, 0.13), transparent 16rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(20px);
+}
+
+.ultraviolet-menu-card {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(183, 140, 255, 0.12), transparent 14rem),
+    radial-gradient(circle at 90% 0%, rgba(32, 214, 210, 0.08), transparent 16rem),
+    linear-gradient(180deg, rgba(16, 9, 29, 0.98), rgba(6, 3, 13, 0.96));
+}
+
+.ultraviolet-menu-card .bg-white,
+.ultraviolet-menu-card .bg-white\/70,
+.ultraviolet-menu-card .bg-slate-50 {
+  color: #171023;
+}
+
+.ultraviolet-experience {
+  background:
+    radial-gradient(circle at 22% 12%, rgba(183, 140, 255, 0.14), transparent 26rem),
+    radial-gradient(circle at 86% 20%, rgba(32, 214, 210, 0.1), transparent 24rem),
+    linear-gradient(180deg, rgba(5, 3, 11, 0.92), rgba(8, 4, 18, 0.98));
+}
+
+.ultraviolet-gallery figure:nth-child(2n) {
+  transform: translateY(1.25rem);
+}
+
+.ultraviolet-reveal {
+  animation: fade-up 640ms ease both;
+}
+
 .luxury-button {
   transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
 }
@@ -202,6 +241,20 @@ select:focus {
   }
   to {
     transform: scale(1.07) translate3d(0.4rem, -0.4rem, 0);
+  }
+}
+
+@media (max-width: 767px) {
+  .ultraviolet-gallery figure:nth-child(2n) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up,
+  .slow-drift,
+  .ultraviolet-reveal {
+    animation: none;
   }
 }
 

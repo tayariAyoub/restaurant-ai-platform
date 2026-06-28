@@ -3,6 +3,74 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 2.1 - Premium Theme Engine And Ultraviolet Luxury Theme
+
+Scope:
+
+- Premium frontend theme engine extension.
+- New original flagship theme: `ultraviolet-luxury` / `Ultraviolet Luxury`.
+- Public restaurant website, admin theme selection, and backend theme seed data only.
+- No `.github/workflows/` changes.
+- No commits made.
+
+Audit findings:
+
+- Public restaurant pages are rendered through `frontend/components/RestaurantSite.tsx` and reusable public sections.
+- Theme resolution already lived in `frontend/lib/restaurantTheme.ts`.
+- Admin theme selection is driven by backend `/admin/themes` data seeded from `backend/app/services/seed.py`.
+- The safest path was to extend the existing theme registry and seed list rather than create a one-off public page or hardcode one restaurant.
+
+Implementation summary:
+
+- Added a modular `ultraviolet-luxury` theme preset with:
+  - dark cinematic palette
+  - immersive hero overlay/fallback
+  - refined menu card treatment
+  - masonry/gallery treatment
+  - original fine-dining personality copy
+  - optional cinematic experience copy
+- Added `CinematicExperience`, a theme-gated public section for immersive themes:
+  - experience storytelling
+  - menu preview
+  - AI Maitre d' positioning
+  - private evenings / special tables prompt
+  - reservation and menu/order CTAs
+- Updated public sections so immersive themes keep a dark luxury surface beyond the hero.
+- Added backend seed data so `Ultraviolet Luxury` appears through existing admin theme APIs and selectors.
+- Improved Visual Builder/onboarding theme labels for the new premium option.
+- Added focused frontend tests for theme resolution and public rendering.
+
+Files changed:
+
+- `backend/app/services/seed.py`
+- `frontend/app/admin/restaurants/new/page.tsx`
+- `frontend/app/globals.css`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/components/admin/VisualBuilder.tsx`
+- `frontend/components/public/restaurant/CinematicExperience.tsx`
+- `frontend/components/public/restaurant/GalleryShowcase.tsx`
+- `frontend/components/public/restaurant/MenuShowcase.tsx`
+- `frontend/components/public/restaurant/ReservationPanel.tsx`
+- `frontend/components/public/restaurant/RestaurantHero.tsx`
+- `frontend/components/public/restaurant/TrustAndStory.tsx`
+- `frontend/lib/restaurantTheme.ts`
+- `frontend/lib/restaurantTheme.test.ts`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+- Frontend tests: `cd frontend && pnpm.cmd test` -> 10 test files passed, 42 tests passed.
+- Frontend build: `cd frontend && pnpm.cmd build` -> successful production build.
+- Backend tests: `cd backend && python -m pytest` -> 74 passed, 96 warnings.
+- Whitespace check: `git diff --check` -> passed; Git reported Windows line-ending normalization warning for `frontend/app/globals.css`.
+
+Remaining recommendations:
+
+- Run browser visual QA for `/restaurants/bella-napoli` after assigning the new theme in admin or seed data.
+- Add screenshot regression checks later for premium themes at mobile and desktop sizes.
+- Keep future cinematic themes data-driven through the same registry instead of adding page-level forks.
+
 ## Phase 5.5 - Visual Menu Builder
 
 Scope:

@@ -9,6 +9,20 @@ type ThemePersonality = {
   signatureCopy: string;
 };
 
+type ThemeExperience = {
+  kicker: string;
+  title: string;
+  copy: string;
+  sensoryTitle: string;
+  sensoryCopy: string;
+  aiTitle: string;
+  aiCopy: string;
+  eventsTitle: string;
+  eventsCopy: string;
+  ctaTitle: string;
+  ctaCopy: string;
+};
+
 type ThemePreset = {
   key: string;
   name: string;
@@ -31,6 +45,7 @@ type ThemePreset = {
   imageTreatmentClass: string;
   trustPanelClass: string;
   personality: ThemePersonality;
+  experience?: ThemeExperience;
 };
 
 export type RestaurantThemeIdentity = ThemePreset & {
@@ -72,6 +87,60 @@ const presets: Record<string, ThemePreset> = {
       momentTitle: "A room designed around anticipation.",
       momentCopy: "Before the first plate arrives, the evening already has a rhythm: soft light, clear choices, and a sense that the kitchen is ready for you.",
       signatureCopy: "Begin with the dishes the kitchen would proudly place at the center of the table.",
+    },
+  },
+  "ultraviolet-luxury": {
+    key: "ultraviolet-luxury",
+    name: "Ultraviolet Luxury",
+    fallbackPrimary: "#b78cff",
+    fallbackSecondary: "#20d6d2",
+    fallbackBackground: "#05030b",
+    fallbackText: "#f7f2ff",
+    fallbackFont: "Cormorant Garamond",
+    buttonStyle: "pill",
+    homepageStyle: "immersive",
+    menuStyle: "refined",
+    galleryStyle: "masonry",
+    heroOverlay:
+      "radial-gradient(circle at 74% 18%, rgba(183,140,255,.26), transparent 24rem), radial-gradient(circle at 20% 70%, rgba(32,214,210,.16), transparent 20rem), linear-gradient(90deg, rgba(3,2,9,.98), rgba(10,5,24,.82) 42%, rgba(10,5,24,.34))",
+    heroFallback:
+      "radial-gradient(circle at 70% 18%, rgba(183,140,255,.28), transparent 23rem), radial-gradient(circle at 18% 80%, rgba(32,214,210,.18), transparent 20rem), linear-gradient(135deg, #020108, #120727 52%, #05030b)",
+    shellBackground:
+      "radial-gradient(circle at 14% 2%, rgba(183,140,255,.16), transparent 25rem), radial-gradient(circle at 90% 9%, rgba(32,214,210,.11), transparent 24rem), radial-gradient(circle at 50% 52%, rgba(103,58,183,.12), transparent 34rem), linear-gradient(180deg, #020108 0%, #05030b 42%, #0d0718 100%)",
+    signaturePanelClass: "ultraviolet-panel text-white",
+    menuCardClass: "ultraviolet-menu-card text-white",
+    galleryClass: "ultraviolet-gallery md:grid-cols-4",
+    heroImageClass: "saturate-[.76] contrast-125 brightness-[.74]",
+    imageTreatmentClass: "saturate-[.78] contrast-125 brightness-[.78]",
+    trustPanelClass: "ultraviolet-panel text-white",
+    personality: {
+      name: "Ultraviolet Luxury",
+      guestKicker: "Immersive nocturne",
+      description:
+        "A dark, cinematic fine-dining mood built for restaurants that want the website to feel like the beginning of the evening.",
+      momentTitle: "A room where light, aroma, and timing become part of the menu.",
+      momentCopy:
+        "Guests are invited into a slower, more emotional rhythm: dramatic visuals, precise choices, and service that feels composed before they arrive.",
+      signatureCopy:
+        "Begin with the dishes that deserve the spotlight, then let the evening unfold course by course.",
+    },
+    experience: {
+      kicker: "Immersive fine dining",
+      title: "A cinematic evening, staged around taste.",
+      copy:
+        "This theme turns the public website into a dark, atmospheric invitation: fewer distractions, stronger appetite cues, and a sense that the table is part of a larger experience.",
+      sensoryTitle: "Light, aroma, texture, and silence.",
+      sensoryCopy:
+        "Use the restaurant story, menu highlights, room photography, and direct reservation flow to make the guest feel the night before they book it.",
+      aiTitle: "AI Maitre d'",
+      aiCopy:
+        "Guests can ask about dishes, allergens, opening hours, reservations, and ordering while staying grounded in the restaurant's real information.",
+      eventsTitle: "Private evenings and special tables",
+      eventsCopy:
+        "For birthdays, client dinners, tasting nights, or private requests, guests are guided to contact the restaurant directly for what is possible.",
+      ctaTitle: "Reserve the night before it disappears.",
+      ctaCopy:
+        "Keep the path from desire to action clear: view the menu, request a table, or contact the team for special arrangements.",
     },
   },
   cafe: {
@@ -262,7 +331,7 @@ const presets: Record<string, ThemePreset> = {
   },
 };
 
-export const premiumThemeKeys = ["elegant", "italian-warm", "japanese", "steakhouse-dark", "cafe", "vegan-natural"];
+export const premiumThemeKeys = ["ultraviolet-luxury", "elegant", "italian-warm", "japanese", "steakhouse-dark", "cafe", "vegan-natural"];
 
 export function resolveRestaurantTheme(restaurant: Restaurant): RestaurantThemeIdentity {
   const key = normalizeThemeKey(restaurant);
@@ -295,6 +364,7 @@ export function resolveRestaurantTheme(restaurant: Restaurant): RestaurantThemeI
 function normalizeThemeKey(restaurant: Restaurant) {
   const raw = normalizeText(restaurant.theme?.key || restaurant.theme?.name || "");
   const haystack = normalizeText(`${raw} ${restaurant.name} ${restaurant.description} ${restaurant.story}`);
+  if (raw.includes("ultraviolet") || raw.includes("violet") || raw.includes("cinematic") || raw.includes("immersive")) return "ultraviolet-luxury";
   if (raw.includes("italian") || raw.includes("mediterranean") || haystack.includes("pizza") || haystack.includes("pasta")) return "italian-warm";
   if (raw.includes("japanese") || raw.includes("sushi") || raw.includes("minimal")) return "japanese";
   if (raw.includes("steak") || raw.includes("grill") || haystack.includes("steak") || haystack.includes("beef")) return "steakhouse-dark";

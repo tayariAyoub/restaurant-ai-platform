@@ -21,9 +21,10 @@ export default function ReservationPanel({
 }: ReservationPanelProps) {
   const primary = themeIdentity.primary;
   const buttonClass = themeIdentity.buttonClass;
+  const immersive = themeIdentity.homepageStyle === "immersive";
 
   return (
-    <section id="contact" className="sensory-section mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28">
+    <section id="contact" className={`sensory-section mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[.9fr_1.1fr] lg:py-28 ${immersive ? "text-white" : ""}`}>
       <div>
         <p className="luxury-kicker text-xs font-bold" style={{ color: primary }}>Visit us</p>
         <h2 className="mt-4 text-4xl font-semibold leading-tight sm:text-6xl">Your table, prepared with care.</h2>
@@ -36,7 +37,7 @@ export default function ReservationPanel({
             <Phone className="mt-1 shrink-0" size={18} style={{ color: primary }} />
             <p>{restaurant.phone || "Phone coming soon"}<br />{restaurant.email}</p>
           </div>
-          <div className="rounded-2xl border border-black/10 bg-white/60 p-4">
+          <div className={`rounded-2xl border p-4 ${immersive ? "border-white/10 bg-white/[.06]" : "border-black/10 bg-white/60"}`}>
             <p className="mb-2 flex items-center gap-2 font-semibold"><Clock3 size={17} style={{ color: primary }} /> Opening hours</p>
             {Object.entries(hours).map(([day, value]) => (
               <p key={day} className="flex justify-between gap-6 border-b border-black/5 py-2 last:border-0">

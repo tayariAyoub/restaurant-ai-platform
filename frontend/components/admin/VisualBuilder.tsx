@@ -1537,6 +1537,7 @@ function serializeDraft(draft: BuilderDraft) {
 
 function themeMood(theme: Theme) {
   const value = `${theme.key} ${theme.name}`.toLowerCase();
+  if (value.includes("ultraviolet") || value.includes("cinematic") || value.includes("immersive")) return "Cinematic nocturne";
   if (value.includes("italian")) return "Italian warmth";
   if (value.includes("japanese") || value.includes("sushi")) return "Japanese minimal";
   if (value.includes("vegan")) return "Plant-led natural";

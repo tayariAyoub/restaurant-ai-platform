@@ -5,12 +5,13 @@ import { bellaNapoli } from "@/test/fixtures";
 import type { Restaurant } from "./types";
 
 function themedRestaurant(themeKey: string, overrides: Partial<Restaurant> = {}): Restaurant {
+  const theme = Object.prototype.hasOwnProperty.call(overrides, "theme") ? overrides.theme : bellaNapoli.theme;
   return {
     ...bellaNapoli,
     ...overrides,
-    theme: bellaNapoli.theme
+    theme: theme
       ? {
-          ...bellaNapoli.theme,
+          ...theme,
           key: themeKey,
           name: themeKey,
         }
@@ -32,6 +33,35 @@ describe("resolveRestaurantTheme", () => {
     expect(resolveRestaurantTheme(themedRestaurant("japanese")).name).toBe("Japanese Minimal");
     expect(resolveRestaurantTheme(themedRestaurant("steakhouse-dark")).name).toBe("Steakhouse Dark");
     expect(resolveRestaurantTheme(themedRestaurant("vegan-natural")).name).toBe("Vegan Natural");
+  });
+
+  it("supports the immersive ultraviolet luxury preset", () => {
+    const identity = resolveRestaurantTheme(themedRestaurant("ultraviolet-luxury", {
+      primary_color: "",
+      secondary_color: "",
+      background_color: "",
+      text_color: "",
+      theme: bellaNapoli.theme
+        ? {
+            ...bellaNapoli.theme,
+            primary_color: "",
+            secondary_color: "",
+            background_color: "",
+            text_color: "",
+            homepage_style: "",
+            menu_style: "",
+            gallery_style: "",
+          }
+        : null,
+      homepage_style: "",
+      menu_style: "",
+      gallery_style: "",
+    }));
+
+    expect(identity.name).toBe("Ultraviolet Luxury");
+    expect(identity.homepageStyle).toBe("immersive");
+    expect(identity.experience?.aiTitle).toBe("AI Maitre d'");
+    expect(identity.menuCardClass).toContain("ultraviolet-menu-card");
   });
 
   it("detects a steakhouse mood from restaurant content", () => {

@@ -4,6 +4,7 @@ import { ShoppingBag } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
+import CinematicExperience from "@/components/public/restaurant/CinematicExperience";
 import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
 import OrderCartDrawer from "@/components/public/restaurant/OrderCartDrawer";
@@ -87,6 +88,14 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
     "directions",
     orderingEnabled && "ordering",
   ].filter(Boolean).join(", ");
+  const immersiveTheme = themeIdentity.homepageStyle === "immersive";
+  const footerStyle = immersiveTheme
+    ? {
+        background:
+          "linear-gradient(180deg, rgba(5,3,11,.98), rgba(2,1,8,1))",
+        color: themeIdentity.text,
+      }
+    : { backgroundColor: text, color: background };
 
   useEffect(() => {
     if (orderModes.length > 0 && !orderModes.includes(orderType)) {
@@ -219,6 +228,15 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
           themeIdentity={themeIdentity}
           storyMoments={storyMoments}
         />
+        <CinematicExperience
+          restaurant={restaurant}
+          themeIdentity={themeIdentity}
+          featuredItems={featuredItems}
+          gallery={gallery}
+          reservationsEnabled={reservationsEnabled}
+          orderingEnabled={orderingEnabled}
+          chatbotEnabled={chatbotEnabled}
+        />
         <MenuShowcase
           restaurant={restaurant}
           themeIdentity={themeIdentity}
@@ -240,7 +258,10 @@ export default function RestaurantSite({ restaurant }: { restaurant: Restaurant 
         )}
       </main>
 
-      <footer className="px-6 py-12 text-center text-sm" style={{ backgroundColor: text, color: background }}>
+      <footer
+        className={`px-6 py-12 text-center text-sm ${immersiveTheme ? "border-t border-white/10" : ""}`}
+        style={footerStyle}
+      >
         <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
         <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
         <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">{footerServices}.</p>

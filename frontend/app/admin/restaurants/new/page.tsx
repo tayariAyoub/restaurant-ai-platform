@@ -846,6 +846,7 @@ function slugify(value: string) {
 
 function friendlyThemeName(theme: Theme) {
   const key = `${theme.key} ${theme.name}`.toLowerCase();
+  if (key.includes("ultraviolet") || key.includes("cinematic") || key.includes("immersive")) return "Ultraviolet Luxury";
   if (key.includes("michelin") || key.includes("elegant")) return "Michelin";
   if (key.includes("italian") || key.includes("mediterranean")) return "Italian";
   if (key.includes("sushi") || key.includes("japanese")) return "Sushi";
