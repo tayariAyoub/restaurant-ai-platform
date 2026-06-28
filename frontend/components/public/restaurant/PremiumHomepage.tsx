@@ -77,7 +77,7 @@ function PremiumNavigation({
   return (
     <header className="absolute inset-x-0 top-0 z-40">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-7">
-        <a href={basePath} className="group flex min-w-0 items-center gap-3">
+        <a href={basePath} aria-label={`${restaurant.name} home`} className="group flex min-w-0 items-center gap-3">
           {restaurant.logo_url ? (
             <img src={restaurant.logo_url} alt="" className="h-11 w-11 rounded-full border border-white/25 object-cover" loading="eager" decoding="async" />
           ) : (

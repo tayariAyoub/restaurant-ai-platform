@@ -198,7 +198,7 @@ function ItalianMenuHero({
       {showNavigation && (
         <div className="absolute inset-x-0 top-0 z-20">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-7">
-            <a href={basePath} className="flex items-center gap-3">
+            <a href={basePath} aria-label={`${restaurant.name} home`} className="flex items-center gap-3">
               <span className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
                 <ChefHat size={19} />
               </span>
