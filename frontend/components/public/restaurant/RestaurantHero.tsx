@@ -53,6 +53,7 @@ export default function RestaurantHero({
   const heroTitle = restaurant.name;
   const heroSubtitle =
     restaurant.tagline || restaurant.description || "A restaurant experience prepared with care.";
+  const basePath = `/restaurants/${restaurant.slug}`;
 
   return (
     <>
@@ -81,12 +82,12 @@ export default function RestaurantHero({
           </a>
           <nav className="hidden items-center gap-2 rounded-full border border-white/15 bg-black/30 px-3 py-2 text-sm font-semibold shadow-2xl backdrop-blur-xl md:flex">
             <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#story">Story</a>
-            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#menu">Menu</a>
-            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#gallery">Gallery</a>
-            <a className="inline-flex min-h-11 items-center rounded-full px-3" href="#contact">Contact</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href={`${basePath}/menu`}>Menu</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href={`${basePath}/gallery`}>Gallery</a>
+            <a className="inline-flex min-h-11 items-center rounded-full px-3" href={`${basePath}/contact`}>Contact</a>
             {reservationsEnabled && (
               <a
-                href="#reserve"
+                href={`${basePath}/reservations`}
                 className={`luxury-button ${buttonClass} inline-flex min-h-11 items-center px-5 py-2.5 text-white shadow-lg`}
                 style={{ backgroundColor: primary }}
               >
@@ -105,9 +106,9 @@ export default function RestaurantHero({
         {mobileOpen && (
           <nav className="fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 grid grid-cols-2 gap-2 rounded-[1.5rem] border border-white/10 bg-black/90 p-3 text-sm font-bold text-white shadow-2xl backdrop-blur md:hidden">
             <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#story" onClick={onCloseMobile}>Story</a>
-            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#menu" onClick={onCloseMobile}>Menu</a>
-            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href="#gallery" onClick={onCloseMobile}>Gallery</a>
-            <a className="rounded-2xl bg-white px-4 py-3 text-center text-slate-950" href={reservationsEnabled ? "#reserve" : "#contact"} onClick={onCloseMobile}>
+            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href={`${basePath}/menu`} onClick={onCloseMobile}>Menu</a>
+            <a className="rounded-2xl bg-white/10 px-4 py-3 text-center" href={`${basePath}/gallery`} onClick={onCloseMobile}>Gallery</a>
+            <a className="rounded-2xl bg-white px-4 py-3 text-center text-slate-950" href={reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`} onClick={onCloseMobile}>
               {reservationsEnabled ? "Reserve" : "Contact"}
             </a>
           </nav>
@@ -143,7 +144,7 @@ export default function RestaurantHero({
             <div className="mt-7 grid gap-3 sm:mt-9 sm:flex sm:flex-wrap">
               {reservationsEnabled && (
                 <a
-                  href="#reserve"
+                  href={`${basePath}/reservations`}
                   className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center gap-2 px-7 py-3.5 font-semibold text-white shadow-2xl sm:py-4`}
                   style={{ backgroundColor: primary }}
                 >
@@ -151,7 +152,7 @@ export default function RestaurantHero({
                 </a>
               )}
               <a
-                href="#menu"
+                href={`${basePath}/menu`}
                 className={`luxury-button ${buttonClass} inline-flex min-h-12 items-center justify-center border border-white/40 bg-white/10 px-7 py-3.5 font-semibold backdrop-blur sm:py-4`}
               >
                 {orderingEnabled ? "View menu / order" : "View menu"}

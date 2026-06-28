@@ -19,10 +19,10 @@ describe("restaurant page", () => {
   });
 
   it("renders restaurant information, menu, gallery, tags, sold-out state, and chatbot trigger", async () => {
-    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
-    expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
-    expect(screen.getByText(bellaNapoli.tagline)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Menu" })).toBeVisible();
+    expect(screen.getByRole("link", { name: bellaNapoli.name })).toHaveAttribute("href", "/restaurants/bella-napoli");
     expect(screen.getByRole("heading", { name: /a menu that feels curated/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Antipasti" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Wood-fired Pizza" })).toBeVisible();
@@ -32,11 +32,19 @@ describe("restaurant page", () => {
     expect(screen.getAllByText("Vegetarian").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Halal").length).toBeGreaterThan(0);
     expect(screen.getByText("Vegan")).toBeVisible();
-    expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
+    expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /open ai maitre d/i })).toBeVisible();
   });
 
-  it("renders immersive theme sections for Ultraviolet Luxury restaurants", () => {
+  it("renders the gallery as a dedicated visual route", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="gallery" />);
+
+    expect(screen.getByRole("heading", { name: "Gallery" })).toBeVisible();
+    expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
+  it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
     renderWithUser(
       <RestaurantSite
         restaurant={{
@@ -67,14 +75,15 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a cinematic evening/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /fire, timing, texture/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /not a list/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /reserve the table/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Menu" })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /reserve/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
+    expect(screen.queryByRole("heading", { name: /the dishes available tonight/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
   });
 
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
-    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
     expect(margheritaCard).not.toBeNull();
@@ -97,7 +106,7 @@ describe("restaurant page", () => {
   });
 
   it("persists cart contents after remounting the page", async () => {
-    const firstRender = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const firstRender = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
     const addMargherita = within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i });
 
@@ -105,7 +114,7 @@ describe("restaurant page", () => {
     expect(screen.getByRole("button", { name: /view order/i })).toBeVisible();
 
     firstRender.unmount();
-    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
     expect(await screen.findByRole("button", { name: /view order/i })).toBeVisible();
     expect(screen.getByText(/1 item/i)).toBeVisible();
@@ -116,7 +125,7 @@ describe("restaurant page", () => {
     requestMock.mockReturnValueOnce(new Promise((resolve) => {
       resolveOrder = resolve;
     }));
-    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
 
     await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
@@ -140,7 +149,7 @@ describe("restaurant page", () => {
 
   it("keeps the persisted cart when order submission fails", async () => {
     requestMock.mockRejectedValueOnce(new Error("Kitchen is closed"));
-    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
 
     await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
@@ -156,7 +165,7 @@ describe("restaurant page", () => {
   it("ignores corrupted persisted cart JSON safely", async () => {
     localStorage.setItem(cartStorageKey(bellaNapoli.slug), "{not-valid-json");
 
-    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
@@ -172,6 +181,30 @@ describe("restaurant page", () => {
 
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getByRole("button", { name: /toggle menu/i })).toBeVisible();
-    expect(screen.getByRole("heading", { name: /a menu that feels curated/i })).toBeVisible();
+    expect(screen.getAllByRole("link", { name: /menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+  });
+
+  it("keeps reservations separate from contact details", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="reservations" />);
+
+    expect(screen.getByRole("heading", { name: /request a table/i })).toBeVisible();
+    expect(screen.queryByText(bellaNapoli.address)).not.toBeInTheDocument();
+  });
+
+  it("renders contact details without a reservation form", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="contact" />);
+
+    expect(screen.getAllByText(/Sonnenallee 42/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/opening hours/i)).toBeVisible();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
+  it("renders private dining and events as a dedicated route", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="events" />);
+
+    expect(screen.getByRole("heading", { name: /private dining/i })).toBeVisible();
+    expect(screen.getByText(/special tables/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /contact the restaurant/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 });

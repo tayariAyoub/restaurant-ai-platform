@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 
-import RestaurantWebsiteClient from "./RestaurantWebsiteClient";
+import RestaurantWebsiteClient from "../RestaurantWebsiteClient";
 import {
   fetchPublicRestaurant,
   generateRestaurantPageMetadata,
   type RestaurantPageProps,
-} from "./restaurantPageData";
+} from "../restaurantPageData";
 
 export async function generateMetadata({ params }: RestaurantPageProps): Promise<Metadata> {
   const { slug } = await params;
-  return generateRestaurantPageMetadata(slug, "home");
+  return generateRestaurantPageMetadata(slug, "contact");
 }
 
-export default async function RestaurantWebsite({ params }: RestaurantPageProps) {
+export default async function RestaurantContactPage({ params }: RestaurantPageProps) {
   const { slug } = await params;
   const restaurant = await fetchPublicRestaurant(slug);
-  return <RestaurantWebsiteClient slug={slug} initialRestaurant={restaurant} page="home" />;
+  return <RestaurantWebsiteClient slug={slug} initialRestaurant={restaurant} page="contact" />;
 }

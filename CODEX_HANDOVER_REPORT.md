@@ -3,6 +3,70 @@
 Generated: 2026-06-27
 Scope: RestaurantAI production hardening checkpoints and handover notes.
 
+## Phase 2.1 Follow-Up - Dedicated Public Restaurant Routes
+
+Scope:
+
+- Public restaurant route architecture and presentation boundaries.
+- No backend, database, auth, payment, admin, or `.github/workflows/` changes.
+
+Reason for change:
+
+- The public restaurant experience still felt like one long stacked page.
+- Reservation and contact details were mixed together, which weakened the luxury/Michelin-style experience.
+- The public site now behaves more like a real digital restaurant experience with dedicated destinations for intent-driven customer journeys.
+
+Implementation summary:
+
+- Split public restaurant pages into dedicated routes:
+  - `/restaurants/[slug]` cinematic homepage / experience gateway
+  - `/restaurants/[slug]/menu` full menu and ordering/cart
+  - `/restaurants/[slug]/reservations` reservation experience only
+  - `/restaurants/[slug]/gallery` immersive gallery
+  - `/restaurants/[slug]/contact` address, opening hours, phone/email, map, and social links
+  - `/restaurants/[slug]/events` private dining and events
+- Added shared restaurant page data and metadata helpers so each route can fetch restaurant data and generate route-specific SEO metadata without duplicating fetch logic.
+- Made `RestaurantSite` route-aware while preserving existing menu, cart, order, reservation, AI chat, JSON-LD, and theme registry behavior.
+- Updated the immersive presentation layer so the homepage is no longer a full everything page; it now shows cinematic hero, experience teaser, menu/reservation/gallery/events teasers, and AI Maitre d' teaser only.
+- Updated classic-theme fallback rendering so non-immersive restaurants also respect the same route boundaries.
+- Updated public hero navigation and CTAs to link to the new dedicated pages instead of old homepage hash sections.
+- Updated frontend tests to verify:
+  - homepage does not render the full menu or reservation form
+  - `/menu` contains the full orderable menu and cart behavior
+  - `/reservations` contains the reservation form without contact details
+  - `/contact` contains contact/opening-hours information without reservation form
+  - `/gallery` contains gallery imagery
+  - `/events` contains private dining/events content
+
+Files changed:
+
+- `frontend/app/restaurants/[slug]/RestaurantWebsiteClient.tsx`
+- `frontend/app/restaurants/[slug]/page.tsx`
+- `frontend/app/restaurants/[slug]/restaurantPageData.ts`
+- `frontend/app/restaurants/[slug]/menu/page.tsx`
+- `frontend/app/restaurants/[slug]/reservations/page.tsx`
+- `frontend/app/restaurants/[slug]/gallery/page.tsx`
+- `frontend/app/restaurants/[slug]/contact/page.tsx`
+- `frontend/app/restaurants/[slug]/events/page.tsx`
+- `frontend/components/RestaurantSite.tsx`
+- `frontend/components/RestaurantSite.test.tsx`
+- `frontend/components/public/restaurant/ImmersiveRestaurantExperience.tsx`
+- `frontend/components/public/restaurant/RestaurantHero.tsx`
+- `CODEX_HANDOVER_REPORT.md`
+
+Validation:
+
+- Frontend tests: `cd frontend && pnpm.cmd test` -> 10 test files passed, 47 tests passed.
+- Frontend build: `cd frontend && pnpm.cmd build` -> successful production build; Next.js listed all new restaurant routes.
+- Backend tests: not run because no backend files were changed.
+- Whitespace check: `git diff --check` -> passed.
+
+Remaining recommendations:
+
+- Perform visual QA on mobile and desktop for all six routes with the dev server running.
+- Add browser screenshot regression tests for the new route boundaries once the visual direction is approved.
+- Decide later whether `/events` should become configurable in admin before pilots with restaurants that do not offer private dining.
+
 ## Phase 2.1 Redesign Follow-Up - Cinematic Luxury Restaurant Experience
 
 Scope:

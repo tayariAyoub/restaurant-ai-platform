@@ -6,13 +6,16 @@ import RestaurantPageSkeleton from "@/components/RestaurantPageSkeleton";
 import RestaurantSite from "@/components/RestaurantSite";
 import { getRestaurantBySlug } from "@/lib/api";
 import type { Restaurant } from "@/lib/types";
+import type { PublicRestaurantPage } from "./restaurantPageData";
 
 export default function RestaurantWebsiteClient({
   slug,
   initialRestaurant = null,
+  page = "home",
 }: {
   slug: string;
   initialRestaurant?: Restaurant | null;
+  page?: PublicRestaurantPage;
 }) {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [error, setError] = useState("");
@@ -37,5 +40,5 @@ export default function RestaurantWebsiteClient({
     return <RestaurantPageSkeleton />;
   }
 
-  return <RestaurantSite restaurant={restaurant} />;
+  return <RestaurantSite restaurant={restaurant} page={page} />;
 }
