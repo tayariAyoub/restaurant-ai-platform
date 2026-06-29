@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   CalendarDays,
-  ChefHat,
   MapPin,
   Phone,
 } from "lucide-react";
@@ -11,6 +10,7 @@ import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import type { MenuItem, Restaurant, RestaurantImage } from "@/lib/types";
 import MenuShowcase from "./MenuShowcase";
 import PremiumHomepage from "./PremiumHomepage";
+import PremiumNavigation, { getRestaurantNavigationLinks } from "./PremiumNavigation";
 
 type ImmersivePage = "home" | "menu" | "reservations" | "gallery" | "contact" | "events";
 
@@ -40,9 +40,10 @@ type ImmersiveRestaurantExperienceProps = {
 };
 
 export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurantExperienceProps) {
-  const { page, restaurant, themeIdentity, gallery, heroVisual } = props;
+  const { page, restaurant, themeIdentity, gallery, heroVisual, reservationsEnabled, mobileOpen, onToggleMobile, onCloseMobile } = props;
   const visuals = [heroVisual, ...gallery.map((image) => image.url)].filter(Boolean);
   const primaryVisual = visuals[0] || "";
+  const basePath = `/restaurants/${restaurant.slug}`;
 
   if (page === "home") {
     return (
@@ -69,7 +70,22 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
 
   return (
     <div className="cinematic-experience min-h-screen bg-[#020108] text-white">
-      <ImmersiveHeader restaurant={restaurant} currentPage={page} />
+      <PremiumNavigation
+        restaurantName={restaurant.name}
+        locationLabel={restaurant.city || "Restaurant experience"}
+        logoUrl={restaurant.logo_url}
+        homeHref={basePath}
+        links={getRestaurantNavigationLinks(restaurant.slug)}
+        cta={{
+          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
+        }}
+        activePage={page}
+        buttonClass={themeIdentity.buttonClass}
+        mobileOpen={mobileOpen}
+        onToggleMobile={onToggleMobile}
+        onCloseMobile={onCloseMobile}
+      />
       {page === "menu" && <MenuPage {...props} visual={primaryVisual} />}
       {page === "reservations" && <ReservationsPage {...props} visual={primaryVisual} />}
       {page === "gallery" && <GalleryPage {...props} visual={primaryVisual} />}
@@ -77,45 +93,6 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
       {page === "events" && <EventsPage {...props} visual={primaryVisual} />}
       <MinimalFooter restaurant={restaurant} themeIdentity={themeIdentity} />
     </div>
-  );
-}
-
-function ImmersiveHeader({ restaurant, currentPage }: { restaurant: Restaurant; currentPage: ImmersivePage }) {
-  const links: Array<[ImmersivePage, string, string]> = [
-    ["home", "Home", `/restaurants/${restaurant.slug}`],
-    ["menu", "Menu", `/restaurants/${restaurant.slug}/menu`],
-    ["reservations", "Reserve", `/restaurants/${restaurant.slug}/reservations`],
-    ["gallery", "Gallery", `/restaurants/${restaurant.slug}/gallery`],
-    ["contact", "Contact", `/restaurants/${restaurant.slug}/contact`],
-    ["events", "Events", `/restaurants/${restaurant.slug}/events`],
-  ];
-
-  return (
-    <header className="absolute inset-x-0 top-0 z-40">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-8">
-        <a href={`/restaurants/${restaurant.slug}`} className="group flex min-w-0 items-center gap-3">
-          {restaurant.logo_url ? (
-            <img src={restaurant.logo_url} alt="" className="h-10 w-10 rounded-full border border-white/30 object-cover" loading="eager" decoding="async" />
-          ) : (
-            <span className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10">
-              <ChefHat size={18} />
-            </span>
-          )}
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold uppercase tracking-[0.24em] text-white/78">{restaurant.name}</span>
-            <span className="hidden text-[10px] font-bold uppercase tracking-[0.28em] text-white/40 sm:block">{restaurant.city || "Private table"}</span>
-          </span>
-        </a>
-        <nav className="hidden items-center gap-5 text-[11px] font-bold uppercase tracking-[0.22em] text-white/54 lg:flex">
-          {links.map(([key, label, href]) => (
-            <a key={key} href={href} className={`transition hover:text-white ${currentPage === key ? "text-white" : ""}`}>{label}</a>
-          ))}
-        </nav>
-        <a href={`/restaurants/${restaurant.slug}/reservations`} className="inline-flex min-h-11 items-center rounded-full border border-white/18 bg-white/[.08] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
-          Reserve
-        </a>
-      </div>
-    </header>
   );
 }
 

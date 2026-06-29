@@ -1,7 +1,7 @@
 import PageRenderer from "@/components/engine/PageRenderer";
 import ThemeProvider from "@/components/engine/ThemeProvider";
 import PremiumFooter from "@/components/public/restaurant/PremiumFooter";
-import PremiumNavigation from "@/components/public/restaurant/PremiumNavigation";
+import PremiumNavigation, { getRestaurantNavigationLinks } from "@/components/public/restaurant/PremiumNavigation";
 import { BLOCK_COMPONENT_IDS } from "@/lib/engine/BlockRegistry";
 import { loadRestaurantConfig } from "@/lib/engine/ConfigLoader";
 import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
@@ -59,14 +59,9 @@ export default function EngineHomepagePreview({
           locationLabel={restaurant.city || "Restaurant experience"}
           logoUrl={restaurant.logo_url}
           homeHref={basePath}
-          links={[
-            { label: "Story", href: "#story" },
-            { label: "Menu", href: `${basePath}/menu` },
-            { label: "Gallery", href: `${basePath}/gallery` },
-            { label: "Events", href: `${basePath}/events` },
-            { label: "Contact", href: `${basePath}/contact` },
-          ]}
+          links={getRestaurantNavigationLinks(restaurant.slug)}
           cta={reservationCta}
+          activePage="home"
           buttonClass={themeIdentity.buttonClass}
           mobileOpen={mobileOpen}
           onToggleMobile={onToggleMobile}

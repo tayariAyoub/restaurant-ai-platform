@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, Wine } from "lucide-react";
+import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
@@ -9,6 +9,7 @@ import ImmersiveRestaurantExperience from "@/components/public/restaurant/Immers
 import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
 import OrderCartDrawer from "@/components/public/restaurant/OrderCartDrawer";
 import PremiumHomepage from "@/components/public/restaurant/PremiumHomepage";
+import PremiumNavigation, { getRestaurantNavigationLinks } from "@/components/public/restaurant/PremiumNavigation";
 import request from "@/lib/api";
 import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
 import { buildRestaurantJsonLd } from "@/lib/restaurantSeo";
@@ -392,6 +393,10 @@ function renderClassicPage({
         featuredItems={featuredItems}
         quantities={quantities}
         orderingEnabled={orderingEnabled}
+        reservationsEnabled={reservationsEnabled}
+        mobileOpen={mobile}
+        onToggleMobile={toggleMobile}
+        onCloseMobile={closeMobile}
         onAdd={add}
       />
     );
@@ -400,7 +405,7 @@ function renderClassicPage({
   if (page === "reservations") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservations" copy="Request a table and give the team the details they need to prepare well." />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservations" copy="Request a table and give the team the details they need to prepare well." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicReservationPage restaurant={restaurant} themeIdentity={themeIdentity} reservationStatus={reservationStatus} onReserve={reserve} enabled={reservationsEnabled} />
       </>
     );
@@ -409,7 +414,7 @@ function renderClassicPage({
   if (page === "gallery") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Gallery" copy="Food, room, service, and atmosphere before you arrive." />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Gallery" copy="Food, room, service, and atmosphere before you arrive." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
       </>
     );
@@ -418,7 +423,7 @@ function renderClassicPage({
   if (page === "contact") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Contact" copy="Address, hours, phone, email, map, and social links." />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Contact" copy="Address, hours, phone, email, map, and social links." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicContactPage restaurant={restaurant} themeIdentity={themeIdentity} hours={hours} />
       </>
     );
@@ -427,7 +432,7 @@ function renderClassicPage({
   if (page === "events") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Private Dining & Events" copy="Plan a special table, private dinner, or hospitality moment directly with the restaurant." />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Private Dining & Events" copy="Plan a special table, private dinner, or hospitality moment directly with the restaurant." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicEventsPage restaurant={restaurant} themeIdentity={themeIdentity} />
       </>
     );
@@ -462,6 +467,10 @@ function ClassicPageHero({
   page,
   title,
   copy,
+  reservationsEnabled,
+  mobileOpen,
+  onToggleMobile,
+  onCloseMobile,
 }: {
   restaurant: Restaurant;
   themeIdentity: RestaurantThemeIdentity;
@@ -469,16 +478,12 @@ function ClassicPageHero({
   page: RestaurantSitePage;
   title: string;
   copy: string;
+  reservationsEnabled: boolean;
+  mobileOpen: boolean;
+  onToggleMobile: () => void;
+  onCloseMobile: () => void;
 }) {
   const basePath = `/restaurants/${restaurant.slug}`;
-  const links: { key: RestaurantSitePage; label: string; href: string }[] = [
-    { key: "home", label: "Home", href: basePath },
-    { key: "menu", label: "Menu", href: `${basePath}/menu` },
-    { key: "reservations", label: "Reserve", href: `${basePath}/reservations` },
-    { key: "gallery", label: "Gallery", href: `${basePath}/gallery` },
-    { key: "events", label: "Events", href: `${basePath}/events` },
-    { key: "contact", label: "Contact", href: `${basePath}/contact` },
-  ];
 
   return (
     <section
@@ -495,38 +500,24 @@ function ClassicPageHero({
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_16%,rgba(255,255,255,.18),transparent_22rem)]" />
       <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-black/55 to-transparent" />
+      <PremiumNavigation
+        restaurantName={restaurant.name}
+        locationLabel={restaurant.city || "Restaurant experience"}
+        logoUrl={restaurant.logo_url}
+        homeHref={basePath}
+        links={getRestaurantNavigationLinks(restaurant.slug)}
+        cta={{
+          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
+        }}
+        activePage={page}
+        buttonClass={themeIdentity.buttonClass}
+        mobileOpen={mobileOpen}
+        onToggleMobile={onToggleMobile}
+        onCloseMobile={onCloseMobile}
+      />
       <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="flex flex-col gap-4 rounded-[1.75rem] border border-white/10 bg-black/[.24] p-2 shadow-2xl backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
-          <a href={basePath} aria-label={`${restaurant.name} home`} className="flex min-w-0 items-center gap-3 rounded-[1.35rem] px-3 py-2 transition hover:bg-white/10">
-            {restaurant.logo_url ? (
-              <img src={restaurant.logo_url} alt="" className="h-10 w-10 rounded-full border border-white/[.20] object-cover" loading="eager" decoding="async" />
-            ) : (
-              <span className="grid h-10 w-10 place-items-center rounded-full border border-white/[.15] bg-white/[.10]">
-                <Wine size={18} />
-              </span>
-            )}
-            <span className="min-w-0">
-              <span className="block truncate text-xs font-bold uppercase tracking-[0.22em] text-white/85">{restaurant.name}</span>
-              <span className="block truncate text-xs text-white/50">{restaurant.city || "Restaurant experience"}</span>
-            </span>
-          </a>
-          <nav aria-label="Restaurant sections" className="flex gap-1 overflow-x-auto rounded-full p-1 text-sm font-semibold text-white/70 [scrollbar-width:none] sm:flex-wrap sm:justify-end">
-            {links.map((link) => {
-              const active = link.key === page;
-              return (
-                <a
-                  key={link.key}
-                  href={link.href}
-                  aria-current={active ? "page" : undefined}
-                  className={`shrink-0 rounded-full px-4 py-2.5 transition ${active ? "bg-white text-[#21160f]" : "hover:bg-white/10 hover:text-white"}`}
-                >
-                  {link.label}
-                </a>
-              );
-            })}
-          </nav>
-        </div>
-        <div className="max-w-4xl pb-6 pt-24 sm:pt-28 lg:pt-36">
+        <div className="max-w-4xl pb-6 pt-40 sm:pt-44 lg:pt-48">
           <p className="luxury-kicker text-xs font-bold text-white/60">{restaurant.tagline || "Restaurant"} in {restaurant.city || "your city"}</p>
           <h1 className="mt-5 text-balance text-[clamp(3.75rem,12vw,8rem)] font-semibold leading-[.86] tracking-normal">{title}</h1>
           <p className="mt-6 max-w-2xl text-balance text-lg leading-8 text-white/76 sm:text-xl">{copy}</p>

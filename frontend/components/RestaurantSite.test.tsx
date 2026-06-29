@@ -103,6 +103,53 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
+  it("uses one shared navigation shell across public restaurant routes", () => {
+    const expectedLinks = [
+      ["Home", "/restaurants/bella-napoli"],
+      ["Menu", "/restaurants/bella-napoli/menu"],
+      ["Gallery", "/restaurants/bella-napoli/gallery"],
+      ["Events", "/restaurants/bella-napoli/events"],
+      ["Contact", "/restaurants/bella-napoli/contact"],
+    ];
+    const routes = [
+      ["home", "Home"],
+      ["menu", "Menu"],
+      ["gallery", "Gallery"],
+      ["events", "Events"],
+      ["contact", "Contact"],
+      ["reservations", "Reserve Table"],
+    ] as const;
+
+    for (const [page, activeLabel] of routes) {
+      const result = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page={page} />);
+      const banner = screen.getByRole("banner");
+      const nav = within(banner).getByRole("navigation", { name: /restaurant navigation/i });
+
+      expectedLinks.forEach(([label, href]) => {
+        const link = within(nav).getByRole("link", { name: label });
+
+        expect(link).toHaveAttribute("href", href);
+        expect(link.className).toContain("min-h-11");
+        expect(link.className).toContain("min-w-[5.75rem]");
+        expect(link.className).toContain("px-4");
+        expect(link.className).toContain("py-2.5");
+      });
+
+      const reserveButton = within(banner).getByRole("link", { name: /reserve table/i });
+      expect(reserveButton).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+      expect(reserveButton.className).toContain("min-h-11");
+      expect(reserveButton.className).toContain("px-5");
+      expect(reserveButton.className).toContain("py-2.5");
+
+      const activeElement = activeLabel === "Reserve Table"
+        ? reserveButton
+        : within(nav).getByRole("link", { name: activeLabel });
+      expect(activeElement).toHaveAttribute("aria-current", "page");
+
+      result.unmount();
+    }
+  });
+
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 

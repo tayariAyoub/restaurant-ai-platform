@@ -2,22 +2,20 @@ import {
   ArrowRight,
   CalendarDays,
   Camera,
-  ChefHat,
   Clock3,
   MapPin,
-  Menu as MenuIcon,
   MessageCircle,
   Phone,
   Sparkles,
   Utensils,
   Wine,
-  X,
   type LucideIcon,
 } from "lucide-react";
 
 import type { RestaurantThemeIdentity } from "@/lib/restaurantTheme";
 import type { MenuItem, Restaurant, RestaurantImage } from "@/lib/types";
 import { formatPrice } from "./experience";
+import PremiumNavigation, { getRestaurantNavigationLinks } from "./PremiumNavigation";
 
 type PremiumHomepageProps = {
   restaurant: Restaurant;
@@ -39,13 +37,29 @@ type PremiumHomepageProps = {
 };
 
 export default function PremiumHomepage(props: PremiumHomepageProps) {
-  const { restaurant, themeIdentity, heroVisual, gallery } = props;
+  const { restaurant, themeIdentity, heroVisual, gallery, reservationsEnabled, mobileOpen, onToggleMobile, onCloseMobile } = props;
+  const basePath = `/restaurants/${restaurant.slug}`;
   const visual = heroVisual || gallery[0]?.url || "";
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#080604] text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(255,255,255,.08),transparent_26rem),radial-gradient(circle_at_82%_12%,rgba(200,75,49,.14),transparent_28rem)]" />
-      <PremiumNavigation {...props} />
+      <PremiumNavigation
+        restaurantName={restaurant.name}
+        locationLabel={restaurant.city || "Restaurant experience"}
+        logoUrl={restaurant.logo_url}
+        homeHref={basePath}
+        links={getRestaurantNavigationLinks(restaurant.slug)}
+        cta={{
+          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
+        }}
+        activePage="home"
+        buttonClass={themeIdentity.buttonClass}
+        mobileOpen={mobileOpen}
+        onToggleMobile={onToggleMobile}
+        onCloseMobile={onCloseMobile}
+      />
       <PremiumHero {...props} visual={visual} />
       <EditorialStory restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} visual={visual} />
       <SignatureDishes restaurant={restaurant} themeIdentity={themeIdentity} featuredItems={props.featuredItems} availableItems={props.availableItems} orderingEnabled={props.orderingEnabled} />
@@ -54,82 +68,6 @@ export default function PremiumHomepage(props: PremiumHomepageProps) {
       <LocationTeaser restaurant={restaurant} themeIdentity={themeIdentity} hours={props.hours} />
       <PremiumHomepageFooter restaurant={restaurant} themeIdentity={themeIdentity} />
     </div>
-  );
-}
-
-function PremiumNavigation({
-  restaurant,
-  themeIdentity,
-  reservationsEnabled,
-  mobileOpen,
-  onToggleMobile,
-  onCloseMobile,
-}: PremiumHomepageProps) {
-  const basePath = `/restaurants/${restaurant.slug}`;
-  const links = [
-    ["Story", "#story"],
-    ["Menu", `${basePath}/menu`],
-    ["Gallery", `${basePath}/gallery`],
-    ["Events", `${basePath}/events`],
-    ["Contact", `${basePath}/contact`],
-  ];
-
-  return (
-    <header className="absolute inset-x-0 top-0 z-40">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-7">
-        <a href={basePath} aria-label={`${restaurant.name} home`} className="group flex min-w-0 items-center gap-3">
-          {restaurant.logo_url ? (
-            <img src={restaurant.logo_url} alt="" className="h-11 w-11 rounded-full border border-white/25 object-cover" loading="eager" decoding="async" />
-          ) : (
-            <span className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
-              <ChefHat size={19} />
-            </span>
-          )}
-          <span className="min-w-0">
-            <span className="block truncate text-sm font-semibold uppercase text-white/85">{restaurant.name}</span>
-            <span className="hidden text-xs text-white/45 sm:block">{restaurant.city || "Restaurant experience"}</span>
-          </span>
-        </a>
-        <nav className="hidden items-center gap-1 rounded-full border border-white/12 bg-black/24 p-1 text-sm font-semibold text-white/70 shadow-2xl backdrop-blur-xl lg:flex">
-          {links.map(([label, href]) => (
-            <a key={label} href={href} className="rounded-full px-4 py-2.5 transition hover:bg-white/10 hover:text-white">
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="flex items-center gap-2">
-          <a
-            href={reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`}
-            className={`${themeIdentity.buttonClass} hidden min-h-11 items-center justify-center bg-white px-5 py-2.5 text-sm font-bold text-[#100c08] shadow-2xl sm:inline-flex`}
-          >
-            {reservationsEnabled ? "Reserve Table" : "Contact"}
-          </a>
-          <button
-            className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur lg:hidden"
-            onClick={onToggleMobile}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X size={20} /> : <MenuIcon size={20} />}
-          </button>
-        </div>
-      </div>
-      {mobileOpen && (
-        <nav className="fixed inset-x-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 grid gap-2 rounded-[1.5rem] border border-white/10 bg-[#080604]/95 p-3 text-sm font-bold text-white shadow-2xl backdrop-blur-xl sm:grid-cols-3 lg:hidden">
-          {links.map(([label, href]) => (
-            <a key={label} href={href} onClick={onCloseMobile} className="rounded-2xl bg-white/[.08] px-4 py-3 text-center">
-              {label}
-            </a>
-          ))}
-          <a
-            href={reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`}
-            onClick={onCloseMobile}
-            className="rounded-2xl bg-white px-4 py-3 text-center text-[#100c08]"
-          >
-            {reservationsEnabled ? "Reserve Table" : "Contact"}
-          </a>
-        </nav>
-      )}
-    </header>
   );
 }
 

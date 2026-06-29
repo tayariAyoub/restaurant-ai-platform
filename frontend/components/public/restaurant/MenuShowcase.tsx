@@ -21,6 +21,7 @@ import {
   matchesMenuFilters,
   pairingSuggestion,
 } from "./experience";
+import PremiumNavigation, { getRestaurantNavigationLinks } from "./PremiumNavigation";
 
 type MenuShowcaseProps = {
   restaurant: Restaurant;
@@ -29,8 +30,12 @@ type MenuShowcaseProps = {
   featuredItems: MenuItem[];
   quantities: Record<number, number>;
   orderingEnabled: boolean;
+  reservationsEnabled?: boolean;
   onAdd: (item: MenuItem) => void;
   showHeroNavigation?: boolean;
+  mobileOpen?: boolean;
+  onToggleMobile?: () => void;
+  onCloseMobile?: () => void;
 };
 
 type ItalianPalette = {
@@ -62,8 +67,12 @@ export default function MenuShowcase({
   featuredItems,
   quantities,
   orderingEnabled,
+  reservationsEnabled = true,
   onAdd,
   showHeroNavigation = true,
+  mobileOpen = false,
+  onToggleMobile = () => undefined,
+  onCloseMobile = () => undefined,
 }: MenuShowcaseProps) {
   const [menuQuery, setMenuQuery] = useState("");
   const [dietaryFilter, setDietaryFilter] = useState<"all" | "vegan" | "vegetarian" | "halal">("all");
@@ -90,9 +99,14 @@ export default function MenuShowcase({
       <ItalianMenuHero
         restaurant={restaurant}
         palette={palette}
+        themeIdentity={themeIdentity}
         heroVisual={heroVisual}
         orderingEnabled={orderingEnabled}
+        reservationsEnabled={reservationsEnabled}
         showNavigation={showHeroNavigation}
+        mobileOpen={mobileOpen}
+        onToggleMobile={onToggleMobile}
+        onCloseMobile={onCloseMobile}
       />
       <section
         id="menu"
@@ -173,15 +187,25 @@ export default function MenuShowcase({
 function ItalianMenuHero({
   restaurant,
   palette,
+  themeIdentity,
   heroVisual,
   orderingEnabled,
+  reservationsEnabled,
   showNavigation,
+  mobileOpen,
+  onToggleMobile,
+  onCloseMobile,
 }: {
   restaurant: Restaurant;
   palette: ItalianPalette;
+  themeIdentity: RestaurantThemeIdentity;
   heroVisual: string;
   orderingEnabled: boolean;
+  reservationsEnabled: boolean;
   showNavigation: boolean;
+  mobileOpen: boolean;
+  onToggleMobile: () => void;
+  onCloseMobile: () => void;
 }) {
   const basePath = `/restaurants/${restaurant.slug}`;
   const headline = isPizzaRestaurant(restaurant)
@@ -196,25 +220,22 @@ function ItalianMenuHero({
       <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-t from-[#19120e] via-[#19120e]/[.72] to-transparent" />
       <div className="absolute inset-0 opacity-[.13] [background-image:radial-gradient(circle_at_20%_20%,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:30px_30px]" />
       {showNavigation && (
-        <div className="absolute inset-x-0 top-0 z-20">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-7">
-            <a href={basePath} aria-label={`${restaurant.name} home`} className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
-                <ChefHat size={19} />
-              </span>
-              <span>
-                <span className="block text-sm font-semibold uppercase tracking-[0.18em]">{restaurant.name}</span>
-                <span className="block text-xs text-white/50">{restaurant.city || "Italian table"}</span>
-              </span>
-            </a>
-            <nav className="hidden items-center gap-1 rounded-full border border-white/12 bg-black/[.24] p-1 text-sm font-semibold text-white/70 backdrop-blur-xl md:flex">
-              <a href={basePath} className="rounded-full px-4 py-2.5 hover:bg-white/10 hover:text-white">Home</a>
-              <a href={`${basePath}/gallery`} className="rounded-full px-4 py-2.5 hover:bg-white/10 hover:text-white">Gallery</a>
-              <a href={`${basePath}/contact`} className="rounded-full px-4 py-2.5 hover:bg-white/10 hover:text-white">Contact</a>
-              <a href={`${basePath}/reservations`} className="rounded-full bg-white px-4 py-2.5 text-[#2d1b13]">Reserve</a>
-            </nav>
-          </div>
-        </div>
+        <PremiumNavigation
+          restaurantName={restaurant.name}
+          locationLabel={restaurant.city || "Restaurant experience"}
+          logoUrl={restaurant.logo_url}
+          homeHref={basePath}
+          links={getRestaurantNavigationLinks(restaurant.slug)}
+          cta={{
+            label: reservationsEnabled ? "Reserve Table" : "Contact",
+            href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
+          }}
+          activePage="menu"
+          buttonClass={themeIdentity.buttonClass}
+          mobileOpen={mobileOpen}
+          onToggleMobile={onToggleMobile}
+          onCloseMobile={onCloseMobile}
+        />
       )}
       <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-10 pt-32 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end lg:pb-16">
         <div>
