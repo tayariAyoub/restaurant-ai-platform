@@ -55,6 +55,6 @@ describe("RestaurantWebsiteClient", () => {
     renderWithUser(<RestaurantWebsiteClient slug="bella-napoli" />);
 
     expect(await screen.findByRole("heading", { name: "Restaurant not found" })).toBeVisible();
-    expect(screen.getByText("Restaurant not found")).toBeVisible();
+    expect(screen.getAllByText("Restaurant not found")).toHaveLength(2);
   });
 });

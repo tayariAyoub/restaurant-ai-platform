@@ -67,6 +67,14 @@ describe("public restaurant data loading", () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
+  it("does not fall back for other slugs when the backend returns 500", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
+
+    await expect(fetchPublicRestaurant("other-restaurant")).resolves.toBeNull();
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
   it("keeps production strict", async () => {
     vi.stubEnv("NODE_ENV", "production");
     fetchMock.mockResolvedValueOnce(mockFetchResponse(500));

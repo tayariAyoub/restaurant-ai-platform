@@ -6,16 +6,17 @@ import { useState } from "react";
 
 export default function Header({ name = "Bella Napoli" }: { name?: string }) {
   const [open, setOpen] = useState(false);
+  const restaurantBasePath = "/restaurants/bella-napoli";
   const links = [
-    ["Our story", "/#story"],
-    ["Menu", "/menu"],
-    ["Gallery", "/#gallery"],
-    ["Visit", "/contact"],
+    ["Home", restaurantBasePath],
+    ["Menu", `${restaurantBasePath}/menu`],
+    ["Gallery", `${restaurantBasePath}/gallery`],
+    ["Visit", `${restaurantBasePath}/contact`],
   ];
   return (
     <header className="absolute inset-x-0 top-0 z-30 text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-10">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-wide">
+        <Link href={restaurantBasePath} className="font-display text-2xl font-semibold tracking-wide">
           {name}
         </Link>
         <nav className="hidden items-center gap-8 text-sm md:flex">
@@ -25,7 +26,7 @@ export default function Header({ name = "Bella Napoli" }: { name?: string }) {
             </Link>
           ))}
           <Link
-            href="/contact#reservation"
+            href={`${restaurantBasePath}/reservations`}
             className="rounded-full border border-white/50 bg-white px-5 py-2.5 font-medium text-ink transition hover:bg-orange-50"
           >
             Book a table
@@ -47,4 +48,3 @@ export default function Header({ name = "Bella Napoli" }: { name?: string }) {
     </header>
   );
 }
-
