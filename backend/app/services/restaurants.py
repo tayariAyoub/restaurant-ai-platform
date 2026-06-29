@@ -3,10 +3,30 @@ import uuid
 
 from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.models import Restaurant, User
+from app.models import MenuCategory, Restaurant, User
 from app.services.knowledge import rebuild_structured_knowledge
+
+
+def restaurant_query():
+    return select(Restaurant).options(
+        selectinload(Restaurant.owner),
+        selectinload(Restaurant.theme),
+        selectinload(Restaurant.images),
+        selectinload(Restaurant.categories).selectinload(MenuCategory.items),
+    )
+
+
+def get_restaurant_for_user(db: Session, restaurant_id: int, user: User) -> Restaurant:
+    restaurant = db.scalar(restaurant_query().where(Restaurant.id == restaurant_id))
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    if user.role != "SUPER_ADMIN" and restaurant.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="You cannot access this restaurant")
+    restaurant.categories.sort(key=lambda category: category.sort_order)
+    restaurant.images.sort(key=lambda image: image.sort_order)
+    return restaurant
 
 
 def list_restaurants(db: Session, user: User) -> list[Restaurant]:

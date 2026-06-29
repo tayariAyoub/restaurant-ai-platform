@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.api import admin
 from app.core.database import Base
-from app.models import Restaurant, User
+from app.models import MenuCategory, Restaurant, RestaurantImage, User
 from app.schemas import RestaurantCreate, RestaurantUpdate
 from app.services import restaurants as restaurant_service
 
@@ -274,10 +274,89 @@ def test_route_level_access_helper_behavior_remains_unchanged(db: Session) -> No
     owner, other_owner, super_admin = users(db)
     bella, private = restaurants(db)
 
-    assert admin.get_restaurant_for_user(db, bella.id, owner).id == bella.id
+    assert restaurant_service.get_restaurant_for_user(db, bella.id, owner).id == bella.id
     with pytest.raises(HTTPException) as error:
-        admin.get_restaurant_for_user(db, private.id, owner)
+        restaurant_service.get_restaurant_for_user(db, private.id, owner)
     assert error.value.status_code == 403
     assert error.value.detail == "You cannot access this restaurant"
-    assert admin.get_restaurant_for_user(db, private.id, other_owner).id == private.id
-    assert admin.get_restaurant_for_user(db, private.id, super_admin).id == private.id
+    assert restaurant_service.get_restaurant_for_user(db, private.id, other_owner).id == private.id
+    assert restaurant_service.get_restaurant_for_user(db, private.id, super_admin).id == private.id
+
+
+def test_missing_restaurant_access_still_returns_404(db: Session) -> None:
+    owner, _, _ = users(db)
+
+    with pytest.raises(HTTPException) as error:
+        restaurant_service.get_restaurant_for_user(db, 999, owner)
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "Restaurant not found"
+
+
+def test_restaurant_access_helper_still_sorts_categories_and_images(
+    db: Session,
+) -> None:
+    owner, _, _ = users(db)
+    bella, _ = restaurants(db)
+    db.add_all(
+        [
+            MenuCategory(
+                restaurant_id=bella.id,
+                name="Second Category",
+                sort_order=2,
+            ),
+            MenuCategory(
+                restaurant_id=bella.id,
+                name="First Category",
+                sort_order=1,
+            ),
+            RestaurantImage(
+                restaurant_id=bella.id,
+                image_type="gallery",
+                url="/uploads/1/second.png",
+                sort_order=2,
+            ),
+            RestaurantImage(
+                restaurant_id=bella.id,
+                image_type="gallery",
+                url="/uploads/1/first.png",
+                sort_order=1,
+            ),
+        ]
+    )
+    db.commit()
+
+    restaurant = restaurant_service.get_restaurant_for_user(db, bella.id, owner)
+
+    assert [category.name for category in restaurant.categories] == [
+        "First Category",
+        "Second Category",
+    ]
+    assert [image.url for image in restaurant.images] == [
+        "/uploads/1/first.png",
+        "/uploads/1/second.png",
+    ]
+
+
+def test_representative_route_still_calls_access_helper_explicitly(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner, _, _ = users(db)
+    bella, _ = restaurants(db)
+    calls: list[tuple[int, int]] = []
+
+    def fake_get_restaurant_for_user(
+        _db: Session, restaurant_id: int, user: User
+    ) -> Restaurant:
+        calls.append((restaurant_id, user.id))
+        return bella
+
+    monkeypatch.setattr(
+        admin.restaurant_service,
+        "get_restaurant_for_user",
+        fake_get_restaurant_for_user,
+    )
+
+    admin.documents(bella.id, db=db, user=owner)
+
+    assert calls == [(bella.id, owner.id)]

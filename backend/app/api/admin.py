@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from fastapi import APIRouter, Depends, File, Form, UploadFile
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.dependencies import get_current_user, require_super_admin
@@ -67,26 +66,6 @@ from app.services.analytics import build_restaurant_overview
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def restaurant_query():
-    return select(Restaurant).options(
-        selectinload(Restaurant.owner),
-        selectinload(Restaurant.theme),
-        selectinload(Restaurant.images),
-        selectinload(Restaurant.categories).selectinload(MenuCategory.items),
-    )
-
-
-def get_restaurant_for_user(db: Session, restaurant_id: int, user: User) -> Restaurant:
-    restaurant = db.scalar(restaurant_query().where(Restaurant.id == restaurant_id))
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
-    if user.role != "SUPER_ADMIN" and restaurant.owner_id != user.id:
-        raise HTTPException(status_code=403, detail="You cannot access this restaurant")
-    restaurant.categories.sort(key=lambda category: category.sort_order)
-    restaurant.images.sort(key=lambda image: image.sort_order)
-    return restaurant
-
-
 @router.get("/dashboard", response_model=DashboardStats)
 def dashboard(
     db: Session = Depends(get_db), user: User = Depends(get_current_user)
@@ -131,7 +110,7 @@ def restaurants(
 def restaurants_overview(
     db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ) -> list[RestaurantOverview]:
-    statement = restaurant_query().order_by(Restaurant.created_at.desc())
+    statement = restaurant_service.restaurant_query().order_by(Restaurant.created_at.desc())
     if user.role != "SUPER_ADMIN":
         statement = statement.where(Restaurant.owner_id == user.id)
     return [
@@ -147,7 +126,7 @@ def create_restaurant(
     user: User = Depends(get_current_user),
 ) -> Restaurant:
     restaurant = restaurant_service.create_restaurant(db, payload.model_dump(), user)
-    return get_restaurant_for_user(db, restaurant.id, user)
+    return restaurant_service.get_restaurant_for_user(db, restaurant.id, user)
 
 
 @router.get("/restaurants/{restaurant_id}", response_model=RestaurantOut)
@@ -156,7 +135,7 @@ def restaurant(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    return get_restaurant_for_user(db, restaurant_id, user)
+    return restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
 
 
 @router.put("/restaurants/{restaurant_id}", response_model=RestaurantOut)
@@ -166,7 +145,7 @@ def update_restaurant(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     restaurant_service.update_restaurant(
         db,
         restaurant_id,
@@ -174,7 +153,7 @@ def update_restaurant(
         payload.model_dump(),
         user,
     )
-    return get_restaurant_for_user(db, restaurant.id, user)
+    return restaurant_service.get_restaurant_for_user(db, restaurant.id, user)
 
 
 @router.delete("/restaurants/{restaurant_id}", status_code=204)
@@ -195,7 +174,7 @@ def add_category(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> MenuCategory:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     category = menu.create_category(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(category)
@@ -212,7 +191,7 @@ def update_category(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> MenuCategory:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     category = menu.update_category(db, restaurant_id, category_id, payload.model_dump())
     db.commit()
     db.refresh(category)
@@ -227,7 +206,7 @@ def delete_category(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     menu.delete_category(db, restaurant_id, category_id)
     db.commit()
     menu.rebuild_menu_knowledge(db, restaurant_id)
@@ -242,7 +221,7 @@ def add_menu_item(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> MenuItem:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     item = menu.create_menu_item(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(item)
@@ -260,7 +239,7 @@ def update_menu_item(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> MenuItem:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     item = menu.update_menu_item(db, restaurant_id, item_id, payload.model_dump())
     db.commit()
     db.refresh(item)
@@ -275,7 +254,7 @@ def delete_menu_item(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     menu.delete_menu_item(db, restaurant_id, item_id)
     db.commit()
     menu.rebuild_menu_knowledge(db, restaurant_id)
@@ -290,7 +269,7 @@ async def upload_image(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> RestaurantImage:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
     return restaurant_images.upload_image(
         db,
@@ -310,7 +289,7 @@ def add_image_url(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> RestaurantImage:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return restaurant_images.add_image_url(
         db,
         restaurant,
@@ -328,7 +307,7 @@ async def upload_loading_video(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
     return loading_video.upload_loading_video(
         db, restaurant, content, file.filename, file.content_type
@@ -341,7 +320,7 @@ def delete_loading_video(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return loading_video.delete_loading_video(db, restaurant)
 
 
@@ -352,7 +331,7 @@ def delete_image(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     restaurant_images.delete_image(db, restaurant, image_id)
 
 
@@ -365,7 +344,7 @@ async def upload_document(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> KnowledgeDocument:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
     return document_service.upload_document(db, restaurant_id, file, content)
 
@@ -376,7 +355,7 @@ def documents(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[KnowledgeDocument]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return document_service.list_documents(db, restaurant_id)
 
 
@@ -386,7 +365,7 @@ def faqs(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[RestaurantFaq]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return faq_service.list_faqs(db, restaurant_id)
 
 
@@ -397,7 +376,7 @@ def create_faq(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     faq = faq_service.create_faq(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(faq)
@@ -413,7 +392,7 @@ def update_faq(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     faq = faq_service.update_faq(db, restaurant_id, faq_id, payload.model_dump())
     db.commit()
     db.refresh(faq)
@@ -428,7 +407,7 @@ def delete_faq(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     faq_service.delete_faq(db, restaurant_id, faq_id)
     db.commit()
     faq_service.rebuild_faq_knowledge(db, restaurant_id)
@@ -445,7 +424,7 @@ def review_unanswered_message(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Message:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     message = faq_service.review_unanswered_message(
         db, restaurant_id, message_id, payload.is_reviewed
     )
@@ -466,7 +445,7 @@ def convert_unanswered_message_to_faq(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     faq = faq_service.convert_unanswered_message_to_faq(
         db, restaurant_id, message_id, payload.model_dump()
     )
@@ -483,7 +462,7 @@ def test_ai_response(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ChatResponse:
-    restaurant = get_restaurant_for_user(db, restaurant_id, user)
+    restaurant = restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return admin_chat.run_test_chat(db, restaurant, payload)
 
 
@@ -494,7 +473,7 @@ def conversations(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Conversation]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return guest_activity.list_conversations(db, restaurant_id, include_test=include_test)
 
 
@@ -504,7 +483,7 @@ def reservations(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[ContactRequest]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return guest_activity.list_reservations(db, restaurant_id)
 
 
@@ -519,7 +498,7 @@ def update_reservation(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> ContactRequest:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     reservation = guest_activity.update_reservation_status(
         db, restaurant_id, reservation_id, payload.status
     )
@@ -536,7 +515,7 @@ def orders(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[Order]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return order_service.list_orders(
         db, restaurant_id, status=status, order_type=order_type
     )
@@ -550,7 +529,7 @@ def update_order(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Order:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     order = order_service.update_admin_order_status(
         db,
         restaurant_id,
@@ -569,7 +548,7 @@ def drivers(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> list[DeliveryDriver]:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     return delivery.list_drivers(db, restaurant_id)
 
 
@@ -582,7 +561,7 @@ def create_driver(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> DeliveryDriver:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     driver = delivery.create_driver(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(driver)
@@ -596,7 +575,7 @@ def delete_driver(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> None:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     delivery.delete_driver(db, restaurant_id, driver_id)
     db.commit()
 
@@ -612,7 +591,7 @@ def assign_driver(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Order:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     order = delivery.assign_driver_to_order(db, restaurant_id, order_id, payload.driver_id)
     db.commit()
     return order_service.get_order_details(db, order.id)
@@ -629,7 +608,7 @@ def update_delivery_status(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Order:
-    get_restaurant_for_user(db, restaurant_id, user)
+    restaurant_service.get_restaurant_for_user(db, restaurant_id, user)
     order = delivery.update_delivery_status(db, restaurant_id, order_id, payload.status)
     db.commit()
     return order_service.get_order_details(db, order.id)

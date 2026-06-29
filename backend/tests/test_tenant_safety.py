@@ -29,6 +29,7 @@ from app.models import (
 from app.services import admin_chat, analytics, chat, knowledge
 from app.services import faqs as faq_service
 from app.services import menu as menu_service
+from app.services import restaurants as restaurant_service
 from app.schemas import (
     CategoryCreate,
     ChatRequest,
@@ -196,19 +197,19 @@ def test_owner_can_access_only_own_restaurant(db: Session) -> None:
     owner_one, owner_two, _ = users(db)
     restaurant_one, restaurant_two = restaurants(db)
 
-    assert admin.get_restaurant_for_user(db, restaurant_one.id, owner_one).id == restaurant_one.id
+    assert restaurant_service.get_restaurant_for_user(db, restaurant_one.id, owner_one).id == restaurant_one.id
     with pytest.raises(HTTPException) as error:
-        admin.get_restaurant_for_user(db, restaurant_two.id, owner_one)
+        restaurant_service.get_restaurant_for_user(db, restaurant_two.id, owner_one)
     assert error.value.status_code == 403
-    assert admin.get_restaurant_for_user(db, restaurant_two.id, owner_two).id == restaurant_two.id
+    assert restaurant_service.get_restaurant_for_user(db, restaurant_two.id, owner_two).id == restaurant_two.id
 
 
 def test_super_admin_can_access_all_restaurants(db: Session) -> None:
     _, _, super_admin = users(db)
     restaurant_one, restaurant_two = restaurants(db)
 
-    assert admin.get_restaurant_for_user(db, restaurant_one.id, super_admin).id == restaurant_one.id
-    assert admin.get_restaurant_for_user(db, restaurant_two.id, super_admin).id == restaurant_two.id
+    assert restaurant_service.get_restaurant_for_user(db, restaurant_one.id, super_admin).id == restaurant_one.id
+    assert restaurant_service.get_restaurant_for_user(db, restaurant_two.id, super_admin).id == restaurant_two.id
 
 
 def test_restaurant_owner_can_create_restaurant_only_for_self(db: Session) -> None:
