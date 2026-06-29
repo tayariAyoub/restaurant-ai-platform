@@ -39,6 +39,7 @@ from app.schemas import (
     OrderCreate,
     OrderItemCreate,
     OrderStatusUpdate,
+    ReservationStatusUpdate,
     RestaurantCreate,
     RestaurantFaqCreate,
     RestaurantFaqFromMessageCreate,
@@ -588,6 +589,35 @@ def test_reservations_are_scoped_to_restaurant_owner(db: Session) -> None:
     assert error.value.status_code == 403
 
 
+def test_reservation_status_update_is_scoped_and_preserves_not_found(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    reservation_one = db.query(ContactRequest).filter_by(restaurant_id=restaurant_one.id).one()
+    reservation_two = db.query(ContactRequest).filter_by(restaurant_id=restaurant_two.id).one()
+
+    updated = admin.update_reservation(
+        restaurant_one.id,
+        reservation_one.id,
+        ReservationStatusUpdate(status="confirmed"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert updated.status == "confirmed"
+    assert db.get(ContactRequest, reservation_two.id).status == "new"
+    for reservation_id in [reservation_two.id, 9999]:
+        with pytest.raises(HTTPException) as error:
+            admin.update_reservation(
+                restaurant_one.id,
+                reservation_id,
+                ReservationStatusUpdate(status="cancelled"),
+                db=db,
+                user=owner_one,
+            )
+        assert error.value.status_code == 404
+        assert error.value.detail == "Reservation not found"
+
+
 def test_public_order_tracking_does_not_leak_across_restaurants(db: Session) -> None:
     assert public.order_tracking("tenant-one", "order-tenant-one", db=db).customer_email == "alice@example.com"
 
@@ -906,6 +936,9 @@ def test_admin_ai_test_conversations_are_separate_from_public_customer_conversat
 ) -> None:
     owner_one, _, _ = users(db)
     restaurant_one, _ = restaurants(db)
+    public_conversation = Conversation(restaurant_id=restaurant_one.id)
+    db.add(public_conversation)
+    db.commit()
 
     def fake_answer(
         _: Session,
@@ -929,5 +962,8 @@ def test_admin_ai_test_conversations_are_separate_from_public_customer_conversat
 
     assert response.answer == "Order Tenant One Pasta."
     assert db.query(Conversation).filter_by(restaurant_id=restaurant_one.id, is_test=True).count() == 1
-    assert admin.conversations(restaurant_one.id, include_test=False, db=db, user=owner_one) == []
-    assert len(admin.conversations(restaurant_one.id, include_test=True, db=db, user=owner_one)) == 1
+    default_conversations = admin.conversations(restaurant_one.id, include_test=False, db=db, user=owner_one)
+    assert [conversation.id for conversation in default_conversations] == [public_conversation.id]
+    all_conversations = admin.conversations(restaurant_one.id, include_test=True, db=db, user=owner_one)
+    assert len(all_conversations) == 2
+    assert any(conversation.is_test for conversation in all_conversations)

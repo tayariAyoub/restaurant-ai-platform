@@ -63,7 +63,7 @@ from app.schemas import (
     UserOut,
 )
 from app.api.public import chat_for_restaurant
-from app.services import delivery
+from app.services import delivery, guest_activity
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -731,17 +731,7 @@ def conversations(
     user: User = Depends(get_current_user),
 ) -> list[Conversation]:
     get_restaurant_for_user(db, restaurant_id, user)
-    statement = (
-        select(Conversation)
-        .where(Conversation.restaurant_id == restaurant_id)
-        .options(selectinload(Conversation.messages))
-        .order_by(Conversation.updated_at.desc())
-    )
-    if not include_test:
-        statement = statement.where(Conversation.is_test.is_(False))
-    return list(
-        db.scalars(statement)
-    )
+    return guest_activity.list_conversations(db, restaurant_id, include_test=include_test)
 
 
 @router.get("/restaurants/{restaurant_id}/reservations", response_model=list[ContactOut])
@@ -751,13 +741,7 @@ def reservations(
     user: User = Depends(get_current_user),
 ) -> list[ContactRequest]:
     get_restaurant_for_user(db, restaurant_id, user)
-    return list(
-        db.scalars(
-            select(ContactRequest)
-            .where(ContactRequest.restaurant_id == restaurant_id)
-            .order_by(ContactRequest.created_at.desc())
-        )
-    )
+    return guest_activity.list_reservations(db, restaurant_id)
 
 
 @router.patch(
@@ -772,10 +756,9 @@ def update_reservation(
     user: User = Depends(get_current_user),
 ) -> ContactRequest:
     get_restaurant_for_user(db, restaurant_id, user)
-    reservation = db.get(ContactRequest, reservation_id)
-    if not reservation or reservation.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Reservation not found")
-    reservation.status = payload.status
+    reservation = guest_activity.update_reservation_status(
+        db, restaurant_id, reservation_id, payload.status
+    )
     db.commit()
     db.refresh(reservation)
     return reservation
