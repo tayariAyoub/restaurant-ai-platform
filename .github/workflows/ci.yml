@@ -48,6 +48,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -55,19 +61,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
 
-      - name: Enable pnpm
-        run: corepack enable
-
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Run frontend tests when available
         run: |
           if node -e "const scripts = require('./package.json').scripts || {}; process.exit(scripts.test ? 0 : 1)"; then
-            npm run test
+            pnpm run test
           else
             echo "No frontend test script found; skipping."
           fi
 
       - name: Build frontend
-        run: npm run build
+        run: pnpm run build
