@@ -26,7 +26,7 @@ from app.models import (
     RestaurantImage,
     User,
 )
-from app.services import chat, knowledge
+from app.services import analytics, chat, knowledge
 from app.schemas import (
     ChatRequest,
     CategoryUpdate,
@@ -646,7 +646,7 @@ def test_reviewing_unanswered_message_removes_ai_gap_count(db: Session) -> None:
     db.commit()
     message = db.query(Message).filter_by(role="assistant").one()
 
-    assert admin.build_restaurant_overview(db, restaurant_one).unanswered_count == 1
+    assert analytics.build_restaurant_overview(db, restaurant_one).unanswered_count == 1
 
     reviewed = admin.review_unanswered_message(
         restaurant_one.id,
@@ -657,7 +657,7 @@ def test_reviewing_unanswered_message_removes_ai_gap_count(db: Session) -> None:
     )
 
     assert reviewed.is_reviewed is True
-    assert admin.build_restaurant_overview(db, restaurant_one).unanswered_count == 0
+    assert analytics.build_restaurant_overview(db, restaurant_one).unanswered_count == 0
 
 
 def test_unanswered_question_can_be_converted_to_faq(db: Session) -> None:
