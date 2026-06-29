@@ -27,6 +27,7 @@ from app.models import (
     User,
 )
 from app.services import analytics, chat, knowledge
+from app.services import faqs as faq_service
 from app.services import menu as menu_service
 from app.schemas import (
     CategoryCreate,
@@ -1005,6 +1006,10 @@ def test_restaurant_owner_can_manage_faq_knowledge(db: Session) -> None:
 
     assert faq.restaurant_id == restaurant_one.id
     assert faq.is_active is True
+    assert [item.id for item in admin.faqs(restaurant_one.id, db=db, user=owner_one)] == [faq.id]
+    with pytest.raises(HTTPException) as error:
+        admin.faqs(restaurant_two.id, db=db, user=owner_one)
+    assert error.value.status_code == 403
     assert "Private dining is available" in "\n".join(
         chunk.content
         for chunk in db.query(KnowledgeChunk)
@@ -1027,6 +1032,33 @@ def test_restaurant_owner_can_manage_faq_knowledge(db: Session) -> None:
     assert updated.sort_order == 1
     assert "groups after calling" in updated.answer
 
+    other_faq = admin.create_faq(
+        restaurant_two.id,
+        RestaurantFaqCreate(question="Tenant two only?", answer="Yes.", sort_order=0),
+        db=db,
+        user=owner_two,
+    )
+    with pytest.raises(HTTPException) as error:
+        admin.update_faq(
+            restaurant_one.id,
+            other_faq.id,
+            RestaurantFaqUpdate(
+                question="Wrong tenant?",
+                answer="This should not update.",
+                is_active=True,
+                sort_order=0,
+            ),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 404
+    assert error.value.detail == "FAQ not found"
+    with pytest.raises(HTTPException) as error:
+        admin.delete_faq(restaurant_one.id, other_faq.id, db=db, user=owner_one)
+    assert error.value.status_code == 404
+    assert error.value.detail == "FAQ not found"
+    assert db.get(RestaurantFaq, other_faq.id).answer == "Yes."
+
     with pytest.raises(HTTPException) as error:
         admin.create_faq(
             restaurant_two.id,
@@ -1038,7 +1070,42 @@ def test_restaurant_owner_can_manage_faq_knowledge(db: Session) -> None:
 
     admin.delete_faq(restaurant_one.id, faq.id, db=db, user=owner_one)
     assert db.get(RestaurantFaq, faq.id) is None
-    assert admin.faqs(restaurant_two.id, db=db, user=owner_two) == []
+    assert [item.id for item in admin.faqs(restaurant_two.id, db=db, user=owner_two)] == [other_faq.id]
+
+
+def test_faq_mutations_rebuild_structured_knowledge_where_expected(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    calls: list[int] = []
+
+    def fake_rebuild(_: Session, restaurant_id: int) -> None:
+        calls.append(restaurant_id)
+
+    monkeypatch.setattr(faq_service, "rebuild_faq_knowledge", fake_rebuild)
+
+    faq = admin.create_faq(
+        restaurant_one.id,
+        RestaurantFaqCreate(question="Do you have tasting menus?", answer="Yes.", sort_order=0),
+        db=db,
+        user=owner_one,
+    )
+    admin.update_faq(
+        restaurant_one.id,
+        faq.id,
+        RestaurantFaqUpdate(
+            question="Do you have tasting menus?",
+            answer="Yes, with advance notice.",
+            is_active=True,
+            sort_order=1,
+        ),
+        db=db,
+        user=owner_one,
+    )
+    admin.delete_faq(restaurant_one.id, faq.id, db=db, user=owner_one)
+
+    assert calls == [restaurant_one.id] * 3
 
 
 def test_reviewing_unanswered_message_removes_ai_gap_count(db: Session) -> None:
@@ -1073,6 +1140,54 @@ def test_reviewing_unanswered_message_removes_ai_gap_count(db: Session) -> None:
 
     assert reviewed.is_reviewed is True
     assert analytics.build_restaurant_overview(db, restaurant_one).unanswered_count == 0
+
+
+def test_reviewing_unanswered_message_preserves_missing_and_non_unanswered_errors(
+    db: Session,
+) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    wrong_restaurant_conversation = Conversation(restaurant_id=restaurant_two.id)
+    conversation = Conversation(restaurant_id=restaurant_one.id)
+    db.add_all([wrong_restaurant_conversation, conversation])
+    db.flush()
+    wrong_restaurant_message = Message(
+        conversation_id=wrong_restaurant_conversation.id,
+        role="assistant",
+        content="I don't have this information.",
+        is_unanswered=True,
+    )
+    answered_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content="We have already answered this.",
+        is_unanswered=False,
+    )
+    db.add_all([wrong_restaurant_message, answered_message])
+    db.commit()
+
+    for message_id in [wrong_restaurant_message.id, 9999]:
+        with pytest.raises(HTTPException) as error:
+            admin.review_unanswered_message(
+                restaurant_one.id,
+                message_id,
+                MessageReviewUpdate(is_reviewed=True),
+                db=db,
+                user=owner_one,
+            )
+        assert error.value.status_code == 404
+        assert error.value.detail == "Unanswered message not found"
+
+    with pytest.raises(HTTPException) as error:
+        admin.review_unanswered_message(
+            restaurant_one.id,
+            answered_message.id,
+            MessageReviewUpdate(is_reviewed=True),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 400
+    assert error.value.detail == "Message is not marked unanswered"
 
 
 def test_unanswered_question_can_be_converted_to_faq(db: Session) -> None:

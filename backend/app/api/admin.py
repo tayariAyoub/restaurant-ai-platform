@@ -63,7 +63,7 @@ from app.schemas import (
     UserOut,
 )
 from app.api.public import chat_for_restaurant
-from app.services import delivery, guest_activity, menu
+from app.services import delivery, faqs as faq_service, guest_activity, menu
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -562,13 +562,7 @@ def faqs(
     user: User = Depends(get_current_user),
 ) -> list[RestaurantFaq]:
     get_restaurant_for_user(db, restaurant_id, user)
-    return list(
-        db.scalars(
-            select(RestaurantFaq)
-            .where(RestaurantFaq.restaurant_id == restaurant_id)
-            .order_by(RestaurantFaq.sort_order, RestaurantFaq.created_at)
-        )
-    )
+    return faq_service.list_faqs(db, restaurant_id)
 
 
 @router.post("/restaurants/{restaurant_id}/faqs", response_model=RestaurantFaqOut, status_code=201)
@@ -579,11 +573,10 @@ def create_faq(
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
     get_restaurant_for_user(db, restaurant_id, user)
-    faq = RestaurantFaq(restaurant_id=restaurant_id, **payload.model_dump())
-    db.add(faq)
+    faq = faq_service.create_faq(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(faq)
-    rebuild_structured_knowledge(db, restaurant_id)
+    faq_service.rebuild_faq_knowledge(db, restaurant_id)
     return faq
 
 
@@ -596,14 +589,10 @@ def update_faq(
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
     get_restaurant_for_user(db, restaurant_id, user)
-    faq = db.get(RestaurantFaq, faq_id)
-    if not faq or faq.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="FAQ not found")
-    for key, value in payload.model_dump().items():
-        setattr(faq, key, value)
+    faq = faq_service.update_faq(db, restaurant_id, faq_id, payload.model_dump())
     db.commit()
     db.refresh(faq)
-    rebuild_structured_knowledge(db, restaurant_id)
+    faq_service.rebuild_faq_knowledge(db, restaurant_id)
     return faq
 
 
@@ -615,31 +604,9 @@ def delete_faq(
     user: User = Depends(get_current_user),
 ) -> None:
     get_restaurant_for_user(db, restaurant_id, user)
-    faq = db.get(RestaurantFaq, faq_id)
-    if not faq or faq.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="FAQ not found")
-    db.delete(faq)
+    faq_service.delete_faq(db, restaurant_id, faq_id)
     db.commit()
-    rebuild_structured_knowledge(db, restaurant_id)
-
-
-def get_public_unanswered_message(
-    db: Session, restaurant_id: int, message_id: int
-) -> Message:
-    message = db.scalar(
-        select(Message)
-        .join(Conversation)
-        .where(
-            Message.id == message_id,
-            Conversation.restaurant_id == restaurant_id,
-            Conversation.is_test.is_(False),
-        )
-    )
-    if not message:
-        raise HTTPException(status_code=404, detail="Unanswered message not found")
-    if not message.is_unanswered:
-        raise HTTPException(status_code=400, detail="Message is not marked unanswered")
-    return message
+    faq_service.rebuild_faq_knowledge(db, restaurant_id)
 
 
 @router.patch(
@@ -654,8 +621,9 @@ def review_unanswered_message(
     user: User = Depends(get_current_user),
 ) -> Message:
     get_restaurant_for_user(db, restaurant_id, user)
-    message = get_public_unanswered_message(db, restaurant_id, message_id)
-    message.is_reviewed = payload.is_reviewed
+    message = faq_service.review_unanswered_message(
+        db, restaurant_id, message_id, payload.is_reviewed
+    )
     db.commit()
     db.refresh(message)
     return message
@@ -674,17 +642,12 @@ def convert_unanswered_message_to_faq(
     user: User = Depends(get_current_user),
 ) -> RestaurantFaq:
     get_restaurant_for_user(db, restaurant_id, user)
-    message = get_public_unanswered_message(db, restaurant_id, message_id)
-    faq = RestaurantFaq(
-        restaurant_id=restaurant_id,
-        source_message_id=message.id,
-        **payload.model_dump(),
+    faq = faq_service.convert_unanswered_message_to_faq(
+        db, restaurant_id, message_id, payload.model_dump()
     )
-    message.is_reviewed = True
-    db.add(faq)
     db.commit()
     db.refresh(faq)
-    rebuild_structured_knowledge(db, restaurant_id)
+    faq_service.rebuild_faq_knowledge(db, restaurant_id)
     return faq
 
 
