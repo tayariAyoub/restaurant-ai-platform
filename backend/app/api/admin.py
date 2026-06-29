@@ -19,7 +19,6 @@ from app.models import (
     MenuItem,
     Message,
     Order,
-    OrderStatus,
     Restaurant,
     RestaurantFaq,
     RestaurantImage,
@@ -64,6 +63,7 @@ from app.schemas import (
     UserOut,
 )
 from app.api.public import chat_for_restaurant
+from app.services import delivery
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -837,13 +837,7 @@ def drivers(
     user: User = Depends(get_current_user),
 ) -> list[DeliveryDriver]:
     get_restaurant_for_user(db, restaurant_id, user)
-    return list(
-        db.scalars(
-            select(DeliveryDriver)
-            .where(DeliveryDriver.restaurant_id == restaurant_id)
-            .order_by(DeliveryDriver.name)
-        )
-    )
+    return delivery.list_drivers(db, restaurant_id)
 
 
 @router.post(
@@ -856,8 +850,7 @@ def create_driver(
     user: User = Depends(get_current_user),
 ) -> DeliveryDriver:
     get_restaurant_for_user(db, restaurant_id, user)
-    driver = DeliveryDriver(restaurant_id=restaurant_id, **payload.model_dump())
-    db.add(driver)
+    driver = delivery.create_driver(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(driver)
     return driver
@@ -871,18 +864,7 @@ def delete_driver(
     user: User = Depends(get_current_user),
 ) -> None:
     get_restaurant_for_user(db, restaurant_id, user)
-    driver = db.get(DeliveryDriver, driver_id)
-    if not driver or driver.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Driver not found")
-    active_assignment = db.scalar(
-        select(DeliveryAssignment).where(
-            DeliveryAssignment.driver_id == driver_id,
-            DeliveryAssignment.status != "DELIVERED",
-        )
-    )
-    if active_assignment:
-        raise HTTPException(status_code=409, detail="Driver has an active delivery")
-    db.delete(driver)
+    delivery.delete_driver(db, restaurant_id, driver_id)
     db.commit()
 
 
@@ -898,18 +880,7 @@ def assign_driver(
     user: User = Depends(get_current_user),
 ) -> Order:
     get_restaurant_for_user(db, restaurant_id, user)
-    order = db.get(Order, order_id)
-    driver = db.get(DeliveryDriver, payload.driver_id)
-    if not order or order.restaurant_id != restaurant_id or order.order_type != "DELIVERY":
-        raise HTTPException(status_code=404, detail="Delivery order not found")
-    if not driver or driver.restaurant_id != restaurant_id or not driver.is_active:
-        raise HTTPException(status_code=404, detail="Driver not found")
-    assignment = order.delivery_assignment
-    if assignment:
-        assignment.driver_id = driver.id
-        assignment.status = "ASSIGNED"
-    else:
-        db.add(DeliveryAssignment(order_id=order.id, driver_id=driver.id))
+    order = delivery.assign_driver_to_order(db, restaurant_id, order_id, payload.driver_id)
     db.commit()
     return db.scalar(order_query().where(Order.id == order.id))
 
@@ -926,17 +897,6 @@ def update_delivery_status(
     user: User = Depends(get_current_user),
 ) -> Order:
     get_restaurant_for_user(db, restaurant_id, user)
-    order = db.scalar(order_query().where(Order.id == order_id))
-    if not order or order.restaurant_id != restaurant_id or not order.delivery_assignment:
-        raise HTTPException(status_code=404, detail="Delivery assignment not found")
-    status = payload.status.upper()
-    if status not in {"ASSIGNED", "ON_THE_WAY", "DELIVERED"}:
-        raise HTTPException(status_code=400, detail="Invalid delivery status")
-    order.delivery_assignment.status = status
-    if status == "ON_THE_WAY":
-        order.status = "DELIVERING"
-    elif status == "DELIVERED":
-        order.status = "DELIVERED"
-    db.add(OrderStatus(order_id=order.id, status=order.status, note=f"Driver status: {status}"))
+    order = delivery.update_delivery_status(db, restaurant_id, order_id, payload.status)
     db.commit()
     return db.scalar(order_query().where(Order.id == order.id))

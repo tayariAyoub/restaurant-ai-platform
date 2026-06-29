@@ -31,6 +31,9 @@ from app.schemas import (
     ChatRequest,
     CategoryUpdate,
     DeliveryAddressCreate,
+    DeliveryAssignmentCreate,
+    DeliveryStatusUpdate,
+    DriverCreate,
     ImageUrlCreate,
     MessageReviewUpdate,
     OrderCreate,
@@ -156,6 +159,30 @@ def users(db: Session) -> tuple[User, User, User]:
 
 def restaurants(db: Session) -> tuple[Restaurant, Restaurant]:
     return db.query(Restaurant).filter_by(slug="tenant-one").one(), db.query(Restaurant).filter_by(slug="tenant-two").one()
+
+
+def assigned_delivery_order(
+    db: Session,
+    restaurant: Restaurant,
+    *,
+    order_status: str = "READY",
+    assignment_status: str = "ASSIGNED",
+) -> tuple[Order, DeliveryDriver]:
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+    order.order_type = "DELIVERY"
+    order.status = order_status
+    driver = DeliveryDriver(restaurant_id=restaurant.id, name="Mina", phone="555")
+    db.add(driver)
+    db.flush()
+    db.add(
+        DeliveryAssignment(
+            order_id=order.id,
+            driver_id=driver.id,
+            status=assignment_status,
+        )
+    )
+    db.commit()
+    return order, driver
 
 
 def test_owner_can_access_only_own_restaurant(db: Session) -> None:
@@ -376,6 +403,177 @@ def test_delivery_assignment_status_follows_order_status_transition(db: Session)
         user=owner_one,
     )
     assert delivered.delivery_assignment.status == "DELIVERED"
+
+
+def test_driver_management_is_restaurant_scoped(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+
+    driver = admin.create_driver(
+        restaurant_one.id,
+        DriverCreate(name="Zara", phone="123"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert driver.restaurant_id == restaurant_one.id
+    assert [driver.name for driver in admin.drivers(restaurant_one.id, db=db, user=owner_one)] == ["Zara"]
+    assert admin.drivers(restaurant_two.id, db=db, user=owner_two) == []
+    with pytest.raises(HTTPException) as error:
+        admin.drivers(restaurant_two.id, db=db, user=owner_one)
+    assert error.value.status_code == 403
+    with pytest.raises(HTTPException) as error:
+        admin.create_driver(
+            restaurant_two.id,
+            DriverCreate(name="Private Driver", phone="222"),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 403
+
+
+def test_assigning_active_driver_creates_and_updates_delivery_assignment(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+    order.order_type = "DELIVERY"
+    db.commit()
+    first_driver = admin.create_driver(
+        restaurant_one.id,
+        DriverCreate(name="Mina", phone="555"),
+        db=db,
+        user=owner_one,
+    )
+    second_driver = admin.create_driver(
+        restaurant_one.id,
+        DriverCreate(name="Omar", phone="777"),
+        db=db,
+        user=owner_one,
+    )
+
+    assigned = admin.assign_driver(
+        restaurant_one.id,
+        order.id,
+        DeliveryAssignmentCreate(driver_id=first_driver.id),
+        db=db,
+        user=owner_one,
+    )
+    assert assigned.id == order.id
+    assignment = db.query(DeliveryAssignment).filter_by(order_id=order.id).one()
+    assignment_id = assignment.id
+    assert assignment.driver_id == first_driver.id
+    assert assignment.status == "ASSIGNED"
+    db.expire_all()
+
+    reassigned = admin.assign_driver(
+        restaurant_one.id,
+        order.id,
+        DeliveryAssignmentCreate(driver_id=second_driver.id),
+        db=db,
+        user=owner_one,
+    )
+    assert reassigned.id == order.id
+    updated_assignment = db.get(DeliveryAssignment, assignment_id)
+    assert updated_assignment.driver_id == second_driver.id
+    assert updated_assignment.status == "ASSIGNED"
+
+
+def test_assigning_wrong_restaurant_or_inactive_driver_returns_driver_not_found(db: Session) -> None:
+    owner_one, owner_two, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+    order.order_type = "DELIVERY"
+    inactive_driver = DeliveryDriver(
+        restaurant_id=restaurant_one.id,
+        name="Inactive Driver",
+        phone="000",
+        is_active=False,
+    )
+    wrong_restaurant_driver = admin.create_driver(
+        restaurant_two.id,
+        DriverCreate(name="Private Driver", phone="222"),
+        db=db,
+        user=owner_two,
+    )
+    db.add(inactive_driver)
+    db.commit()
+
+    for driver_id in [wrong_restaurant_driver.id, inactive_driver.id]:
+        with pytest.raises(HTTPException) as error:
+            admin.assign_driver(
+                restaurant_one.id,
+                order.id,
+                DeliveryAssignmentCreate(driver_id=driver_id),
+                db=db,
+                user=owner_one,
+            )
+        assert error.value.status_code == 404
+        assert error.value.detail == "Driver not found"
+
+
+def test_invalid_delivery_status_is_rejected(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order, _ = assigned_delivery_order(db, restaurant_one)
+
+    with pytest.raises(HTTPException) as error:
+        admin.update_delivery_status(
+            restaurant_one.id,
+            order.id,
+            DeliveryStatusUpdate(status="LOST"),
+            db=db,
+            user=owner_one,
+        )
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Invalid delivery status"
+
+
+def test_delivery_status_updates_order_status_and_history(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order, _ = assigned_delivery_order(db, restaurant_one)
+
+    on_the_way = admin.update_delivery_status(
+        restaurant_one.id,
+        order.id,
+        DeliveryStatusUpdate(status="ON_THE_WAY"),
+        db=db,
+        user=owner_one,
+    )
+    assert on_the_way.status == "DELIVERING"
+    assert on_the_way.delivery_assignment.status == "ON_THE_WAY"
+    assert ("DELIVERING", "Driver status: ON_THE_WAY") in [
+        (status.status, status.note) for status in on_the_way.status_history
+    ]
+    db.expire_all()
+
+    delivered = admin.update_delivery_status(
+        restaurant_one.id,
+        order.id,
+        DeliveryStatusUpdate(status="DELIVERED"),
+        db=db,
+        user=owner_one,
+    )
+    assert delivered.status == "DELIVERED"
+    assert delivered.delivery_assignment.status == "DELIVERED"
+    status_history = db.query(OrderStatus).filter_by(order_id=order.id).all()
+    assert ("DELIVERED", "Driver status: DELIVERED") in [
+        (status.status, status.note) for status in status_history
+    ]
+
+
+def test_deleting_driver_with_active_delivery_is_rejected(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    _, driver = assigned_delivery_order(db, restaurant_one)
+
+    with pytest.raises(HTTPException) as error:
+        admin.delete_driver(restaurant_one.id, driver.id, db=db, user=owner_one)
+
+    assert error.value.status_code == 409
+    assert error.value.detail == "Driver has an active delivery"
+    assert db.get(DeliveryDriver, driver.id) is not None
 
 
 def test_reservations_are_scoped_to_restaurant_owner(db: Session) -> None:
