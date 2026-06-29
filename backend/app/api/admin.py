@@ -63,6 +63,7 @@ from app.schemas import (
 from app.services import admin_chat, admin_console, delivery, faqs as faq_service, guest_activity
 from app.services import loading_video, menu
 from app.services import orders as order_service
+from app.services import restaurant_images
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -332,27 +333,15 @@ async def upload_image(
 ) -> RestaurantImage:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
-    stored = get_storage_service().save_image(
-        restaurant_id,
+    return restaurant_images.upload_image(
+        db,
+        restaurant,
         content,
         file.filename,
         file.content_type,
-    )
-    image = RestaurantImage(
-        restaurant_id=restaurant_id,
         image_type=image_type,
-        url=stored.url,
         alt_text=alt_text,
-        sort_order=len(restaurant.images),
     )
-    if image_type == "logo":
-        restaurant.logo_url = stored.url
-    elif image_type == "hero":
-        restaurant.hero_image = stored.url
-    db.add(image)
-    db.commit()
-    db.refresh(image)
-    return image
 
 
 @router.post("/restaurants/{restaurant_id}/image-url", response_model=ImageOut, status_code=201)
@@ -363,21 +352,14 @@ def add_image_url(
     user: User = Depends(get_current_user),
 ) -> RestaurantImage:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    image = RestaurantImage(
-        restaurant_id=restaurant_id,
+    return restaurant_images.add_image_url(
+        db,
+        restaurant,
         image_type=payload.image_type,
-        url=payload.url.strip(),
-        alt_text=payload.alt_text.strip(),
-        sort_order=payload.sort_order if payload.sort_order is not None else len(restaurant.images),
+        url=payload.url,
+        alt_text=payload.alt_text,
+        sort_order=payload.sort_order,
     )
-    if image.image_type == "logo":
-        restaurant.logo_url = image.url
-    elif image.image_type == "hero":
-        restaurant.hero_image = image.url
-    db.add(image)
-    db.commit()
-    db.refresh(image)
-    return image
 
 
 @router.post("/restaurants/{restaurant_id}/loading-video", response_model=RestaurantOut)
@@ -412,16 +394,7 @@ def delete_image(
     user: User = Depends(get_current_user),
 ) -> None:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    image = db.get(RestaurantImage, image_id)
-    if not image or image.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Image not found")
-    if restaurant.logo_url == image.url:
-        restaurant.logo_url = ""
-    if restaurant.hero_image == image.url:
-        restaurant.hero_image = ""
-    get_storage_service().delete_url(image.url)
-    db.delete(image)
-    db.commit()
+    restaurant_images.delete_image(db, restaurant, image_id)
 
 
 @router.post(
