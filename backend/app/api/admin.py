@@ -2,11 +2,10 @@ import re
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy import delete, func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
-from app.core.security import hash_password
 from app.dependencies import get_current_user, require_super_admin
 from app.models import (
     ContactRequest,
@@ -63,7 +62,7 @@ from app.schemas import (
     UserOut,
 )
 from app.api.public import chat_for_restaurant
-from app.services import delivery, faqs as faq_service, guest_activity, menu
+from app.services import admin_console, delivery, faqs as faq_service, guest_activity, menu
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -111,52 +110,14 @@ def normalize_slug(value: str) -> str:
 def dashboard(
     db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ) -> DashboardStats:
-    restaurant_filter = [] if user.role == "SUPER_ADMIN" else [Restaurant.owner_id == user.id]
-    restaurant_ids = select(Restaurant.id).where(*restaurant_filter)
-    return DashboardStats(
-        restaurants=db.scalar(select(func.count(Restaurant.id)).where(*restaurant_filter)) or 0,
-        owners=db.scalar(select(func.count(User.id)).where(User.role == "RESTAURANT_OWNER"))
-        if user.role == "SUPER_ADMIN"
-        else 1,
-        reservations=db.scalar(
-            select(func.count(ContactRequest.id)).where(
-                ContactRequest.restaurant_id.in_(restaurant_ids)
-            )
-        )
-        or 0,
-        conversations=db.scalar(
-            select(func.count(Conversation.id)).where(
-                Conversation.restaurant_id.in_(restaurant_ids),
-                Conversation.is_test.is_(False),
-            )
-        )
-        or 0,
-        unanswered=db.scalar(
-            select(func.count(Message.id))
-            .join(Conversation)
-            .where(
-                Conversation.restaurant_id.in_(restaurant_ids),
-                Conversation.is_test.is_(False),
-                Message.is_unanswered.is_(True),
-                Message.is_reviewed.is_(False),
-            )
-        )
-        or 0,
-        new_orders=db.scalar(
-            select(func.count(Order.id)).where(
-                Order.restaurant_id.in_(restaurant_ids),
-                Order.status == "NEW",
-            )
-        )
-        or 0,
-    )
+    return admin_console.build_dashboard_stats(db, user)
 
 
 @router.get("/users", response_model=list[UserOut])
 def users(
     db: Session = Depends(get_db), _: User = Depends(require_super_admin)
 ) -> list[User]:
-    return list(db.scalars(select(User).order_by(User.created_at.desc())))
+    return admin_console.list_users(db)
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
@@ -165,17 +126,7 @@ def create_user(
     db: Session = Depends(get_db),
     _: User = Depends(require_super_admin),
 ) -> User:
-    if db.scalar(select(User).where(User.email == payload.email)):
-        raise HTTPException(status_code=409, detail="Email already exists")
-    if payload.role not in {"SUPER_ADMIN", "RESTAURANT_OWNER"}:
-        raise HTTPException(status_code=400, detail="Invalid role")
-    user = User(
-        email=payload.email,
-        name=payload.name,
-        role=payload.role,
-        password_hash=hash_password(payload.password),
-    )
-    db.add(user)
+    user = admin_console.create_user(db, payload.model_dump())
     db.commit()
     db.refresh(user)
     return user
@@ -185,7 +136,7 @@ def create_user(
 def themes(
     db: Session = Depends(get_db), _: User = Depends(get_current_user)
 ) -> list[Theme]:
-    return list(db.scalars(select(Theme).order_by(Theme.id)))
+    return admin_console.list_themes(db)
 
 
 @router.get("/restaurants", response_model=list[RestaurantSummary])
