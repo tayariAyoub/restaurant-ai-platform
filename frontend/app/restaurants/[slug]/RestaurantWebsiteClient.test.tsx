@@ -19,13 +19,14 @@ describe("RestaurantWebsiteClient", () => {
     vi.unstubAllEnvs();
   });
 
-  it("shows the premium loading skeleton while restaurant data is loading", () => {
+  it("shows the premium branded loading state while restaurant data is loading", () => {
     getRestaurantBySlugMock.mockReturnValue(new Promise(() => undefined));
 
     renderWithUser(<RestaurantWebsiteClient slug="bella-napoli" />);
 
     expect(screen.getByLabelText(/loading restaurant/i)).toBeVisible();
-    expect(screen.getByText(/preparing your table/i)).toBeVisible();
+    expect(screen.getByRole("heading", { name: /preparing bella napoli/i })).toBeVisible();
+    expect(screen.getByText(/setting the table/i)).toBeVisible();
   });
 
   it("uses local Bella Napoli fallback in development when the client retry receives 500", async () => {

@@ -1,79 +1,43 @@
-import { ChefHat, Sparkles } from "lucide-react";
+import { ChefHat, Flame, Sparkles } from "lucide-react";
 
 export default function RestaurantPageSkeleton() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f7f3ea] text-stone-900" aria-label="Loading restaurant">
-      <section className="relative flex min-h-[100svh] items-end overflow-hidden bg-[#15110d] text-white">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(9,7,5,.96),rgba(26,20,14,.74)_45%,rgba(44,34,24,.48))]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(255,255,255,.14),transparent_18rem)]" />
-        <div className="absolute inset-x-0 top-0 z-10 mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:py-7">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-full border border-white/20 bg-white/10">
-              <ChefHat size={21} />
-            </div>
-            <div className="space-y-2">
-              <div className="h-4 w-36 rounded-full bg-white/25" />
-              <div className="hidden h-2 w-28 rounded-full bg-white/15 sm:block" />
-            </div>
-          </div>
-          <div className="hidden items-center gap-3 rounded-full border border-white/10 bg-white/10 px-4 py-3 md:flex">
-            <div className="h-3 w-12 rounded-full bg-white/20" />
-            <div className="h-3 w-12 rounded-full bg-white/20" />
-            <div className="h-3 w-14 rounded-full bg-white/20" />
-          </div>
-        </div>
+    <main className="relative grid min-h-screen overflow-hidden bg-[#120c08] text-white" aria-label="Loading restaurant">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(185,72,45,.26),transparent_20rem),radial-gradient(circle_at_78%_18%,rgba(199,154,73,.18),transparent_24rem),linear-gradient(135deg,#070403_0%,#1b100b_48%,#090504_100%)]" />
+      <div className="absolute inset-0 opacity-[.16] [background-image:radial-gradient(circle_at_20%_20%,rgba(255,244,220,.9)_1px,transparent_1px)] [background-size:34px_34px]" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[28rem] w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#c79a49]/20 bg-[radial-gradient(circle,rgba(185,72,45,.30),rgba(45,27,19,.10)_46%,transparent_70%)] blur-sm sm:h-[36rem] sm:w-[36rem]" />
 
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-10 pt-36 sm:px-6 lg:grid-cols-[1.02fr_.98fr] lg:items-end lg:pb-16">
-          <div className="max-w-3xl">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/75">
-              <Sparkles size={13} /> Preparing your table
-            </p>
-            <div className="mt-7 space-y-4">
-              <div className="h-14 w-full max-w-2xl rounded-full bg-white/20 sm:h-20" />
-              <div className="h-14 w-4/5 max-w-xl rounded-full bg-white/15 sm:h-20" />
-            </div>
-            <div className="mt-7 max-w-2xl space-y-3">
-              <div className="h-4 rounded-full bg-white/18" />
-              <div className="h-4 w-10/12 rounded-full bg-white/14" />
-              <div className="h-4 w-7/12 rounded-full bg-white/10" />
-            </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <div className="h-12 w-36 rounded-full bg-white/25" />
-              <div className="h-12 w-32 rounded-full border border-white/15 bg-white/10" />
-            </div>
+      <section className="relative z-10 flex min-h-screen items-center justify-center px-5 py-16 text-center sm:px-6" aria-live="polite">
+        <div className="w-full max-w-xl">
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-white/18 bg-white/[.08] shadow-[0_24px_80px_rgba(185,72,45,.28)] backdrop-blur-xl">
+            <span className="grid h-14 w-14 place-items-center rounded-full border border-[#c79a49]/35 bg-[#1b100b]/80 text-[#f8dfb2]">
+              <ChefHat size={24} />
+            </span>
           </div>
 
-          <div className="rounded-[1.75rem] border border-white/10 bg-white/10 p-3 shadow-2xl backdrop-blur">
-            <div className="aspect-[4/3] rounded-[1.25rem] bg-white/15" />
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="h-20 rounded-2xl bg-white/12" />
-              <div className="h-20 rounded-2xl bg-white/10" />
-              <div className="h-20 rounded-2xl bg-white/12" />
-            </div>
-          </div>
-        </div>
-      </section>
+          <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/62 backdrop-blur">
+            <Sparkles size={13} className="text-[#c79a49]" /> Bella Napoli
+          </p>
 
-      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 lg:grid-cols-[0.7fr_1.3fr]">
-        <div className="space-y-4">
-          <div className="h-3 w-28 rounded-full bg-stone-300" />
-          <div className="h-10 w-64 rounded-full bg-stone-200" />
-          <div className="h-4 w-full rounded-full bg-stone-200" />
-          <div className="h-4 w-4/5 rounded-full bg-stone-200" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
-              <div className="h-32 rounded-2xl bg-stone-100" />
-              <div className="mt-4 h-5 w-3/4 rounded-full bg-stone-200" />
-              <div className="mt-3 h-3 w-full rounded-full bg-stone-100" />
-              <div className="mt-2 h-3 w-2/3 rounded-full bg-stone-100" />
-              <div className="mt-5 flex items-center justify-between">
-                <div className="h-5 w-20 rounded-full bg-stone-200" />
-                <div className="h-10 w-28 rounded-full bg-stone-900/10" />
-              </div>
-            </div>
-          ))}
+          <h1 className="mt-5 font-display text-5xl font-semibold leading-none text-white sm:text-7xl">
+            Preparing Bella Napoli
+          </h1>
+          <p className="mx-auto mt-5 max-w-sm text-base leading-7 text-white/64">
+            Setting the table...
+          </p>
+
+          <div className="mx-auto mt-9 flex max-w-xs items-center justify-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[#c79a49]/45" />
+            <span className="grid h-11 w-11 animate-pulse place-items-center rounded-full border border-[#c79a49]/25 bg-[#2d1b13]/80 text-[#f4d59b] shadow-[0_0_48px_rgba(199,154,73,.22)]">
+              <Flame size={18} />
+            </span>
+            <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[#c79a49]/45" />
+          </div>
+
+          <div className="mx-auto mt-8 h-1 w-40 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-gradient-to-r from-[#b9482d] via-[#c79a49] to-[#f8dfb2]" />
+          </div>
         </div>
       </section>
     </main>
