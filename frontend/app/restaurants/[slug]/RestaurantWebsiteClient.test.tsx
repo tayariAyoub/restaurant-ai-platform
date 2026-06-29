@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import RestaurantWebsiteClient from "./RestaurantWebsiteClient";
@@ -22,11 +22,23 @@ describe("RestaurantWebsiteClient", () => {
   it("shows the premium branded loading state while restaurant data is loading", () => {
     getRestaurantBySlugMock.mockReturnValue(new Promise(() => undefined));
 
-    renderWithUser(<RestaurantWebsiteClient slug="bella-napoli" />);
+    const { container } = renderWithUser(<RestaurantWebsiteClient slug="bella-napoli" />);
 
     expect(screen.getByLabelText(/loading restaurant/i)).toBeVisible();
     expect(screen.getByRole("heading", { name: /preparing bella napoli/i })).toBeVisible();
-    expect(screen.getByText(/setting the table/i)).toBeVisible();
+    expect(screen.getByText(/the oven is warming. setting your table/i)).toBeVisible();
+
+    const video = container.querySelector("video") as HTMLVideoElement;
+    expect(video).toHaveAttribute("src", "/videos/bella-napoli-loading.mp4");
+    expect(video.autoplay).toBe(true);
+    expect(video.muted).toBe(true);
+    expect(video.loop).toBe(true);
+    expect(video.playsInline).toBe(true);
+    expect(video.getAttribute("preload")).toBe("metadata");
+
+    fireEvent.error(video);
+    expect(container.querySelector("video")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /preparing bella napoli/i })).toBeVisible();
   });
 
   it("uses local Bella Napoli fallback in development when the client retry receives 500", async () => {
