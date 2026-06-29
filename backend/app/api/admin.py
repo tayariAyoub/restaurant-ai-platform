@@ -11,7 +11,6 @@ from app.models import (
     ContactRequest,
     Conversation,
     DeliveryDriver,
-    KnowledgeChunk,
     KnowledgeDocument,
     MenuCategory,
     MenuItem,
@@ -60,18 +59,15 @@ from app.schemas import (
     UserCreate,
     UserOut,
 )
-from app.services import admin_chat, admin_console, delivery, faqs as faq_service, guest_activity
+from app.services import admin_chat, admin_console, delivery, documents as document_service
+from app.services import faqs as faq_service, guest_activity
 from app.services import loading_video, menu
 from app.services import orders as order_service
 from app.services import restaurant_images
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
-    chunk_text,
-    create_embeddings,
-    extract_upload_text,
     rebuild_structured_knowledge,
 )
-from app.services.storage import get_storage_service, validate_document_upload
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -408,37 +404,7 @@ async def upload_document(
 ) -> KnowledgeDocument:
     get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
-    validate_document_upload(content, file.filename)
-    try:
-        chunks = chunk_text(extract_upload_text(file, content))
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    if not chunks:
-        raise HTTPException(status_code=400, detail="No readable text found")
-    stored = get_storage_service().save_document(restaurant_id, content, file.filename)
-    document = KnowledgeDocument(
-        restaurant_id=restaurant_id,
-        filename=stored.filename,
-        content_type=file.content_type or "application/octet-stream",
-    )
-    db.add(document)
-    db.flush()
-    embeddings = create_embeddings(chunks)
-    db.add_all(
-        [
-            KnowledgeChunk(
-                document_id=document.id,
-                restaurant_id=restaurant_id,
-                source=stored.filename,
-                content=chunk,
-                embedding=embedding,
-            )
-            for chunk, embedding in zip(chunks, embeddings, strict=True)
-        ]
-    )
-    db.commit()
-    db.refresh(document)
-    return document
+    return document_service.upload_document(db, restaurant_id, file, content)
 
 
 @router.get("/restaurants/{restaurant_id}/documents", response_model=list[DocumentOut])
@@ -448,13 +414,7 @@ def documents(
     user: User = Depends(get_current_user),
 ) -> list[KnowledgeDocument]:
     get_restaurant_for_user(db, restaurant_id, user)
-    return list(
-        db.scalars(
-            select(KnowledgeDocument)
-            .where(KnowledgeDocument.restaurant_id == restaurant_id)
-            .order_by(KnowledgeDocument.created_at.desc())
-        )
-    )
+    return document_service.list_documents(db, restaurant_id)
 
 
 @router.get("/restaurants/{restaurant_id}/faqs", response_model=list[RestaurantFaqOut])
