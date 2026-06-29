@@ -26,12 +26,13 @@ from app.models import (
     RestaurantImage,
     User,
 )
-from app.services import analytics, chat, knowledge
+from app.services import admin_chat, analytics, chat, knowledge
 from app.services import faqs as faq_service
 from app.services import menu as menu_service
 from app.schemas import (
     CategoryCreate,
     ChatRequest,
+    ChatResponse,
     CategoryUpdate,
     DeliveryAddressCreate,
     DeliveryAssignmentCreate,
@@ -1320,3 +1321,75 @@ def test_admin_ai_test_conversations_are_separate_from_public_customer_conversat
     all_conversations = admin.conversations(restaurant_one.id, include_test=True, db=db, user=owner_one)
     assert len(all_conversations) == 2
     assert any(conversation.is_test for conversation in all_conversations)
+
+
+def test_admin_ai_test_route_shows_setup_guidance_when_key_is_missing(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    monkeypatch.setattr(chat.settings, "openai_api_key", "")
+
+    response = admin.test_ai_response(
+        restaurant_one.id,
+        ChatRequest(message="Do you deliver tonight?"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert "Set OPENAI_API_KEY" in response.answer
+    assert response.unanswered is True
+    assert response.sources == []
+
+
+def test_admin_chat_service_preserves_test_chat_flag(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    flags: list[bool] = []
+
+    def fake_chat_for_restaurant(
+        restaurant: Restaurant,
+        payload: ChatRequest,
+        session: Session,
+        is_test: bool = False,
+    ) -> ChatResponse:
+        assert restaurant.id == restaurant_one.id
+        assert payload.message == "Run a test"
+        assert session is db
+        flags.append(is_test)
+        return ChatResponse(answer="Test response", conversation_id="test-id")
+
+    monkeypatch.setattr(admin_chat, "chat_for_restaurant", fake_chat_for_restaurant)
+
+    response = admin_chat.run_test_chat(
+        db, restaurant_one, ChatRequest(message="Run a test")
+    )
+
+    assert response.answer == "Test response"
+    assert flags == [True]
+
+
+def test_admin_ai_test_wrong_restaurant_access_stays_in_route_layer(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner_one, _, _ = users(db)
+    _, restaurant_two = restaurants(db)
+
+    def fail_if_called(
+        _: Session, __: Restaurant, ___: ChatRequest
+    ) -> ChatResponse:
+        raise AssertionError("admin chat service should not be called")
+
+    monkeypatch.setattr(admin_chat, "run_test_chat", fail_if_called)
+
+    with pytest.raises(HTTPException) as error:
+        admin.test_ai_response(
+            restaurant_two.id,
+            ChatRequest(message="Can I access this?"),
+            db=db,
+            user=owner_one,
+        )
+
+    assert error.value.status_code == 403
+    assert error.value.detail == "You cannot access this restaurant"

@@ -60,8 +60,7 @@ from app.schemas import (
     UserCreate,
     UserOut,
 )
-from app.api.public import chat_for_restaurant
-from app.services import admin_console, delivery, faqs as faq_service, guest_activity, menu
+from app.services import admin_chat, admin_console, delivery, faqs as faq_service, guest_activity, menu
 from app.services import orders as order_service
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
@@ -609,7 +608,7 @@ def test_ai_response(
     user: User = Depends(get_current_user),
 ) -> ChatResponse:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    return chat_for_restaurant(restaurant, payload, db, is_test=True)
+    return admin_chat.run_test_chat(db, restaurant, payload)
 
 
 @router.get("/restaurants/{restaurant_id}/conversations", response_model=list[ConversationOut])
