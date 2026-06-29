@@ -63,7 +63,7 @@ from app.schemas import (
     UserOut,
 )
 from app.api.public import chat_for_restaurant
-from app.services import delivery, guest_activity
+from app.services import delivery, guest_activity, menu
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -291,8 +291,7 @@ def add_category(
     user: User = Depends(get_current_user),
 ) -> MenuCategory:
     get_restaurant_for_user(db, restaurant_id, user)
-    category = MenuCategory(restaurant_id=restaurant_id, **payload.model_dump())
-    db.add(category)
+    category = menu.create_category(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(category)
     return category
@@ -309,14 +308,10 @@ def update_category(
     user: User = Depends(get_current_user),
 ) -> MenuCategory:
     get_restaurant_for_user(db, restaurant_id, user)
-    category = db.get(MenuCategory, category_id)
-    if not category or category.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Category not found")
-    for key, value in payload.model_dump().items():
-        setattr(category, key, value)
+    category = menu.update_category(db, restaurant_id, category_id, payload.model_dump())
     db.commit()
     db.refresh(category)
-    rebuild_structured_knowledge(db, restaurant_id)
+    menu.rebuild_menu_knowledge(db, restaurant_id)
     return category
 
 
@@ -328,12 +323,9 @@ def delete_category(
     user: User = Depends(get_current_user),
 ) -> None:
     get_restaurant_for_user(db, restaurant_id, user)
-    category = db.get(MenuCategory, category_id)
-    if not category or category.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Category not found")
-    db.delete(category)
+    menu.delete_category(db, restaurant_id, category_id)
     db.commit()
-    rebuild_structured_knowledge(db, restaurant_id)
+    menu.rebuild_menu_knowledge(db, restaurant_id)
 
 
 @router.post(
@@ -346,14 +338,10 @@ def add_menu_item(
     user: User = Depends(get_current_user),
 ) -> MenuItem:
     get_restaurant_for_user(db, restaurant_id, user)
-    category = db.get(MenuCategory, payload.category_id)
-    if not category or category.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Category not found")
-    item = MenuItem(**payload.model_dump())
-    db.add(item)
+    item = menu.create_menu_item(db, restaurant_id, payload.model_dump())
     db.commit()
     db.refresh(item)
-    rebuild_structured_knowledge(db, restaurant_id)
+    menu.rebuild_menu_knowledge(db, restaurant_id)
     return item
 
 
@@ -368,15 +356,10 @@ def update_menu_item(
     user: User = Depends(get_current_user),
 ) -> MenuItem:
     get_restaurant_for_user(db, restaurant_id, user)
-    item = db.get(MenuItem, item_id)
-    category = db.get(MenuCategory, payload.category_id)
-    if not item or not category or category.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Menu item not found")
-    for key, value in payload.model_dump().items():
-        setattr(item, key, value)
+    item = menu.update_menu_item(db, restaurant_id, item_id, payload.model_dump())
     db.commit()
     db.refresh(item)
-    rebuild_structured_knowledge(db, restaurant_id)
+    menu.rebuild_menu_knowledge(db, restaurant_id)
     return item
 
 
@@ -388,16 +371,9 @@ def delete_menu_item(
     user: User = Depends(get_current_user),
 ) -> None:
     get_restaurant_for_user(db, restaurant_id, user)
-    item = db.scalar(
-        select(MenuItem)
-        .join(MenuCategory)
-        .where(MenuItem.id == item_id, MenuCategory.restaurant_id == restaurant_id)
-    )
-    if not item:
-        raise HTTPException(status_code=404, detail="Menu item not found")
-    db.delete(item)
+    menu.delete_menu_item(db, restaurant_id, item_id)
     db.commit()
-    rebuild_structured_knowledge(db, restaurant_id)
+    menu.rebuild_menu_knowledge(db, restaurant_id)
 
 
 @router.post("/restaurants/{restaurant_id}/images", response_model=ImageOut, status_code=201)

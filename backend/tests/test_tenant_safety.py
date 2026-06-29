@@ -27,7 +27,9 @@ from app.models import (
     User,
 )
 from app.services import analytics, chat, knowledge
+from app.services import menu as menu_service
 from app.schemas import (
+    CategoryCreate,
     ChatRequest,
     CategoryUpdate,
     DeliveryAddressCreate,
@@ -35,6 +37,8 @@ from app.schemas import (
     DeliveryStatusUpdate,
     DriverCreate,
     ImageUrlCreate,
+    MenuItemCreate,
+    MenuItemUpdate,
     MessageReviewUpdate,
     OrderCreate,
     OrderItemCreate,
@@ -273,11 +277,28 @@ def test_image_url_creation_is_restaurant_scoped(db: Session) -> None:
     ).url == "https://cdn.example.com/hero.jpg"
 
 
-def test_category_update_is_restaurant_scoped(db: Session) -> None:
+def test_category_management_is_restaurant_scoped(db: Session) -> None:
     owner_one, owner_two, _ = users(db)
     restaurant_one, restaurant_two = restaurants(db)
     category_one = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
     category_two = db.query(MenuCategory).filter_by(restaurant_id=restaurant_two.id).one()
+
+    created = admin.add_category(
+        restaurant_one.id,
+        CategoryCreate(name="Desserts", description="After dinner", sort_order=3),
+        db=db,
+        user=owner_one,
+    )
+
+    assert created.restaurant_id == restaurant_one.id
+    with pytest.raises(HTTPException) as error:
+        admin.add_category(
+            restaurant_two.id,
+            CategoryCreate(name="Private", description="", sort_order=0),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 403
 
     updated = admin.update_category(
         restaurant_one.id,
@@ -300,6 +321,172 @@ def test_category_update_is_restaurant_scoped(db: Session) -> None:
         )
     assert error.value.status_code == 403
     assert db.get(MenuCategory, category_two.id).name == "Mains"
+    with pytest.raises(HTTPException) as error:
+        admin.update_category(
+            restaurant_one.id,
+            category_two.id,
+            CategoryUpdate(name="Wrong Tenant", description="", sort_order=1),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 404
+    assert error.value.detail == "Category not found"
+
+    admin.delete_category(restaurant_one.id, created.id, db=db, user=owner_one)
+    assert db.get(MenuCategory, created.id) is None
+    with pytest.raises(HTTPException) as error:
+        admin.delete_category(restaurant_one.id, category_two.id, db=db, user=owner_one)
+    assert error.value.status_code == 404
+    assert error.value.detail == "Category not found"
+
+
+def test_menu_item_create_rejects_category_from_another_restaurant(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    category_two = db.query(MenuCategory).filter_by(restaurant_id=restaurant_two.id).one()
+
+    with pytest.raises(HTTPException) as error:
+        admin.add_menu_item(
+            restaurant_one.id,
+            MenuItemCreate(
+                category_id=category_two.id,
+                name="Private Pasta",
+                description="Wrong restaurant",
+                price=Decimal("16.00"),
+            ),
+            db=db,
+            user=owner_one,
+        )
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "Category not found"
+    assert db.query(MenuItem).filter_by(name="Private Pasta").count() == 0
+
+
+def test_menu_item_update_and_delete_are_restaurant_scoped(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    category_one = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
+    item_one = db.query(MenuItem).filter_by(category_id=category_one.id).one()
+    item_two = (
+        db.query(MenuItem)
+        .join(MenuCategory)
+        .filter(MenuCategory.restaurant_id == restaurant_two.id)
+        .one()
+    )
+
+    with pytest.raises(HTTPException) as error:
+        admin.update_menu_item(
+            restaurant_one.id,
+            item_two.id,
+            MenuItemUpdate(
+                category_id=category_one.id,
+                name="Moved Pasta",
+                description="Should not cross tenants",
+                price=Decimal("18.00"),
+            ),
+            db=db,
+            user=owner_one,
+        )
+    assert error.value.status_code == 404
+    assert error.value.detail == "Menu item not found"
+    assert db.get(MenuItem, item_two.id).name == "Tenant Two Pasta"
+
+    updated = admin.update_menu_item(
+        restaurant_one.id,
+        item_one.id,
+        MenuItemUpdate(
+            category_id=category_one.id,
+            name="Tenant One Ravioli",
+            description="Spinach and ricotta",
+            price=Decimal("13.00"),
+        ),
+        db=db,
+        user=owner_one,
+    )
+    assert updated.name == "Tenant One Ravioli"
+    assert updated.category_id == category_one.id
+
+    with pytest.raises(HTTPException) as error:
+        admin.delete_menu_item(restaurant_one.id, item_two.id, db=db, user=owner_one)
+    assert error.value.status_code == 404
+    assert error.value.detail == "Menu item not found"
+
+    admin.delete_menu_item(restaurant_one.id, item_one.id, db=db, user=owner_one)
+    assert db.get(MenuItem, item_one.id) is None
+
+
+def test_menu_item_update_preserves_404_for_wrong_restaurant_category(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    category_one = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
+    category_two = db.query(MenuCategory).filter_by(restaurant_id=restaurant_two.id).one()
+    item_one = db.query(MenuItem).filter_by(category_id=category_one.id).one()
+
+    with pytest.raises(HTTPException) as error:
+        admin.update_menu_item(
+            restaurant_one.id,
+            item_one.id,
+            MenuItemUpdate(
+                category_id=category_two.id,
+                name="Tenant One Pasta",
+                description="Wrong category",
+                price=Decimal("12.00"),
+            ),
+            db=db,
+            user=owner_one,
+        )
+
+    assert error.value.status_code == 404
+    assert error.value.detail == "Menu item not found"
+    assert db.get(MenuItem, item_one.id).category_id == category_one.id
+
+
+def test_menu_mutations_rebuild_structured_knowledge_where_expected(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    category = db.query(MenuCategory).filter_by(restaurant_id=restaurant_one.id).one()
+    calls: list[int] = []
+
+    def fake_rebuild(_: Session, restaurant_id: int) -> None:
+        calls.append(restaurant_id)
+
+    monkeypatch.setattr(menu_service, "rebuild_menu_knowledge", fake_rebuild)
+
+    created_category = admin.add_category(
+        restaurant_one.id,
+        CategoryCreate(name="Rebuild Check", description="", sort_order=9),
+        db=db,
+        user=owner_one,
+    )
+    assert calls == []
+
+    admin.update_category(
+        restaurant_one.id,
+        created_category.id,
+        CategoryUpdate(name="Rebuild Updated", description="", sort_order=9),
+        db=db,
+        user=owner_one,
+    )
+    item = admin.add_menu_item(
+        restaurant_one.id,
+        MenuItemCreate(category_id=category.id, name="Rebuild Pasta", price=Decimal("15.00")),
+        db=db,
+        user=owner_one,
+    )
+    admin.update_menu_item(
+        restaurant_one.id,
+        item.id,
+        MenuItemUpdate(category_id=category.id, name="Rebuild Ravioli", price=Decimal("16.00")),
+        db=db,
+        user=owner_one,
+    )
+    admin.delete_menu_item(restaurant_one.id, item.id, db=db, user=owner_one)
+    admin.delete_category(restaurant_one.id, created_category.id, db=db, user=owner_one)
+
+    assert calls == [restaurant_one.id] * 5
 
 
 def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:
