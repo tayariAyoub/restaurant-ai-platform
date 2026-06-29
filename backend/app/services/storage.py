@@ -19,6 +19,12 @@ DEFAULT_IMAGE_EXTENSION = {
     "image/webp": ".webp",
     "image/gif": ".gif",
 }
+ALLOWED_VIDEO_TYPES = {
+    "video/mp4": {".mp4"},
+}
+DEFAULT_VIDEO_EXTENSION = {
+    "video/mp4": ".mp4",
+}
 DANGEROUS_EXTENSIONS = {
     ".bat",
     ".cmd",
@@ -37,6 +43,7 @@ DANGEROUS_EXTENSIONS = {
     ".svg",
 }
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
+MAX_VIDEO_BYTES = 5 * 1024 * 1024
 MAX_DOCUMENT_BYTES = 10 * 1024 * 1024
 
 
@@ -89,6 +96,10 @@ class StorageService:
         filename = validate_document_upload(content, original_filename)
         return self.provider.save(restaurant_id, content, filename, folder="documents")
 
+    def save_video(self, restaurant_id: int, content: bytes, original_filename: str | None, content_type: str | None) -> StoredFile:
+        filename = validate_video_upload(content, original_filename, content_type)
+        return self.provider.save(restaurant_id, content, filename, folder="videos")
+
     def delete_url(self, url: str) -> None:
         self.provider.delete_url(url)
 
@@ -112,6 +123,22 @@ def validate_image_upload(content: bytes, original_filename: str | None, content
     if suffix and suffix not in ALLOWED_IMAGE_TYPES[content_type]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image extension does not match the uploaded file type")
     suffix = suffix or DEFAULT_IMAGE_EXTENSION[content_type]
+    return f"{uuid.uuid4().hex}{suffix}"
+
+
+def validate_video_upload(content: bytes, original_filename: str | None, content_type: str | None) -> str:
+    if content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Upload an MP4 loading video")
+    if len(content) > MAX_VIDEO_BYTES:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Video is larger than 5 MB")
+
+    raw_name = Path(original_filename or "").name
+    suffix = Path(raw_name).suffix.lower()
+    if suffix in DANGEROUS_EXTENSIONS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File extension is not allowed")
+    if suffix and suffix not in ALLOWED_VIDEO_TYPES[content_type]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Video extension does not match the uploaded file type")
+    suffix = suffix or DEFAULT_VIDEO_EXTENSION[content_type]
     return f"{uuid.uuid4().hex}{suffix}"
 
 

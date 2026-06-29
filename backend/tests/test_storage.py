@@ -76,6 +76,56 @@ def test_image_upload_rejects_oversized_file(local_storage) -> None:
     assert error.value.status_code == 413
 
 
+def test_video_upload_stores_safe_url_and_file(local_storage) -> None:
+    stored = local_storage.save_video(
+        restaurant_id=7,
+        content=b"fake-mp4",
+        original_filename="loading screen.mp4",
+        content_type="video/mp4",
+    )
+
+    assert stored.url.startswith("/uploads/7/videos/")
+    assert stored.url.endswith(".mp4")
+    assert Path(stored.path).exists()
+    assert Path(stored.path).read_bytes() == b"fake-mp4"
+
+
+def test_video_upload_rejects_invalid_content_type(local_storage) -> None:
+    with pytest.raises(HTTPException) as error:
+        local_storage.save_video(
+            restaurant_id=7,
+            content=b"not-video",
+            original_filename="loading.mp4",
+            content_type="video/quicktime",
+        )
+
+    assert error.value.status_code == 400
+
+
+def test_video_upload_rejects_dangerous_extension(local_storage) -> None:
+    with pytest.raises(HTTPException) as error:
+        local_storage.save_video(
+            restaurant_id=7,
+            content=b"not-safe",
+            original_filename="loading.php",
+            content_type="video/mp4",
+        )
+
+    assert error.value.status_code == 400
+
+
+def test_video_upload_rejects_oversized_file(local_storage) -> None:
+    with pytest.raises(HTTPException) as error:
+        local_storage.save_video(
+            restaurant_id=7,
+            content=b"x" * (5 * 1024 * 1024 + 1),
+            original_filename="loading.mp4",
+            content_type="video/mp4",
+        )
+
+    assert error.value.status_code == 413
+
+
 def test_document_upload_uses_safe_unique_filename(local_storage) -> None:
     stored = local_storage.save_document(
         restaurant_id=7,

@@ -139,6 +139,22 @@ describe("visual restaurant builder", () => {
         const payload = JSON.parse(String(options.body));
         return Promise.resolve({ id: 99, restaurant_id: 1, sort_order: 2, created_at: "2026-01-01T00:00:00Z", ...payload });
       }
+      if (path === "/admin/restaurants/1/loading-video" && options?.method === "POST") {
+        return Promise.resolve({
+          ...bellaNapoli,
+          loading_video_url: "/uploads/1/videos/loading.mp4",
+          loading_video_filename: "loading.mp4",
+          loading_video_size_bytes: 11,
+        });
+      }
+      if (path === "/admin/restaurants/1/loading-video" && options?.method === "DELETE") {
+        return Promise.resolve({
+          ...bellaNapoli,
+          loading_video_url: "",
+          loading_video_filename: "",
+          loading_video_size_bytes: 0,
+        });
+      }
       if (path.startsWith("/admin/restaurants/1/images/") && options?.method === "DELETE") return Promise.resolve(undefined);
       return Promise.resolve({});
     });
@@ -276,6 +292,61 @@ describe("visual restaurant builder", () => {
     await user.click(screen.getByRole("button", { name: /clear hero image url/i }));
     expect(screen.getByLabelText(/hero image url/i)).toHaveValue("");
     expect(screen.getByText("Unsaved")).toBeVisible();
+  });
+
+  it("uploads, previews, and removes the loading video from the brand section", async () => {
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    expect(await screen.findByDisplayValue(bellaNapoli.name)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /brand/i }));
+
+    expect(screen.getByText("Loading Experience")).toBeVisible();
+    expect(screen.getByText(/premium static loader will be used/i)).toBeVisible();
+
+    const file = new File(["video-bytes"], "loading.mp4", { type: "video/mp4" });
+    await user.upload(screen.getByLabelText(/upload loading video/i), file);
+
+    await waitFor(() => {
+      expect(adminRequestMock).toHaveBeenCalledWith(
+        "/admin/restaurants/1/loading-video",
+        "token-123",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.any(FormData),
+        }),
+      );
+    });
+    expect(await screen.findByLabelText(/loading video preview/i)).toHaveAttribute("src", "/uploads/1/videos/loading.mp4");
+    expect(screen.getByText("loading.mp4")).toBeVisible();
+    expect(screen.getByText("11 B")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: /remove/i }));
+
+    await waitFor(() => {
+      expect(adminRequestMock).toHaveBeenCalledWith(
+        "/admin/restaurants/1/loading-video",
+        "token-123",
+        expect.objectContaining({ method: "DELETE" }),
+      );
+    });
+    expect(await screen.findByText(/premium static loader will be used/i)).toBeVisible();
+  });
+
+  it("rejects invalid loading video files before upload", async () => {
+    const { user } = renderWithUser(<VisualBuilder restaurantId={1} />);
+
+    expect(await screen.findByDisplayValue(bellaNapoli.name)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /brand/i }));
+
+    const invalidFile = new File(["not-video"], "loading.mov", { type: "video/mp4" });
+    await user.upload(screen.getByLabelText(/upload loading video/i), invalidFile);
+
+    expect(await screen.findByText(/upload an mp4 loading video/i)).toBeVisible();
+    expect(adminRequestMock).not.toHaveBeenCalledWith(
+      "/admin/restaurants/1/loading-video",
+      "token-123",
+      expect.anything(),
+    );
   });
 
   it("warns before leaving with unsaved changes", async () => {

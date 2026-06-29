@@ -3,18 +3,20 @@
 import { ChefHat, Flame, Sparkles } from "lucide-react";
 import { useState } from "react";
 
-export const DEFAULT_RESTAURANT_LOADING_VIDEO_SRC = "/videos/bella-napoli-loading.mp4";
-
 type RestaurantPageSkeletonProps = {
   loadingVideoSrc?: string | null;
+  restaurantName?: string;
 };
 
 export default function RestaurantPageSkeleton({
-  loadingVideoSrc = DEFAULT_RESTAURANT_LOADING_VIDEO_SRC,
+  loadingVideoSrc = null,
+  restaurantName,
 }: RestaurantPageSkeletonProps = {}) {
   const [videoReady, setVideoReady] = useState(false);
   const [videoUnavailable, setVideoUnavailable] = useState(false);
   const shouldRenderVideo = Boolean(loadingVideoSrc) && !videoUnavailable;
+  const brandLabel = restaurantName || "Restaurant experience";
+  const heading = restaurantName ? `Preparing ${restaurantName}` : "Preparing your table";
 
   return (
     <main className="relative grid min-h-screen overflow-hidden bg-[#120c08] text-white" aria-label="Loading restaurant">
@@ -50,11 +52,11 @@ export default function RestaurantPageSkeleton({
           </div>
 
           <p className="mt-8 inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[.07] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-white/62 backdrop-blur">
-            <Sparkles size={13} className="text-[#c79a49]" /> Bella Napoli
+            <Sparkles size={13} className="text-[#c79a49]" /> {brandLabel}
           </p>
 
           <h1 className="mt-5 font-display text-5xl font-semibold leading-none text-white sm:text-7xl">
-            Preparing Bella Napoli
+            {heading}
           </h1>
           <p className="mx-auto mt-5 max-w-sm text-base leading-7 text-white/64">
             The oven is warming. Setting your table...

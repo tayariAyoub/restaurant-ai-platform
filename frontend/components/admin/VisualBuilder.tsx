@@ -21,10 +21,12 @@ import {
   Store,
   Trash2,
   UtensilsCrossed,
+  Upload,
+  Video,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, type MouseEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 
 import AdminShell from "@/components/admin/AdminShell";
 import { adminRequest } from "@/lib/api";
@@ -58,6 +60,9 @@ type BuilderDraft = {
   opening_hours: string;
   logo_url: string;
   hero_image: string;
+  loading_video_url: string;
+  loading_video_filename: string;
+  loading_video_size_bytes: number;
   reservation_url: string;
   primary_color: string;
   secondary_color: string;
@@ -132,6 +137,9 @@ const blankDraft: BuilderDraft = {
   }),
   logo_url: "",
   hero_image: "",
+  loading_video_url: "",
+  loading_video_filename: "",
+  loading_video_size_bytes: 0,
   reservation_url: "",
   primary_color: "#c6a15b",
   secondary_color: "#2c2925",
@@ -376,6 +384,89 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
     }
   }
 
+  async function uploadLoadingVideo(file: File) {
+    if (!draft.id) {
+      setToast({ type: "error", message: "Save the restaurant before uploading a loading video." });
+      return;
+    }
+    if (file.type !== "video/mp4" || !file.name.toLowerCase().endsWith(".mp4")) {
+      setToast({ type: "error", message: "Upload an MP4 loading video." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setToast({ type: "error", message: "Loading video must be 5 MB or smaller." });
+      return;
+    }
+
+    const hadUnsavedChanges = serializeDraft(draft) !== savedSnapshot;
+    setSaving(true);
+    setToast(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const token = getToken();
+      const updated = await adminRequest<Restaurant>(`/admin/restaurants/${draft.id}/loading-video`, token, {
+        method: "POST",
+        body: form,
+      });
+      const nextDraft = {
+        ...draft,
+        loading_video_url: updated.loading_video_url,
+        loading_video_filename: updated.loading_video_filename,
+        loading_video_size_bytes: updated.loading_video_size_bytes,
+      };
+      setDraft((current) => ({
+        ...current,
+        loading_video_url: updated.loading_video_url,
+        loading_video_filename: updated.loading_video_filename,
+        loading_video_size_bytes: updated.loading_video_size_bytes,
+      }));
+      if (!hadUnsavedChanges) setSavedSnapshot(serializeDraft(nextDraft));
+      setToast({ type: "success", message: "Loading video updated." });
+    } catch (videoError) {
+      setToast({
+        type: "error",
+        message: videoError instanceof Error ? videoError.message : "Could not update loading video.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeLoadingVideo() {
+    if (!draft.id) return;
+    const hadUnsavedChanges = serializeDraft(draft) !== savedSnapshot;
+    setSaving(true);
+    setToast(null);
+    try {
+      const token = getToken();
+      const updated = await adminRequest<Restaurant>(`/admin/restaurants/${draft.id}/loading-video`, token, {
+        method: "DELETE",
+      });
+      const nextDraft = {
+        ...draft,
+        loading_video_url: updated.loading_video_url,
+        loading_video_filename: updated.loading_video_filename,
+        loading_video_size_bytes: updated.loading_video_size_bytes,
+      };
+      setDraft((current) => ({
+        ...current,
+        loading_video_url: updated.loading_video_url,
+        loading_video_filename: updated.loading_video_filename,
+        loading_video_size_bytes: updated.loading_video_size_bytes,
+      }));
+      if (!hadUnsavedChanges) setSavedSnapshot(serializeDraft(nextDraft));
+      setToast({ type: "success", message: "Loading video removed. The static premium loader will be used." });
+    } catch (videoError) {
+      setToast({
+        type: "error",
+        message: videoError instanceof Error ? videoError.message : "Could not remove loading video.",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <AdminShell>
@@ -505,6 +596,8 @@ export default function VisualBuilder({ restaurantId }: { restaurantId?: number 
                 onSectionChange={setSection}
                 onAddGalleryImage={addGalleryImage}
                 onClearGalleryImage={clearGalleryImage}
+                onUploadLoadingVideo={uploadLoadingVideo}
+                onRemoveLoadingVideo={removeLoadingVideo}
                 saving={saving}
               />
               <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-5">
@@ -754,6 +847,8 @@ function BuilderForm({
   onSectionChange,
   onAddGalleryImage,
   onClearGalleryImage,
+  onUploadLoadingVideo,
+  onRemoveLoadingVideo,
   saving,
 }: {
   section: BuilderSection;
@@ -769,6 +864,8 @@ function BuilderForm({
   onSectionChange: (section: BuilderSection) => void;
   onAddGalleryImage: (url: string, altText: string) => Promise<void>;
   onClearGalleryImage: (imageId: number) => Promise<void>;
+  onUploadLoadingVideo: (file: File) => Promise<void>;
+  onRemoveLoadingVideo: () => Promise<void>;
   saving: boolean;
 }) {
   if (section === "basics") {
@@ -853,6 +950,12 @@ function BuilderForm({
             saving={saving}
             onAddGalleryImage={onAddGalleryImage}
             onClearGalleryImage={onClearGalleryImage}
+          />
+          <LoadingVideoCard
+            draft={draft}
+            saving={saving}
+            onUploadLoadingVideo={onUploadLoadingVideo}
+            onRemoveLoadingVideo={onRemoveLoadingVideo}
           />
         </div>
       </div>
@@ -1173,6 +1276,138 @@ function GalleryImageCard({
   );
 }
 
+function LoadingVideoCard({
+  draft,
+  saving,
+  onUploadLoadingVideo,
+  onRemoveLoadingVideo,
+}: {
+  draft: BuilderDraft;
+  saving: boolean;
+  onUploadLoadingVideo: (file: File) => Promise<void>;
+  onRemoveLoadingVideo: () => Promise<void>;
+}) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoBroken, setVideoBroken] = useState(false);
+  const inputId = "loading-video-upload";
+  const displayName = selectedFile?.name || draft.loading_video_filename || filenameFromUrl(draft.loading_video_url);
+  const displaySize = selectedFile
+    ? formatBytes(selectedFile.size)
+    : draft.loading_video_size_bytes > 0
+      ? formatBytes(draft.loading_video_size_bytes)
+      : "No file uploaded";
+
+  useEffect(() => {
+    setVideoBroken(false);
+  }, [draft.loading_video_url]);
+
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    try {
+      await onUploadLoadingVideo(file);
+    } finally {
+      setSelectedFile(null);
+      input.value = "";
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="flex items-center gap-2 font-semibold">
+            <Video size={17} className="text-slate-500" /> Loading Experience
+          </p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            Optional MP4 shown while the public restaurant website prepares. If it is missing or cannot load, guests see the premium static loader.
+          </p>
+        </div>
+        {draft.loading_video_url && (
+          <button
+            type="button"
+            onClick={onRemoveLoadingVideo}
+            disabled={saving}
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700 disabled:opacity-45"
+          >
+            <Trash2 size={15} /> Remove
+          </button>
+        )}
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(16rem,.7fr)]">
+        <div className="overflow-hidden rounded-2xl border border-slate-100 bg-slate-950">
+          {draft.loading_video_url && !videoBroken ? (
+            <video
+              src={draft.loading_video_url}
+              controls
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              onError={() => setVideoBroken(true)}
+              className="aspect-video w-full bg-slate-950 object-cover"
+              aria-label="Loading video preview"
+            />
+          ) : (
+            <div className="grid aspect-video place-items-center bg-[radial-gradient(circle_at_30%_20%,rgba(198,161,91,.22),transparent_18rem),linear-gradient(135deg,#120c08,#050403)] p-6 text-center text-white">
+              <div>
+                <span className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-white/15 bg-white/10 text-[#f7d99b]">
+                  <Video size={20} />
+                </span>
+                <p className="mt-4 text-sm font-semibold">{videoBroken ? "Video preview unavailable" : "Premium static loader will be used"}</p>
+                <p className="mt-1 text-xs leading-5 text-white/55">
+                  Upload a short MP4 to make the loading screen cinematic.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <dl className="grid gap-3 text-sm">
+            <div>
+              <dt className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Current filename</dt>
+              <dd className="mt-1 break-all font-semibold text-slate-700">{displayName || "No loading video"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">File size</dt>
+              <dd className="mt-1 font-semibold text-slate-700">{displaySize}</dd>
+            </div>
+          </dl>
+
+          <label
+            htmlFor={inputId}
+            className={`mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm ${
+              saving || !draft.id ? "cursor-not-allowed opacity-45" : "cursor-pointer"
+            }`}
+          >
+            {saving && selectedFile ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+            {draft.loading_video_url ? "Replace video" : "Upload MP4"}
+          </label>
+          <input
+            id={inputId}
+            type="file"
+            accept="video/mp4,.mp4"
+            disabled={saving || !draft.id}
+            onChange={handleFileChange}
+            className="sr-only"
+            aria-label="Upload loading video"
+          />
+          {!draft.id && <p className="mt-2 text-xs text-slate-500">Save the restaurant before uploading a loading video.</p>}
+
+          <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-5 text-slate-500">
+            <p className="font-semibold text-slate-700">Recommended format</p>
+            <p>MP4 (H.264), max 5 MB, 5-10 seconds, landscape 16:9, designed to loop muted.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ImagePreview({
   src,
   broken,
@@ -1453,6 +1688,9 @@ function restaurantFromDraft(draft: BuilderDraft, selectedTheme?: Theme): Restau
     opening_hours: draft.opening_hours,
     logo_url: draft.logo_url,
     hero_image: draft.hero_image,
+    loading_video_url: draft.loading_video_url,
+    loading_video_filename: draft.loading_video_filename,
+    loading_video_size_bytes: draft.loading_video_size_bytes,
     reservation_url: draft.reservation_url,
     primary_color: draft.primary_color,
     secondary_color: draft.secondary_color,
@@ -1508,6 +1746,9 @@ function draftFromRestaurant(restaurant: Restaurant): BuilderDraft {
     opening_hours: restaurant.opening_hours || "{}",
     logo_url: restaurant.logo_url || "",
     hero_image: restaurant.hero_image || "",
+    loading_video_url: restaurant.loading_video_url || "",
+    loading_video_filename: restaurant.loading_video_filename || "",
+    loading_video_size_bytes: restaurant.loading_video_size_bytes || 0,
     reservation_url: restaurant.reservation_url || "",
     primary_color: restaurant.primary_color || "#c6a15b",
     secondary_color: restaurant.secondary_color || "#2c2925",
@@ -1558,6 +1799,9 @@ function payloadFromDraft(draft: BuilderDraft) {
     opening_hours: draft.opening_hours,
     logo_url: draft.logo_url,
     hero_image: draft.hero_image,
+    loading_video_url: draft.loading_video_url,
+    loading_video_filename: draft.loading_video_filename,
+    loading_video_size_bytes: draft.loading_video_size_bytes,
     reservation_url: draft.reservation_url,
     primary_color: draft.primary_color,
     secondary_color: draft.secondary_color,
@@ -1617,6 +1861,24 @@ function slugify(value: string) {
 
 function safeColor(value: string) {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : "#c6a15b";
+}
+
+function filenameFromUrl(value: string) {
+  if (!value) return "";
+  const name = value.split("?")[0].split("#")[0].split("/").pop() || "";
+  try {
+    return decodeURIComponent(name);
+  } catch {
+    return name;
+  }
+}
+
+function formatBytes(value: number) {
+  if (!Number.isFinite(value) || value <= 0) return "0 B";
+  if (value < 1024) return `${value} B`;
+  const kilobytes = value / 1024;
+  if (kilobytes < 1024) return `${kilobytes.toFixed(1)} KB`;
+  return `${(kilobytes / 1024).toFixed(1)} MB`;
 }
 
 function serializeDraft(draft: BuilderDraft) {

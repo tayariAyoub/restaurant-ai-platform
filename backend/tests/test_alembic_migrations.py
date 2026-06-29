@@ -19,7 +19,7 @@ def make_alembic_config(database_url: str | None = None) -> Config:
 def test_alembic_has_single_head_revision():
     script = ScriptDirectory.from_config(make_alembic_config())
 
-    assert script.get_current_head() == "20260627_0001"
+    assert script.get_current_head() == "20260629_0002"
 
 
 def test_alembic_upgrade_head_creates_current_schema_on_sqlite(tmp_path):
@@ -36,3 +36,4 @@ def test_alembic_upgrade_head_creates_current_schema_on_sqlite(tmp_path):
     assert inspector.has_table("restaurant_faqs")
     assert inspector.has_table("knowledge_chunks")
     assert inspector.has_table("orders")
+    assert "loading_video_url" in {column["name"] for column in inspector.get_columns("restaurants")}

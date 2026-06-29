@@ -76,6 +76,9 @@ export type Restaurant = {
   opening_hours: string;
   logo_url: string;
   hero_image: string;
+  loading_video_url: string;
+  loading_video_filename: string;
+  loading_video_size_bytes: number;
   reservation_url: string;
   primary_color: string;
   secondary_color: string;

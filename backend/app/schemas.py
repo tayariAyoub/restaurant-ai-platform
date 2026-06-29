@@ -130,6 +130,9 @@ class RestaurantBase(BaseModel):
     opening_hours: str = "{}"
     logo_url: str = ""
     hero_image: str = ""
+    loading_video_url: str = ""
+    loading_video_filename: str = ""
+    loading_video_size_bytes: int = 0
     reservation_url: str = ""
     primary_color: str = ""
     secondary_color: str = ""
