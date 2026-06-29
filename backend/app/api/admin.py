@@ -60,7 +60,8 @@ from app.schemas import (
     UserCreate,
     UserOut,
 )
-from app.services import admin_chat, admin_console, delivery, faqs as faq_service, guest_activity, menu
+from app.services import admin_chat, admin_console, delivery, faqs as faq_service, guest_activity
+from app.services import loading_video, menu
 from app.services import orders as order_service
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
@@ -92,11 +93,6 @@ def get_restaurant_for_user(db: Session, restaurant_id: int, user: User) -> Rest
     restaurant.categories.sort(key=lambda category: category.sort_order)
     restaurant.images.sort(key=lambda image: image.sort_order)
     return restaurant
-
-
-def display_upload_filename(filename: str | None, fallback: str) -> str:
-    safe_name = (filename or fallback).replace("\\", "/").split("/")[-1].strip()
-    return safe_name[:255] or fallback
 
 
 def normalize_slug(value: str) -> str:
@@ -393,17 +389,9 @@ async def upload_loading_video(
 ) -> Restaurant:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
     content = await file.read()
-    storage = get_storage_service()
-    stored = storage.save_video(restaurant_id, content, file.filename, file.content_type)
-    previous_url = restaurant.loading_video_url
-    restaurant.loading_video_url = stored.url
-    restaurant.loading_video_filename = display_upload_filename(file.filename, stored.filename)
-    restaurant.loading_video_size_bytes = len(content)
-    db.commit()
-    db.refresh(restaurant)
-    if previous_url and previous_url != stored.url:
-        storage.delete_url(previous_url)
-    return restaurant
+    return loading_video.upload_loading_video(
+        db, restaurant, content, file.filename, file.content_type
+    )
 
 
 @router.delete("/restaurants/{restaurant_id}/loading-video", response_model=RestaurantOut)
@@ -413,15 +401,7 @@ def delete_loading_video(
     user: User = Depends(get_current_user),
 ) -> Restaurant:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    previous_url = restaurant.loading_video_url
-    restaurant.loading_video_url = ""
-    restaurant.loading_video_filename = ""
-    restaurant.loading_video_size_bytes = 0
-    db.commit()
-    db.refresh(restaurant)
-    if previous_url:
-        get_storage_service().delete_url(previous_url)
-    return restaurant
+    return loading_video.delete_loading_video(db, restaurant)
 
 
 @router.delete("/restaurants/{restaurant_id}/images/{image_id}", status_code=204)

@@ -31,16 +31,32 @@ def db() -> Generator[Session, None, None]:
         role="RESTAURANT_OWNER",
         is_active=True,
     )
-    session.add(owner)
+    other_owner = User(
+        email="other-owner@example.com",
+        password_hash="hash",
+        name="Other Owner",
+        role="RESTAURANT_OWNER",
+        is_active=True,
+    )
+    session.add_all([owner, other_owner])
     session.flush()
-    session.add(
-        Restaurant(
-            owner_id=owner.id,
-            name="Bella Napoli",
-            slug="bella-napoli",
-            email="ciao@bella.example",
-            city="Aachen",
-        )
+    session.add_all(
+        [
+            Restaurant(
+                owner_id=owner.id,
+                name="Bella Napoli",
+                slug="bella-napoli",
+                email="ciao@bella.example",
+                city="Aachen",
+            ),
+            Restaurant(
+                owner_id=other_owner.id,
+                name="Private Bistro",
+                slug="private-bistro",
+                email="private@example.com",
+                city="Berlin",
+            ),
+        ]
     )
     session.commit()
     try:
@@ -128,3 +144,20 @@ def test_loading_video_rejects_non_mp4_upload(client: TestClient):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Upload an MP4 loading video"
+
+
+def test_loading_video_wrong_restaurant_access_stays_in_route_layer(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    def fail_if_called(*_: object, **__: object) -> Restaurant:
+        raise AssertionError("loading video service should not be called")
+
+    monkeypatch.setattr(admin.loading_video, "upload_loading_video", fail_if_called)
+
+    response = client.post(
+        "/admin/restaurants/2/loading-video",
+        files={"file": ("loading.mp4", b"video-bytes", "video/mp4")},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "You cannot access this restaurant"
