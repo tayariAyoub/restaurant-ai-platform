@@ -10,7 +10,6 @@ from app.dependencies import get_current_user, require_super_admin
 from app.models import (
     ContactRequest,
     Conversation,
-    DeliveryAssignment,
     DeliveryDriver,
     KnowledgeChunk,
     KnowledgeDocument,
@@ -63,6 +62,7 @@ from app.schemas import (
 )
 from app.api.public import chat_for_restaurant
 from app.services import admin_console, delivery, faqs as faq_service, guest_activity, menu
+from app.services import orders as order_service
 from app.services.analytics import build_restaurant_overview
 from app.services.knowledge import (
     chunk_text,
@@ -70,7 +70,6 @@ from app.services.knowledge import (
     extract_upload_text,
     rebuild_structured_knowledge,
 )
-from app.services.orders import update_order_status
 from app.services.storage import get_storage_service, validate_document_upload
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -654,15 +653,6 @@ def update_reservation(
     return reservation
 
 
-def order_query():
-    return select(Order).options(
-        selectinload(Order.items),
-        selectinload(Order.delivery_address),
-        selectinload(Order.delivery_assignment).selectinload(DeliveryAssignment.driver),
-        selectinload(Order.status_history),
-    )
-
-
 @router.get("/restaurants/{restaurant_id}/orders", response_model=list[OrderOut])
 def orders(
     restaurant_id: int,
@@ -672,12 +662,9 @@ def orders(
     user: User = Depends(get_current_user),
 ) -> list[Order]:
     get_restaurant_for_user(db, restaurant_id, user)
-    statement = order_query().where(Order.restaurant_id == restaurant_id)
-    if status:
-        statement = statement.where(Order.status == status.upper())
-    if order_type:
-        statement = statement.where(Order.order_type == order_type.upper())
-    return list(db.scalars(statement.order_by(Order.created_at.desc())).unique())
+    return order_service.list_orders(
+        db, restaurant_id, status=status, order_type=order_type
+    )
 
 
 @router.patch("/restaurants/{restaurant_id}/orders/{order_id}", response_model=OrderOut)
@@ -689,18 +676,16 @@ def update_order(
     user: User = Depends(get_current_user),
 ) -> Order:
     get_restaurant_for_user(db, restaurant_id, user)
-    order = db.get(Order, order_id)
-    if not order or order.restaurant_id != restaurant_id:
-        raise HTTPException(status_code=404, detail="Order not found")
-    update_order_status(
+    order = order_service.update_admin_order_status(
         db,
-        order,
+        restaurant_id,
+        order_id,
         payload.status,
         estimated_minutes=payload.estimated_minutes,
         rejection_reason=payload.rejection_reason,
     )
     db.commit()
-    return db.scalar(order_query().where(Order.id == order.id))
+    return order_service.get_order_details(db, order.id)
 
 
 @router.get("/restaurants/{restaurant_id}/drivers", response_model=list[DriverOut])
@@ -755,7 +740,7 @@ def assign_driver(
     get_restaurant_for_user(db, restaurant_id, user)
     order = delivery.assign_driver_to_order(db, restaurant_id, order_id, payload.driver_id)
     db.commit()
-    return db.scalar(order_query().where(Order.id == order.id))
+    return order_service.get_order_details(db, order.id)
 
 
 @router.patch(
@@ -772,4 +757,4 @@ def update_delivery_status(
     get_restaurant_for_user(db, restaurant_id, user)
     order = delivery.update_delivery_status(db, restaurant_id, order_id, payload.status)
     db.commit()
-    return db.scalar(order_query().where(Order.id == order.id))
+    return order_service.get_order_details(db, order.id)

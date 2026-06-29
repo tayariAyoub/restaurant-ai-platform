@@ -1,7 +1,8 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
-from app.models import Order, OrderStatus
+from app.models import DeliveryAssignment, Order, OrderStatus
 
 
 ALLOWED_ORDER_TRANSITIONS = {
@@ -15,6 +16,41 @@ ALLOWED_ORDER_TRANSITIONS = {
     "REJECTED": set(),
     "COMPLETED": set(),
 }
+
+
+def order_query():
+    return select(Order).options(
+        selectinload(Order.items),
+        selectinload(Order.delivery_address),
+        selectinload(Order.delivery_assignment).selectinload(DeliveryAssignment.driver),
+        selectinload(Order.status_history),
+    )
+
+
+def list_orders(
+    db: Session,
+    restaurant_id: int,
+    *,
+    status: str | None = None,
+    order_type: str | None = None,
+) -> list[Order]:
+    statement = order_query().where(Order.restaurant_id == restaurant_id)
+    if status:
+        statement = statement.where(Order.status == status.upper())
+    if order_type:
+        statement = statement.where(Order.order_type == order_type.upper())
+    return list(db.scalars(statement.order_by(Order.created_at.desc())).unique())
+
+
+def get_order_for_restaurant(db: Session, restaurant_id: int, order_id: int) -> Order:
+    order = db.get(Order, order_id)
+    if not order or order.restaurant_id != restaurant_id:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+def get_order_details(db: Session, order_id: int) -> Order | None:
+    return db.scalar(order_query().where(Order.id == order_id))
 
 
 def validate_order_transition(current_status: str, new_status: str) -> str:
@@ -67,3 +103,22 @@ def update_order_status(
             order.delivery_assignment.status = "DELIVERED"
 
     return order
+
+
+def update_admin_order_status(
+    db: Session,
+    restaurant_id: int,
+    order_id: int,
+    new_status: str,
+    *,
+    estimated_minutes: int | None = None,
+    rejection_reason: str = "",
+) -> Order:
+    order = get_order_for_restaurant(db, restaurant_id, order_id)
+    return update_order_status(
+        db,
+        order,
+        new_status,
+        estimated_minutes=estimated_minutes,
+        rejection_reason=rejection_reason,
+    )

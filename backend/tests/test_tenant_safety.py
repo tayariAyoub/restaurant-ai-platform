@@ -503,6 +503,57 @@ def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:
     assert [order.public_id for order in admin.orders(restaurant_two.id, db=db, user=owner_two)] == ["order-tenant-two"]
 
 
+def test_order_listing_preserves_status_and_order_type_filters(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    db.add(
+        Order(
+            restaurant_id=restaurant_one.id,
+            public_id="order-filter-ready",
+            order_type="DELIVERY",
+            status="READY",
+            customer_name="Charlie",
+            customer_phone="333",
+            customer_email="charlie@example.com",
+            subtotal=Decimal("18.00"),
+            delivery_fee=Decimal("3.50"),
+            total=Decimal("21.50"),
+        )
+    )
+    db.commit()
+
+    ready_orders = admin.orders(restaurant_one.id, status="ready", db=db, user=owner_one)
+    assert [order.public_id for order in ready_orders] == ["order-filter-ready"]
+
+    delivery_orders = admin.orders(
+        restaurant_one.id, order_type="delivery", db=db, user=owner_one
+    )
+    assert [order.public_id for order in delivery_orders] == ["order-filter-ready"]
+
+    pickup_orders = admin.orders(
+        restaurant_one.id, order_type="pickup", db=db, user=owner_one
+    )
+    assert [order.public_id for order in pickup_orders] == ["order-tenant-one"]
+
+
+def test_wrong_or_missing_restaurant_order_update_returns_404(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, restaurant_two = restaurants(db)
+    other_order = db.query(Order).filter_by(restaurant_id=restaurant_two.id).one()
+
+    for order_id in [other_order.id, 9999]:
+        with pytest.raises(HTTPException) as error:
+            admin.update_order(
+                restaurant_one.id,
+                order_id,
+                OrderStatusUpdate(status="ACCEPTED", estimated_minutes=20),
+                db=db,
+                user=owner_one,
+            )
+        assert error.value.status_code == 404
+        assert error.value.detail == "Order not found"
+
+
 def test_valid_order_status_transition_updates_history(db: Session) -> None:
     owner_one, _, _ = users(db)
     restaurant_one, _ = restaurants(db)
