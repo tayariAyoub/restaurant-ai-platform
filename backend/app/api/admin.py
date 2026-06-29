@@ -1,6 +1,3 @@
-import re
-import uuid
-
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -64,10 +61,8 @@ from app.services import faqs as faq_service, guest_activity
 from app.services import loading_video, menu
 from app.services import orders as order_service
 from app.services import restaurant_images
+from app.services import restaurants as restaurant_service
 from app.services.analytics import build_restaurant_overview
-from app.services.knowledge import (
-    rebuild_structured_knowledge,
-)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -90,11 +85,6 @@ def get_restaurant_for_user(db: Session, restaurant_id: int, user: User) -> Rest
     restaurant.categories.sort(key=lambda category: category.sort_order)
     restaurant.images.sort(key=lambda image: image.sort_order)
     return restaurant
-
-
-def normalize_slug(value: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
-    return slug or f"restaurant-{uuid.uuid4().hex[:8]}"
 
 
 @router.get("/dashboard", response_model=DashboardStats)
@@ -134,10 +124,7 @@ def themes(
 def restaurants(
     db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ) -> list[Restaurant]:
-    statement = select(Restaurant).order_by(Restaurant.created_at.desc())
-    if user.role != "SUPER_ADMIN":
-        statement = statement.where(Restaurant.owner_id == user.id)
-    return list(db.scalars(statement))
+    return restaurant_service.list_restaurants(db, user)
 
 
 @router.get("/restaurants-overview", response_model=list[RestaurantOverview])
@@ -159,20 +146,7 @@ def create_restaurant(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Restaurant:
-    slug = normalize_slug(payload.slug or payload.name)
-    if db.scalar(select(Restaurant).where(Restaurant.slug == slug)):
-        raise HTTPException(status_code=409, detail="Website slug already exists")
-    data = payload.model_dump(exclude={"slug"})
-    if user.role == "SUPER_ADMIN":
-        if payload.owner_id and not db.get(User, payload.owner_id):
-            raise HTTPException(status_code=404, detail="Owner not found")
-    else:
-        data["owner_id"] = user.id
-    if data.get("owner_id") and not db.get(User, data["owner_id"]):
-        raise HTTPException(status_code=404, detail="Owner not found")
-    restaurant = Restaurant(**data, slug=slug)
-    db.add(restaurant)
-    db.commit()
+    restaurant = restaurant_service.create_restaurant(db, payload.model_dump(), user)
     return get_restaurant_for_user(db, restaurant.id, user)
 
 
@@ -193,20 +167,13 @@ def update_restaurant(
     user: User = Depends(get_current_user),
 ) -> Restaurant:
     restaurant = get_restaurant_for_user(db, restaurant_id, user)
-    data = payload.model_dump()
-    if user.role != "SUPER_ADMIN":
-        data["owner_id"] = restaurant.owner_id
-    slug = normalize_slug(data["slug"])
-    duplicate = db.scalar(
-        select(Restaurant).where(Restaurant.slug == slug, Restaurant.id != restaurant_id)
+    restaurant_service.update_restaurant(
+        db,
+        restaurant_id,
+        restaurant,
+        payload.model_dump(),
+        user,
     )
-    if duplicate:
-        raise HTTPException(status_code=409, detail="Website slug already exists")
-    data["slug"] = slug
-    for key, value in data.items():
-        setattr(restaurant, key, value)
-    db.commit()
-    rebuild_structured_knowledge(db, restaurant.id)
     return get_restaurant_for_user(db, restaurant.id, user)
 
 
@@ -216,11 +183,7 @@ def delete_restaurant(
     db: Session = Depends(get_db),
     _: User = Depends(require_super_admin),
 ) -> None:
-    restaurant = db.get(Restaurant, restaurant_id)
-    if not restaurant:
-        raise HTTPException(status_code=404, detail="Restaurant not found")
-    db.delete(restaurant)
-    db.commit()
+    restaurant_service.delete_restaurant(db, restaurant_id)
 
 
 @router.post(
