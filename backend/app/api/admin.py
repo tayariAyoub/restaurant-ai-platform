@@ -71,6 +71,7 @@ from app.services.knowledge import (
     extract_upload_text,
     rebuild_structured_knowledge,
 )
+from app.services.orders import update_order_status
 from app.services.storage import get_storage_service, validate_document_upload
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -897,19 +898,6 @@ def orders(
     return list(db.scalars(statement.order_by(Order.created_at.desc())).unique())
 
 
-ALLOWED_ORDER_TRANSITIONS = {
-    "NEW": {"ACCEPTED", "REJECTED"},
-    "ACCEPTED": {"PREPARING", "REJECTED"},
-    "PREPARING": {"READY", "REJECTED"},
-    "READY": {"PICKED_UP", "DELIVERING", "COMPLETED"},
-    "DELIVERING": {"DELIVERED"},
-    "PICKED_UP": {"COMPLETED"},
-    "DELIVERED": {"COMPLETED"},
-    "REJECTED": set(),
-    "COMPLETED": set(),
-}
-
-
 @router.patch("/restaurants/{restaurant_id}/orders/{order_id}", response_model=OrderOut)
 def update_order(
     restaurant_id: int,
@@ -922,33 +910,13 @@ def update_order(
     order = db.get(Order, order_id)
     if not order or order.restaurant_id != restaurant_id:
         raise HTTPException(status_code=404, detail="Order not found")
-    next_status = payload.status.upper()
-    if next_status != order.status and next_status not in ALLOWED_ORDER_TRANSITIONS.get(
-        order.status, set()
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot move order from {order.status} to {next_status}",
-        )
-    changed = next_status != order.status
-    order.status = next_status
-    if payload.estimated_minutes is not None:
-        order.estimated_minutes = payload.estimated_minutes
-    if next_status == "REJECTED":
-        order.rejection_reason = payload.rejection_reason
-    if changed:
-        db.add(
-            OrderStatus(
-                order_id=order.id,
-                status=next_status,
-                note=payload.rejection_reason if next_status == "REJECTED" else "",
-            )
-        )
-    if order.delivery_assignment:
-        if next_status == "DELIVERING":
-            order.delivery_assignment.status = "ON_THE_WAY"
-        elif next_status in {"DELIVERED", "COMPLETED"}:
-            order.delivery_assignment.status = "DELIVERED"
+    update_order_status(
+        db,
+        order,
+        payload.status,
+        estimated_minutes=payload.estimated_minutes,
+        rejection_reason=payload.rejection_reason,
+    )
     db.commit()
     return db.scalar(order_query().where(Order.id == order.id))
 

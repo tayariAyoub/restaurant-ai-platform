@@ -12,6 +12,8 @@ from app.models import (
     Conversation,
     ContactRequest,
     DeliveryAddress,
+    DeliveryAssignment,
+    DeliveryDriver,
     KnowledgeChunk,
     MenuCategory,
     MenuItem,
@@ -33,6 +35,7 @@ from app.schemas import (
     MessageReviewUpdate,
     OrderCreate,
     OrderItemCreate,
+    OrderStatusUpdate,
     RestaurantCreate,
     RestaurantFaqCreate,
     RestaurantFaqFromMessageCreate,
@@ -282,6 +285,97 @@ def test_orders_are_scoped_to_restaurant_owner(db: Session) -> None:
         admin.orders(restaurant_two.id, db=db, user=owner_one)
     assert error.value.status_code == 403
     assert [order.public_id for order in admin.orders(restaurant_two.id, db=db, user=owner_two)] == ["order-tenant-two"]
+
+
+def test_valid_order_status_transition_updates_history(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+
+    updated = admin.update_order(
+        restaurant_one.id,
+        order.id,
+        OrderStatusUpdate(status="ACCEPTED", estimated_minutes=25),
+        db=db,
+        user=owner_one,
+    )
+
+    assert updated.status == "ACCEPTED"
+    assert updated.estimated_minutes == 25
+    assert ("ACCEPTED", "") in [
+        (status.status, status.note) for status in updated.status_history
+    ]
+
+
+def test_invalid_order_status_transition_is_rejected(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+
+    with pytest.raises(HTTPException) as error:
+        admin.update_order(
+            restaurant_one.id,
+            order.id,
+            OrderStatusUpdate(status="DELIVERED"),
+            db=db,
+            user=owner_one,
+        )
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Cannot move order from NEW to DELIVERED"
+    assert order.status == "NEW"
+    assert [status.status for status in order.status_history] == ["NEW"]
+
+
+def test_rejected_order_status_transition_stores_rejection_note(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+
+    updated = admin.update_order(
+        restaurant_one.id,
+        order.id,
+        OrderStatusUpdate(status="REJECTED", rejection_reason="Kitchen is closed"),
+        db=db,
+        user=owner_one,
+    )
+
+    assert updated.status == "REJECTED"
+    assert updated.rejection_reason == "Kitchen is closed"
+    assert ("REJECTED", "Kitchen is closed") in [
+        (status.status, status.note) for status in updated.status_history
+    ]
+
+
+def test_delivery_assignment_status_follows_order_status_transition(db: Session) -> None:
+    owner_one, _, _ = users(db)
+    restaurant_one, _ = restaurants(db)
+    order = db.query(Order).filter_by(public_id="order-tenant-one").one()
+    order.status = "READY"
+    driver = DeliveryDriver(restaurant_id=restaurant_one.id, name="Mina", phone="555")
+    db.add(driver)
+    db.flush()
+    assignment = DeliveryAssignment(order_id=order.id, driver_id=driver.id)
+    db.add(assignment)
+    db.commit()
+
+    delivering = admin.update_order(
+        restaurant_one.id,
+        order.id,
+        OrderStatusUpdate(status="DELIVERING"),
+        db=db,
+        user=owner_one,
+    )
+    assert delivering.delivery_assignment.status == "ON_THE_WAY"
+
+    delivered = admin.update_order(
+        restaurant_one.id,
+        order.id,
+        OrderStatusUpdate(status="DELIVERED"),
+        db=db,
+        user=owner_one,
+    )
+    assert delivered.delivery_assignment.status == "DELIVERED"
 
 
 def test_reservations_are_scoped_to_restaurant_owner(db: Session) -> None:
