@@ -168,6 +168,29 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
 
+  it("renders a premium empty gallery state when no images exist", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...northStarGrill,
+          images: [],
+          hero_image: "",
+        }}
+        page="gallery"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "Gallery" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /the visual story is still being prepared/i })).toBeVisible();
+    expect(screen.getByText(/gallery being curated/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/north-star-grill/menu");
+    expect(screen.getByRole("link", { name: /reserve a table/i })).toHaveAttribute("href", "/restaurants/north-star-grill/reservations");
+    expect(screen.getByRole("link", { name: /plan a visit/i })).toHaveAttribute("href", "/restaurants/north-star-grill/contact");
+    expect(screen.getByText(/menu first/i)).toBeVisible();
+    expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+  });
+
   it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
     renderWithUser(
       <RestaurantSite
