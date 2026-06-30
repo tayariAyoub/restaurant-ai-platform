@@ -12,6 +12,95 @@ vi.mock("@/lib/api", () => ({
   default: requestMock,
 }));
 
+const northStarGrill = {
+  ...bellaNapoli,
+  id: 2,
+  theme_id: 2,
+  name: "North Star Grill",
+  slug: "north-star-grill",
+  tagline: "Seasonal grill dining with a polished room.",
+  description: "A modern grill room serving seafood, steak, and market vegetables.",
+  story: "The kitchen builds the menu around peak ingredients, composed service, and a room made for long evenings.",
+  primary_color: "#9b6b3d",
+  secondary_color: "#263238",
+  background_color: "#f5f0e8",
+  text_color: "#1a1714",
+  ai_name: "North Star AI Maitre d'",
+  theme: bellaNapoli.theme
+    ? {
+        ...bellaNapoli.theme,
+        id: 2,
+        key: "elegant",
+        name: "Fine Dining Gold",
+        description: "Quiet luxury for a modern dining room",
+        primary_color: "#9b6b3d",
+        secondary_color: "#263238",
+        background_color: "#f5f0e8",
+        text_color: "#1a1714",
+        homepage_style: "editorial",
+        menu_style: "refined",
+        gallery_style: "masonry",
+      }
+    : null,
+  categories: [
+    {
+      id: 20,
+      name: "Raw Bar",
+      description: "Bright seafood and chilled starters.",
+      sort_order: 1,
+      items: [
+        {
+          id: 301,
+          category_id: 20,
+          name: "Sea Bass Crudo",
+          description: "Citrus, herb oil, and shaved fennel.",
+          price: "16.00",
+          image_url: "",
+          is_available: true,
+          is_vegan: false,
+          is_vegetarian: false,
+          is_halal: false,
+          allergens: "Fish",
+        },
+      ],
+    },
+    {
+      id: 21,
+      name: "Grill",
+      description: "Main plates from the kitchen.",
+      sort_order: 2,
+      items: [
+        {
+          id: 401,
+          category_id: 21,
+          name: "Charred Ribeye",
+          description: "Aged beef, pepper jus, and crisp potatoes.",
+          price: "29.00",
+          image_url: "",
+          is_available: true,
+          is_vegan: false,
+          is_vegetarian: false,
+          is_halal: false,
+          allergens: "",
+        },
+        {
+          id: 402,
+          category_id: 21,
+          name: "Market Greens",
+          description: "Seasonal leaves, toasted seeds, and herb dressing.",
+          price: "12.00",
+          image_url: "",
+          is_available: true,
+          is_vegan: true,
+          is_vegetarian: true,
+          is_halal: true,
+          allergens: "",
+        },
+      ],
+    },
+  ],
+};
+
 describe("restaurant page", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -22,6 +111,10 @@ describe("restaurant page", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
     expect(screen.getByRole("heading", { name: /authentic neapolitan pizza/i })).toBeVisible();
+    expect(screen.getByText(/wood-fired warmth/i)).toBeVisible();
+    expect(screen.getByText(/fresh from the oven/i)).toBeVisible();
+    expect(screen.getByPlaceholderText(/search pizza, burrata, allergens/i)).toBeVisible();
+    expect(screen.getByText(/begin with the plates that smell of the oven/i)).toBeVisible();
     expect(screen.getAllByRole("link", { name: /bella napoli/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli")).toBe(true);
     expect(screen.getByRole("heading", { name: /a menu built around appetite/i })).toBeVisible();
     expect(screen.getByRole("link", { name: /view menu/i })).toHaveAttribute("href", "#menu");
@@ -36,6 +129,29 @@ describe("restaurant page", () => {
     expect(screen.getByText("Vegan")).toBeVisible();
     expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /open ai maitre d/i })).toBeVisible();
+  });
+
+  it("uses cuisine-neutral menu copy for non-Italian restaurants without changing search or cart", async () => {
+    const { user } = renderWithUser(<RestaurantSite restaurant={northStarGrill} page="menu" />);
+
+    expect(screen.getByText(/chef-led menu/i)).toBeVisible();
+    expect(screen.getAllByText(/from the kitchen/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/begin with the plates guests come back for/i)).toBeVisible();
+    expect(screen.getByPlaceholderText(/search dishes, ingredients, allergens/i)).toBeVisible();
+    expect(screen.queryByText(/wood-fired warmth/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/fresh from the oven/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/search pizza, burrata, allergens/i)).not.toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText(/search dishes, ingredients, allergens/i), "ribeye");
+
+    const ribeyeCard = screen.getByRole("heading", { name: "Charred Ribeye" }).closest("article");
+    expect(ribeyeCard).not.toBeNull();
+    expect(screen.queryByRole("heading", { name: "Market Greens" })).not.toBeInTheDocument();
+
+    await user.click(within(ribeyeCard as HTMLElement).getByRole("button", { name: /add to order/i }));
+
+    expect(screen.getByRole("button", { name: /view order/i })).toBeVisible();
+    expect(screen.getByText(/1 item/i)).toBeVisible();
   });
 
   it("renders the gallery as a dedicated visual route", () => {

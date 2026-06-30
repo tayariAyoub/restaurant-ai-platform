@@ -49,6 +49,21 @@ type ItalianPalette = {
   gold: string;
 };
 
+type MenuShowcaseCopy = {
+  heroKicker: string;
+  defaultSubheadline: string;
+  heroDescriptionFallback: string;
+  craftNoteTitle: string;
+  craftNoteCopy: string;
+  flowNoteTitle: string;
+  flowNoteOrderingCopy: string;
+  flowNoteBrowseCopy: string;
+  introKicker: string;
+  searchPlaceholder: string;
+  signatureHeading: string;
+  imageFallbackKicker: string;
+};
+
 const italianPalette: ItalianPalette = {
   ivory: "#fff8ef",
   cream: "#f7ead5",
@@ -82,6 +97,7 @@ export default function MenuShowcase({
     terracotta: themeIdentity.primary,
     olive: themeIdentity.secondary,
   };
+  const copy = menuCopyForMood(italianMood);
   const heroVisual = getMenuHeroVisual(restaurant, featuredItems);
 
   const filteredCategories = useMemo(
@@ -96,9 +112,10 @@ export default function MenuShowcase({
 
   return (
     <>
-      <ItalianMenuHero
+      <MenuHero
         restaurant={restaurant}
         palette={palette}
+        copy={copy}
         themeIdentity={themeIdentity}
         heroVisual={heroVisual}
         orderingEnabled={orderingEnabled}
@@ -118,7 +135,7 @@ export default function MenuShowcase({
       >
         <div className="pointer-events-none absolute inset-0 opacity-[.18] [background-image:linear-gradient(90deg,rgba(45,27,19,.08)_1px,transparent_1px),linear-gradient(rgba(45,27,19,.07)_1px,transparent_1px)] [background-size:52px_52px]" />
         <div className="relative mx-auto max-w-7xl">
-          <MenuIntro restaurant={restaurant} palette={palette} menuItems={menuItems} />
+          <MenuIntro restaurant={restaurant} palette={palette} copy={copy} menuItems={menuItems} />
           {restaurant.categories.length === 0 || menuItems.length === 0 ? (
             <EmptyMenuState palette={palette} />
           ) : (
@@ -126,6 +143,7 @@ export default function MenuShowcase({
               <MenuToolbar
                 restaurant={restaurant}
                 palette={palette}
+                copy={copy}
                 menuQuery={menuQuery}
                 dietaryFilter={dietaryFilter}
                 visibleMenuItems={visibleMenuItems}
@@ -137,6 +155,7 @@ export default function MenuShowcase({
                 <SignatureDishes
                   featuredItems={featuredItems}
                   palette={palette}
+                  copy={copy}
                   themeIdentity={themeIdentity}
                   orderingEnabled={orderingEnabled}
                   onAdd={onAdd}
@@ -166,6 +185,7 @@ export default function MenuShowcase({
                             index={index}
                             quantity={quantities[item.id] || 0}
                             palette={palette}
+                            copy={copy}
                             themeIdentity={themeIdentity}
                             orderingEnabled={orderingEnabled}
                             onAdd={() => onAdd(item)}
@@ -184,9 +204,10 @@ export default function MenuShowcase({
   );
 }
 
-function ItalianMenuHero({
+function MenuHero({
   restaurant,
   palette,
+  copy,
   themeIdentity,
   heroVisual,
   orderingEnabled,
@@ -198,6 +219,7 @@ function ItalianMenuHero({
 }: {
   restaurant: Restaurant;
   palette: ItalianPalette;
+  copy: MenuShowcaseCopy;
   themeIdentity: RestaurantThemeIdentity;
   heroVisual: string;
   orderingEnabled: boolean;
@@ -211,7 +233,7 @@ function ItalianMenuHero({
   const headline = isPizzaRestaurant(restaurant)
     ? "Authentic Neapolitan Pizza"
     : `${restaurant.name} Menu`;
-  const subheadline = restaurant.tagline || "Baked with patience, fire, and Italian warmth.";
+  const subheadline = restaurant.tagline || copy.defaultSubheadline;
 
   return (
     <section className="relative flex min-h-[92svh] items-end overflow-hidden bg-[#19120e] text-white sm:min-h-[86svh]">
@@ -240,7 +262,7 @@ function ItalianMenuHero({
       <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-4 pb-10 pt-32 sm:px-6 lg:grid-cols-[1.05fr_.95fr] lg:items-end lg:pb-16">
         <div>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/[.16] bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-white/[.72] backdrop-blur">
-            <Flame size={15} style={{ color: palette.gold }} /> Wood-fired warmth
+            <Flame size={15} style={{ color: palette.gold }} /> {copy.heroKicker}
           </p>
           <h1 className="mt-6 max-w-5xl text-balance text-[clamp(3.7rem,13vw,8.8rem)] font-semibold leading-[.82]">
             {headline}
@@ -249,7 +271,7 @@ function ItalianMenuHero({
             {subheadline}
           </p>
           <p className="mt-5 max-w-xl text-base leading-8 text-white/[.62]">
-            {restaurant.description || "A handcrafted menu of slow dough, bright tomato, fresh herbs, and the kind of heat only a proper oven can give."}
+            {restaurant.description || copy.heroDescriptionFallback}
           </p>
           <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <a href="#menu" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#2d1b13] shadow-2xl">
@@ -266,8 +288,8 @@ function ItalianMenuHero({
             Handcrafted menu
           </p>
           <div className="mt-5 grid gap-4 text-sm leading-6 text-white/[.62]">
-            <HeroNote icon={Flame} title="Wood-fired character" copy="Crisp edges, soft centers, and a little smoke in the crust." />
-            <HeroNote icon={Wine} title="Italian rhythm" copy={orderingEnabled ? "Browse, order, or reserve without leaving the mood." : "Browse dishes and reserve without leaving the mood."} />
+            <HeroNote icon={Flame} title={copy.craftNoteTitle} copy={copy.craftNoteCopy} />
+            <HeroNote icon={Wine} title={copy.flowNoteTitle} copy={orderingEnabled ? copy.flowNoteOrderingCopy : copy.flowNoteBrowseCopy} />
             <HeroNote icon={MapPin} title="At the restaurant" copy={`${restaurant.address}, ${restaurant.city}`} />
           </div>
         </aside>
@@ -279,16 +301,18 @@ function ItalianMenuHero({
 function MenuIntro({
   restaurant,
   palette,
+  copy,
   menuItems,
 }: {
   restaurant: Restaurant;
   palette: ItalianPalette;
+  copy: MenuShowcaseCopy;
   menuItems: MenuItem[];
 }) {
   return (
     <div className="mx-auto max-w-4xl text-center">
       <p className="text-xs font-bold uppercase tracking-[0.26em]" style={{ color: palette.terracotta }}>
-        Fresh from the oven
+        {copy.introKicker}
       </p>
       <h2 className="mt-4 text-balance text-5xl font-semibold leading-[.95] text-[#2d1b13] sm:text-7xl">
         A menu built around appetite, not interface.
@@ -306,6 +330,7 @@ function MenuIntro({
 function MenuToolbar({
   restaurant,
   palette,
+  copy,
   menuQuery,
   dietaryFilter,
   visibleMenuItems,
@@ -314,6 +339,7 @@ function MenuToolbar({
 }: {
   restaurant: Restaurant;
   palette: ItalianPalette;
+  copy: MenuShowcaseCopy;
   menuQuery: string;
   dietaryFilter: "all" | "vegan" | "vegetarian" | "halal";
   visibleMenuItems: number;
@@ -329,7 +355,7 @@ function MenuToolbar({
             value={menuQuery}
             onChange={(event) => onQueryChange(event.target.value)}
             className="min-h-12 w-full rounded-full border border-[#d8b889]/70 bg-white/[.86] py-3 pl-11 pr-4 text-base text-[#2d1b13] shadow-inner placeholder:text-[#8a6a44]/70 sm:text-sm"
-            placeholder="Search pizza, burrata, allergens..."
+            placeholder={copy.searchPlaceholder}
             autoComplete="off"
           />
         </label>
@@ -371,12 +397,14 @@ function MenuToolbar({
 function SignatureDishes({
   featuredItems,
   palette,
+  copy,
   themeIdentity,
   orderingEnabled,
   onAdd,
 }: {
   featuredItems: MenuItem[];
   palette: ItalianPalette;
+  copy: MenuShowcaseCopy;
   themeIdentity: RestaurantThemeIdentity;
   orderingEnabled: boolean;
   onAdd: (item: MenuItem) => void;
@@ -386,7 +414,7 @@ function SignatureDishes({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.24em]" style={{ color: palette.gold }}>Signature dishes</p>
-          <h3 className="mt-2 text-3xl font-semibold leading-tight sm:text-5xl">Begin with the plates that smell of the oven.</h3>
+          <h3 className="mt-2 text-3xl font-semibold leading-tight sm:text-5xl">{copy.signatureHeading}</h3>
         </div>
         <Sparkles className="hidden text-white/[.35] sm:block" />
       </div>
@@ -403,7 +431,7 @@ function SignatureDishes({
             {item.image_url ? (
               <img src={item.image_url} alt={item.name} className={`h-48 w-full object-cover transition duration-700 group-hover:scale-105 ${themeIdentity.imageTreatmentClass}`} loading="lazy" decoding="async" />
             ) : (
-              <FoodFallback name={item.name} compact />
+              <FoodFallback name={item.name} kicker={copy.imageFallbackKicker} compact />
             )}
             <span className="block p-4">
               <span className="block text-2xl font-semibold leading-tight">{item.name}</span>
@@ -453,6 +481,7 @@ function MenuItemCard({
   index,
   quantity,
   palette,
+  copy,
   themeIdentity,
   orderingEnabled,
   onAdd,
@@ -461,6 +490,7 @@ function MenuItemCard({
   index: number;
   quantity: number;
   palette: ItalianPalette;
+  copy: MenuShowcaseCopy;
   themeIdentity: RestaurantThemeIdentity;
   orderingEnabled: boolean;
   onAdd: () => void;
@@ -481,7 +511,7 @@ function MenuItemCard({
               decoding="async"
             />
           ) : (
-            <FoodFallback name={item.name} />
+            <FoodFallback name={item.name} kicker={copy.imageFallbackKicker} />
           )}
           <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/[.64] to-transparent" />
           <span className="absolute left-4 top-4 rounded-full border border-white/25 bg-black/[.38] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
@@ -538,7 +568,7 @@ function MenuItemCard({
   );
 }
 
-function FoodFallback({ name, compact = false }: { name: string; compact?: boolean }) {
+function FoodFallback({ name, kicker, compact = false }: { name: string; kicker: string; compact?: boolean }) {
   return (
     <div className={`relative overflow-hidden bg-[#2d1b13] text-white ${compact ? "h-48" : "h-full min-h-72"}`}>
       <div
@@ -549,7 +579,7 @@ function FoodFallback({ name, compact = false }: { name: string; compact?: boole
         }}
       />
       <div className="absolute inset-x-5 bottom-5">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/[.45]">From the oven</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/[.45]">{kicker}</p>
         <p className="mt-2 line-clamp-2 font-display text-2xl font-semibold leading-tight">{name}</p>
       </div>
     </div>
@@ -638,6 +668,40 @@ function isPizzaRestaurant(restaurant: Restaurant) {
   ].join(" ").toLowerCase();
 
   return ["pizza", "pizzeria", "napoli", "neapolitan"].some((term) => searchable.includes(term));
+}
+
+function menuCopyForMood(italianMood: boolean): MenuShowcaseCopy {
+  if (italianMood) {
+    return {
+      heroKicker: "Wood-fired warmth",
+      defaultSubheadline: "Baked with patience, fire, and Italian warmth.",
+      heroDescriptionFallback: "A handcrafted menu of slow dough, bright tomato, fresh herbs, and the kind of heat only a proper oven can give.",
+      craftNoteTitle: "Wood-fired character",
+      craftNoteCopy: "Crisp edges, soft centers, and a little smoke in the crust.",
+      flowNoteTitle: "Italian rhythm",
+      flowNoteOrderingCopy: "Browse, order, or reserve without leaving the mood.",
+      flowNoteBrowseCopy: "Browse dishes and reserve without leaving the mood.",
+      introKicker: "Fresh from the oven",
+      searchPlaceholder: "Search pizza, burrata, allergens...",
+      signatureHeading: "Begin with the plates that smell of the oven.",
+      imageFallbackKicker: "From the oven",
+    };
+  }
+
+  return {
+    heroKicker: "Chef-led menu",
+    defaultSubheadline: "Seasonal dishes, polished service, and a clear path from appetite to table.",
+    heroDescriptionFallback: "A carefully edited menu with clear ingredients, dietary notes, and direct next steps for ordering or booking.",
+    craftNoteTitle: "Kitchen signature",
+    craftNoteCopy: "Thoughtful ingredients, confident pacing, and dishes prepared with care tonight.",
+    flowNoteTitle: "Guest rhythm",
+    flowNoteOrderingCopy: "Browse, order, or reserve without leaving the experience.",
+    flowNoteBrowseCopy: "Browse dishes and reserve without leaving the experience.",
+    introKicker: "From the kitchen",
+    searchPlaceholder: "Search dishes, ingredients, allergens...",
+    signatureHeading: "Begin with the plates guests come back for.",
+    imageFallbackKicker: "From the kitchen",
+  };
 }
 
 function serviceModeLabel({
