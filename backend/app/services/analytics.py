@@ -1,8 +1,19 @@
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import ContactRequest, Conversation, KnowledgeChunk, Message, Order, Restaurant
+from app.models import ContactRequest, Conversation, KnowledgeChunk, Message, Order, Restaurant, User
 from app.schemas import RestaurantOverview, SetupChecklist
+from app.services.restaurants import restaurant_query
+
+
+def list_restaurant_overviews(db: Session, user: User) -> list[RestaurantOverview]:
+    statement = restaurant_query().order_by(Restaurant.created_at.desc())
+    if user.role != "SUPER_ADMIN":
+        statement = statement.where(Restaurant.owner_id == user.id)
+    return [
+        build_restaurant_overview(db, restaurant)
+        for restaurant in db.scalars(statement).unique()
+    ]
 
 
 def build_restaurant_overview(db: Session, restaurant: Restaurant) -> RestaurantOverview:

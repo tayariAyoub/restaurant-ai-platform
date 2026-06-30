@@ -55,13 +55,12 @@ from app.schemas import (
     UserCreate,
     UserOut,
 )
-from app.services import admin_chat, admin_console, delivery, documents as document_service
+from app.services import admin_chat, admin_console, analytics, delivery, documents as document_service
 from app.services import faqs as faq_service, guest_activity
 from app.services import loading_video, menu
 from app.services import orders as order_service
 from app.services import restaurant_images
 from app.services import restaurants as restaurant_service
-from app.services.analytics import build_restaurant_overview
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -110,13 +109,7 @@ def restaurants(
 def restaurants_overview(
     db: Session = Depends(get_db), user: User = Depends(get_current_user)
 ) -> list[RestaurantOverview]:
-    statement = restaurant_service.restaurant_query().order_by(Restaurant.created_at.desc())
-    if user.role != "SUPER_ADMIN":
-        statement = statement.where(Restaurant.owner_id == user.id)
-    return [
-        build_restaurant_overview(db, restaurant)
-        for restaurant in db.scalars(statement).unique()
-    ]
+    return analytics.list_restaurant_overviews(db, user)
 
 
 @router.post("/restaurants", response_model=RestaurantOut, status_code=201)

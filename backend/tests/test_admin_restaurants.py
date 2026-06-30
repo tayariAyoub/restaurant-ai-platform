@@ -126,6 +126,64 @@ def test_super_admin_restaurant_listing_sees_all_restaurants(db: Session) -> Non
     }
 
 
+def test_owner_restaurant_overview_remains_scoped(db: Session) -> None:
+    owner, _, _ = users(db)
+
+    overviews = admin.restaurants_overview(db=db, user=owner)
+
+    assert [overview.slug for overview in overviews] == ["bella-napoli"]
+
+
+def test_super_admin_restaurant_overview_sees_all_restaurants(db: Session) -> None:
+    _, _, super_admin = users(db)
+
+    overviews = admin.restaurants_overview(db=db, user=super_admin)
+
+    assert {overview.slug for overview in overviews} == {
+        "bella-napoli",
+        "private-bistro",
+    }
+
+
+def test_restaurant_overview_response_shape_remains_unchanged(db: Session) -> None:
+    owner, _, _ = users(db)
+
+    overview = admin.restaurants_overview(db=db, user=owner)[0]
+
+    assert set(overview.model_dump()) == {
+        "id",
+        "owner_id",
+        "theme_id",
+        "name",
+        "slug",
+        "city",
+        "email",
+        "hero_image",
+        "is_published",
+        "created_at",
+        "owner_name",
+        "owner_email",
+        "theme_name",
+        "menu_items",
+        "image_count",
+        "reservation_count",
+        "new_reservations",
+        "new_orders",
+        "conversation_count",
+        "unanswered_count",
+        "setup_percent",
+        "checklist",
+    }
+    assert set(overview.checklist.model_dump()) == {
+        "information",
+        "opening_hours",
+        "branding",
+        "menu",
+        "design",
+        "chatbot",
+    }
+
+
 def test_create_restaurant_normalizes_slug(db: Session) -> None:
     owner, _, _ = users(db)
 
