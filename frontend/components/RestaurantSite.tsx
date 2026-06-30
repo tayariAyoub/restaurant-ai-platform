@@ -405,7 +405,7 @@ function renderClassicPage({
   if (page === "reservations") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservations" copy="Request a table and give the team the details they need to prepare well." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservations" copy="Request a table with the details that help the team prepare the right welcome." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicReservationPage restaurant={restaurant} themeIdentity={themeIdentity} reservationStatus={reservationStatus} onReserve={reserve} enabled={reservationsEnabled} />
       </>
     );
@@ -414,7 +414,7 @@ function renderClassicPage({
   if (page === "gallery") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Gallery" copy="Food, room, service, and atmosphere before you arrive." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Gallery" copy="A visual preview of the dining room, the plates, and the atmosphere before you arrive." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
       </>
     );
@@ -423,7 +423,7 @@ function renderClassicPage({
   if (page === "contact") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Contact" copy="Address, hours, phone, email, map, and social links." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Contact" copy="Everything guests need before arrival: address, hours, phone, email, map, and social links." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicContactPage restaurant={restaurant} themeIdentity={themeIdentity} hours={hours} />
       </>
     );
@@ -432,7 +432,7 @@ function renderClassicPage({
   if (page === "events") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Private Dining & Events" copy="Plan a special table, private dinner, or hospitality moment directly with the restaurant." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Private Dining & Events" copy="Plan a private table, client dinner, celebration, or hospitality moment directly with the restaurant." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicEventsPage restaurant={restaurant} themeIdentity={themeIdentity} />
       </>
     );
@@ -484,6 +484,7 @@ function ClassicPageHero({
   onCloseMobile: () => void;
 }) {
   const basePath = `/restaurants/${restaurant.slug}`;
+  const actions = classicHeroActions({ page, basePath, reservationsEnabled });
 
   return (
     <section
@@ -522,11 +523,11 @@ function ClassicPageHero({
           <h1 className="mt-5 text-balance text-[clamp(3.75rem,12vw,8rem)] font-semibold leading-[.86] tracking-normal">{title}</h1>
           <p className="mt-6 max-w-2xl text-balance text-lg leading-8 text-white/76 sm:text-xl">{copy}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href={`${basePath}/menu`} className="min-h-12 rounded-full border border-white/[.18] bg-white px-6 py-3 text-sm font-bold text-[#21160f] shadow-2xl transition hover:-translate-y-0.5">
-              View menu
+            <a href={actions.primary.href} className="min-h-12 rounded-full border border-white/[.18] bg-white px-6 py-3 text-sm font-bold text-[#21160f] shadow-2xl transition hover:-translate-y-0.5">
+              {actions.primary.label}
             </a>
-            <a href={`${basePath}/reservations`} className="min-h-12 rounded-full border border-white/[.18] bg-white/[.10] px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/[.16]">
-              Reserve table
+            <a href={actions.secondary.href} className="min-h-12 rounded-full border border-white/[.18] bg-white/[.10] px-6 py-3 text-sm font-bold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/[.16]">
+              {actions.secondary.label}
             </a>
           </div>
         </div>
@@ -603,11 +604,11 @@ function ClassicContactPage({
   hours: Record<string, string>;
 }) {
   return (
-    <section className="bg-[#fbf6ee] px-4 py-16 text-[#21160f] sm:px-6 lg:py-24">
+    <section id="contact-details" className="bg-[#fbf6ee] px-4 py-16 text-[#21160f] sm:px-6 lg:py-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_.86fr]">
         <div className="rounded-[2rem] border border-[#2d1b13]/10 bg-white p-7 shadow-[0_24px_70px_rgba(45,27,19,.1)] sm:p-9">
           <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Visit {restaurant.name}</p>
-          <h2 className="mt-3 text-4xl font-semibold leading-[1.03] sm:text-6xl">Find the table, the oven, and the people behind the meal.</h2>
+          <h2 className="mt-3 text-4xl font-semibold leading-[1.03] sm:text-6xl">Find the table, the details, and the people behind the meal.</h2>
           <div className="mt-8 grid gap-5 text-base leading-7">
             <p className="flex gap-4">
               <MapPin size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
@@ -665,7 +666,7 @@ function ClassicEventsPage({ restaurant, themeIdentity }: { restaurant: Restaura
   ];
 
   return (
-    <section className="bg-[#120c08] px-4 py-16 text-white sm:px-6 lg:py-24">
+    <section id="events-details" className="bg-[#120c08] px-4 py-16 text-white sm:px-6 lg:py-24">
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-8 lg:grid-cols-[.92fr_1.08fr] lg:items-end">
           <div>
@@ -691,4 +692,53 @@ function ClassicEventsPage({ restaurant, themeIdentity }: { restaurant: Restaura
       </div>
     </section>
   );
+}
+
+function classicHeroActions({
+  page,
+  basePath,
+  reservationsEnabled,
+}: {
+  page: RestaurantSitePage;
+  basePath: string;
+  reservationsEnabled: boolean;
+}) {
+  const reservationAction = reservationsEnabled
+    ? { label: "Request a table", href: `${basePath}/reservations` }
+    : { label: "Contact the restaurant", href: `${basePath}/contact` };
+
+  if (page === "reservations") {
+    return {
+      primary: { label: reservationsEnabled ? "Start reservation request" : "Contact the restaurant", href: reservationsEnabled ? "#reserve" : `${basePath}/contact` },
+      secondary: { label: "View menu first", href: `${basePath}/menu` },
+    };
+  }
+
+  if (page === "gallery") {
+    return {
+      primary: { label: "Explore the gallery", href: "#gallery" },
+      secondary: reservationsEnabled
+        ? { label: "Reserve after browsing", href: `${basePath}/reservations` }
+        : { label: "Contact after browsing", href: `${basePath}/contact` },
+    };
+  }
+
+  if (page === "contact") {
+    return {
+      primary: { label: "View contact details", href: "#contact-details" },
+      secondary: reservationAction,
+    };
+  }
+
+  if (page === "events") {
+    return {
+      primary: { label: "Plan an event", href: "#events-details" },
+      secondary: { label: "Contact the restaurant", href: `${basePath}/contact` },
+    };
+  }
+
+  return {
+    primary: { label: "View menu", href: `${basePath}/menu` },
+    secondary: reservationAction,
+  };
 }
