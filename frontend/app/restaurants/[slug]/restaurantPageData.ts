@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import {
   getLocalDevelopmentRestaurantFallbackForError,
+  getLocalDevelopmentRestaurantFallback,
   getLocalDevelopmentRestaurantFallbackForStatus,
 } from "@/lib/mockRestaurants";
 import {
   absolutePublicUrl,
   backendUrl,
+  configuredBackendUrl,
   FALLBACK_SEO_DESCRIPTION,
   FALLBACK_SEO_TITLE,
   restaurantPageUrl,
@@ -36,6 +38,11 @@ export type RestaurantPageProps = {
 };
 
 export async function fetchPublicRestaurant(slug: string): Promise<Restaurant | null> {
+  if (process.env.NODE_ENV === "production" && !configuredBackendUrl()) {
+    const fallback = getLocalFallbackForMissingBackend(slug);
+    if (fallback) return fallback;
+  }
+
   try {
     const response = await fetch(`${backendUrl()}/api/restaurants/${encodeURIComponent(slug)}`, {
       cache: "no-store",
@@ -52,13 +59,24 @@ export async function fetchPublicRestaurant(slug: string): Promise<Restaurant | 
   }
 }
 
+function getLocalFallbackForMissingBackend(slug: string): Restaurant | null {
+  const fallback = getLocalDevelopmentRestaurantFallback(slug);
+
+  if (!fallback) return null;
+
+  console.warn(
+    `[RestaurantAI] Using demo fallback for /restaurants/${slug}: no backend URL configured`,
+  );
+  return fallback;
+}
+
 function getLocalFallbackForStatus(slug: string, status: number): Restaurant | null {
   const fallback = getLocalDevelopmentRestaurantFallbackForStatus(slug, status);
 
   if (!fallback) return null;
 
   console.warn(
-    `[RestaurantAI] Using local development fallback for /restaurants/${slug}: backend responded with ${status}`,
+    `[RestaurantAI] Using demo fallback for /restaurants/${slug}: backend responded with ${status}`,
   );
   return fallback;
 }
@@ -70,7 +88,7 @@ function getLocalFallbackForError(slug: string, error: unknown): Restaurant | nu
 
   const reason = error instanceof Error ? error.message : "request failed";
   console.warn(
-    `[RestaurantAI] Using local development fallback for /restaurants/${slug}: ${reason}`,
+    `[RestaurantAI] Using demo fallback for /restaurants/${slug}: ${reason}`,
   );
   return fallback;
 }

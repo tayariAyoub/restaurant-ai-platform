@@ -14,6 +14,7 @@ vi.mock("@/lib/api", () => ({
 
 describe("restaurant public page runtime fallback", () => {
   beforeEach(() => {
+    fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     getRestaurantBySlugMock.mockReset();
@@ -71,8 +72,23 @@ describe("restaurant public page runtime fallback", () => {
     expect(screen.getByText("Request failed (404)")).toBeVisible();
   });
 
-  it("does not use mock Bella Napoli in production on 500", async () => {
+  it("renders mock Bella Napoli in production when no backend URL is configured", async () => {
     vi.stubEnv("NODE_ENV", "production");
+
+    const page = await RestaurantWebsite({
+      params: Promise.resolve({ slug: "bella-napoli" }),
+    });
+
+    renderWithUser(page);
+
+    expect(screen.getAllByRole("heading", { name: "Bella Napoli" }).length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getRestaurantBySlugMock).not.toHaveBeenCalled();
+  });
+
+  it("does not use mock Bella Napoli in production when a backend URL is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BACKEND_INTERNAL_URL", "https://api.example.com");
     fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
     getRestaurantBySlugMock.mockRejectedValueOnce(new Error("Request failed (500)"));
 

@@ -38,7 +38,11 @@ export function siteUrl() {
 }
 
 export function backendUrl() {
-  return (process.env.BACKEND_INTERNAL_URL || "http://localhost:8000").replace(/\/$/, "");
+  return (configuredBackendUrl() || "http://localhost:8000").replace(/\/$/, "");
+}
+
+export function configuredBackendUrl() {
+  return process.env.BACKEND_INTERNAL_URL?.trim() || "";
 }
 
 export function restaurantPageUrl(slug: string) {

@@ -7,6 +7,7 @@ const fetchMock = vi.fn();
 
 describe("public restaurant data loading", () => {
   beforeEach(() => {
+    fetchMock.mockReset();
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
@@ -25,7 +26,7 @@ describe("public restaurant data loading", () => {
 
     expect(restaurant?.name).toBe("Bella Napoli");
     expect(restaurant?.slug).toBe("bella-napoli");
-    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("local development fallback"));
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("demo fallback"));
   });
 
   it("falls back to Bella Napoli in development when the backend returns 500", async () => {
@@ -75,8 +76,20 @@ describe("public restaurant data loading", () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
-  it("keeps production strict", async () => {
+  it("uses Bella Napoli demo fallback in production when no backend URL is configured", async () => {
     vi.stubEnv("NODE_ENV", "production");
+
+    const restaurant = await fetchPublicRestaurant("bella-napoli");
+
+    expect(restaurant?.name).toBe("Bella Napoli");
+    expect(restaurant?.slug).toBe("bella-napoli");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("no backend URL configured"));
+  });
+
+  it("keeps production strict when a backend URL is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BACKEND_INTERNAL_URL", "https://api.example.com");
     fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
 
     await expect(fetchPublicRestaurant("bella-napoli")).resolves.toBeNull();
