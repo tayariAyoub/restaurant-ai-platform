@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles } from "lucide-react";
+import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, type LucideIcon } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
@@ -650,47 +650,121 @@ function ClassicContactPage({
 }
 
 function ClassicEventsPage({ restaurant, themeIdentity }: { restaurant: Restaurant; themeIdentity: RestaurantThemeIdentity }) {
+  const basePath = `/restaurants/${restaurant.slug}`;
+  const reservationsEnabled = restaurant.reservations_enabled !== false;
   const experiences = [
     {
       title: "Private table",
-      copy: "An intimate corner for birthdays, anniversaries, and family evenings that deserve a little ceremony.",
+      copy: "A composed table for birthdays, anniversaries, family dinners, or evenings that need a little more care.",
     },
     {
-      title: "Tasting evening",
-      copy: "A slower dinner built around the kitchen's strongest dishes, seasonal ingredients, and thoughtful pacing.",
+      title: "Hosted evening",
+      copy: "A slower dining moment shaped around timing, room feel, menu direction, and the pace guests expect.",
     },
     {
       title: "Client dinner",
-      copy: "A polished hospitality setting for conversations that need privacy, warmth, and reliable service.",
+      copy: "A polished hospitality setting for conversations that need privacy, warmth, and reliable coordination.",
     },
   ];
+  const planningDetails = [
+    {
+      icon: CalendarDays,
+      title: "Date, party size, and timing",
+      copy: "Share the preferred date, approximate guest count, and whether the evening should feel quick, relaxed, or celebratory.",
+    },
+    {
+      icon: Sparkles,
+      title: "Menu direction",
+      copy: "Point the team toward dietary needs, favorite dishes, drinks, pacing, and the kind of welcome guests should feel.",
+    },
+    {
+      icon: Phone,
+      title: "Direct coordination",
+      copy: "The restaurant confirms availability, details, and next steps directly, without pretending this is an automated events calendar.",
+    },
+  ];
+  const actions = [
+    { label: "Start an inquiry", href: `${basePath}/contact`, primary: true },
+    reservationsEnabled ? { label: "Request a table", href: `${basePath}/reservations`, primary: false } : null,
+    { label: "View menu", href: `${basePath}/menu`, primary: false },
+  ].filter(Boolean) as Array<{ label: string; href: string; primary: boolean }>;
 
   return (
     <section id="events-details" className="bg-[#120c08] px-4 py-16 text-white sm:px-6 lg:py-24">
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-8 lg:grid-cols-[.92fr_1.08fr] lg:items-end">
+        <div className="grid gap-8 lg:grid-cols-[.92fr_1.08fr] lg:items-stretch">
           <div>
             <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Private dining</p>
-            <h2 className="mt-4 text-balance text-4xl font-semibold leading-[1.03] sm:text-6xl">Special tables, private evenings, and hospitality moments.</h2>
+            <h2 className="mt-4 text-balance text-4xl font-semibold leading-[1.03] sm:text-6xl">Private dining that starts with a clear conversation.</h2>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/66">
+              For celebrations, client dinners, hosted evenings, or private requests, {restaurant.name} can help shape the date, room, menu, and service style before guests arrive.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {actions.map((action) => (
+                <a
+                  key={action.label}
+                  href={action.href}
+                  className={`inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-bold transition hover:-translate-y-0.5 ${
+                    action.primary
+                      ? "text-white shadow-lg"
+                      : "border border-white/15 bg-white/[.08] text-white backdrop-blur hover:bg-white/[.12]"
+                  }`}
+                  style={action.primary ? { backgroundColor: themeIdentity.primary } : undefined}
+                >
+                  {action.label}
+                </a>
+              ))}
+            </div>
           </div>
-          <p className="max-w-2xl text-lg leading-8 text-white/66">
-            For birthdays, client dinners, tasting nights, or private requests, contact {restaurant.name} directly. The team can confirm what is possible for the date, room, menu, and service style.
-          </p>
+          <aside className="rounded-[2rem] border border-white/10 bg-white/[.06] p-6 shadow-2xl backdrop-blur sm:p-8">
+            <p className="luxury-kicker text-xs font-bold text-white/45">Inquiry guide</p>
+            <h3 className="mt-3 text-3xl font-semibold leading-tight">Share what matters before the team replies.</h3>
+            <div className="mt-6 grid gap-3">
+              {planningDetails.map((detail) => (
+                <EventPlanningDetail key={detail.title} {...detail} color={themeIdentity.primary} />
+              ))}
+            </div>
+          </aside>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {experiences.map((experience) => (
             <article key={experience.title} className="rounded-[1.75rem] border border-white/10 bg-white/[.06] p-6 shadow-2xl transition hover:-translate-y-1 hover:bg-white/[.09]">
-              <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">Experience</p>
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/42">Inquiry type</p>
               <h3 className="mt-4 text-2xl font-semibold">{experience.title}</h3>
               <p className="mt-3 text-sm leading-6 text-white/62">{experience.copy}</p>
             </article>
           ))}
         </div>
-        <a href={`/restaurants/${restaurant.slug}/contact`} className={`luxury-button mt-8 inline-flex min-h-12 items-center rounded-full px-6 py-3 font-semibold text-white`} style={{ backgroundColor: themeIdentity.primary }}>
-          Contact the restaurant
-        </a>
+        <div className="mt-8 rounded-[1.75rem] border border-white/10 bg-black/20 p-6 text-sm leading-7 text-white/62 sm:p-7">
+          <p className="font-semibold text-white">No fake calendar, no generic packages.</p>
+          <p className="mt-2">
+            This page is a premium inquiry path: guests can review the menu, request a standard table, or contact the restaurant with the context needed for a private dining reply.
+          </p>
+        </div>
       </div>
     </section>
+  );
+}
+
+function EventPlanningDetail({
+  icon: Icon,
+  title,
+  copy,
+  color,
+}: {
+  icon: LucideIcon;
+  title: string;
+  copy: string;
+  color: string;
+}) {
+  return (
+    <p className="grid grid-cols-[auto_1fr] gap-4 rounded-[1.25rem] border border-white/10 bg-black/[.18] p-4">
+      <Icon size={19} className="mt-0.5" style={{ color }} />
+      <span>
+        <b className="block text-white">{title}</b>
+        <span className="mt-1 block leading-6 text-white/58">{copy}</span>
+      </span>
+    </p>
   );
 }
 

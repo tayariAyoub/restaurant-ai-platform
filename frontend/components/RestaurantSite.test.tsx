@@ -425,11 +425,18 @@ describe("restaurant page", () => {
   it("renders private dining and events as a dedicated route", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="events" />);
 
-    expect(screen.getByRole("heading", { name: /private dining/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Private Dining & Events" })).toBeVisible();
     expect(screen.getByText(/plan a private table/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /plan an event/i })).toHaveAttribute("href", "#events-details");
-    expect(screen.getByText(/special tables/i)).toBeVisible();
-    expect(screen.getAllByRole("link", { name: /contact the restaurant/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/contact")).toBe(true);
+    expect(screen.getByRole("heading", { name: /private dining that starts with a clear conversation/i })).toBeVisible();
+    expect(screen.getByText(/inquiry guide/i)).toBeVisible();
+    expect(screen.getByText(/date, party size, and timing/i)).toBeVisible();
+    expect(screen.getAllByText(/menu direction/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/direct coordination/i)).toBeVisible();
+    expect(screen.getByText(/no fake calendar/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /start an inquiry/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(screen.getByRole("link", { name: /request a table/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
