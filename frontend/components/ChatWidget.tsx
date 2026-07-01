@@ -203,14 +203,16 @@ export default function ChatWidget({
         </div>
       )}
 
-      <button
-        onClick={() => setOpen(!open)}
-        className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105 sm:h-16 sm:w-16"
-        style={{ backgroundColor: primaryColor }}
-        aria-label="Open AI Maitre d'"
-      >
-        {open ? <X /> : <MessageCircle />}
-      </button>
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="ml-auto flex h-14 w-14 items-center justify-center rounded-full border border-white/20 text-white shadow-2xl transition hover:scale-105 hover:shadow-[0_22px_60px_rgba(0,0,0,.28)] focus:scale-105 sm:h-16 sm:w-16"
+          style={{ backgroundColor: primaryColor }}
+          aria-label="Open AI Maitre d'"
+        >
+          <MessageCircle />
+        </button>
+      )}
     </div>
   );
 }

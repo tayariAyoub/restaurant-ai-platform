@@ -27,6 +27,24 @@ describe("ChatWidget", () => {
     expect(screen.getByRole("button", { name: /send message/i })).toBeEnabled();
   });
 
+  it("hides the floating launcher while open and closes from the panel header", async () => {
+    const { user } = renderWithUser(<ChatWidget slug="bella-napoli" restaurantName="Bella Napoli" />);
+
+    const launcher = screen.getByRole("button", { name: /open ai maitre d/i });
+    expect(launcher).toBeVisible();
+
+    await user.click(launcher);
+
+    expect(screen.getByText(/Bella Napoli AI Maitre d'/i)).toBeVisible();
+    expect(screen.queryByRole("button", { name: /open ai maitre d/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /close chat/i })).toHaveLength(1);
+
+    await user.click(screen.getByRole("button", { name: /close chat/i }));
+
+    expect(screen.queryByText(/Bella Napoli AI Maitre d'/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /open ai maitre d/i })).toBeVisible();
+  });
+
   it("shows loading state, sources, and renders a successful response", async () => {
     let resolveResponse: (value: unknown) => void = () => undefined;
     requestMock.mockReturnValue(
