@@ -120,20 +120,20 @@ describe("restaurant page", () => {
     expect(screen.getByRole("heading", { name: /authentic neapolitan pizza/i })).toBeVisible();
     expect(screen.getByText(/wood-fired warmth/i)).toBeVisible();
     expect(screen.getByText(/fresh from the oven/i)).toBeVisible();
-    expect(screen.getByPlaceholderText(/search pizza, burrata, allergens/i)).toBeVisible();
+    expect(screen.getByPlaceholderText(/pizza, burrata, allergene suchen/i)).toBeVisible();
     expect(screen.getByText(/begin with the plates that smell of the oven/i)).toBeVisible();
     expect(screen.getAllByRole("link", { name: /bella napoli/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli")).toBe(true);
     expect(screen.getByRole("heading", { name: /a menu built around appetite/i })).toBeVisible();
-    expect(screen.getByRole("link", { name: /view menu/i })).toHaveAttribute("href", "#menu");
-    expect(screen.getByRole("link", { name: /reserve a table/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(screen.getByRole("link", { name: /speisekarte ansehen/i })).toHaveAttribute("href", "#menu");
+    expect(screen.getAllByRole("link", { name: /tisch reservieren/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
     expect(screen.getByRole("heading", { name: "Antipasti" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Wood-fired Pizza" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Margherita" })).toBeVisible();
     expect(screen.getByText("Sold out tonight")).toBeVisible();
-    expect(screen.getByRole("button", { name: /unavailable today/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /heute nicht verfügbar/i })).toBeDisabled();
     expect(screen.getAllByText("Vegetarian").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Halal").length).toBeGreaterThan(0);
-    expect(screen.getByText("Vegan")).toBeVisible();
+    expect(screen.getAllByText("Vegan").length).toBeGreaterThan(0);
     expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /open ai maitre d/i })).toBeVisible();
   });
@@ -144,40 +144,40 @@ describe("restaurant page", () => {
     expect(screen.getByText(/chef-led menu/i)).toBeVisible();
     expect(screen.getAllByText(/from the kitchen/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/begin with the plates guests come back for/i)).toBeVisible();
-    expect(screen.getByPlaceholderText(/search dishes, ingredients, allergens/i)).toBeVisible();
+    expect(screen.getByPlaceholderText(/gerichte, zutaten, allergene suchen/i)).toBeVisible();
     expect(screen.queryByText(/wood-fired warmth/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/fresh from the oven/i)).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText(/search pizza, burrata, allergens/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/pizza, burrata, allergene suchen/i)).not.toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText(/search dishes, ingredients, allergens/i), "ribeye");
+    await user.type(screen.getByPlaceholderText(/gerichte, zutaten, allergene suchen/i), "ribeye");
 
     const ribeyeCard = screen.getByRole("heading", { name: "Charred Ribeye" }).closest("article");
     expect(ribeyeCard).not.toBeNull();
     expect(screen.queryByRole("heading", { name: "Market Greens" })).not.toBeInTheDocument();
 
-    await user.click(within(ribeyeCard as HTMLElement).getByRole("button", { name: /add to order/i }));
+    await user.click(within(ribeyeCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i }));
 
-    expect(screen.getByRole("button", { name: /view order/i })).toBeVisible();
-    expect(screen.getByText(/1 item/i)).toBeVisible();
+    expect(screen.getByRole("button", { name: /bestellung ansehen/i })).toBeVisible();
+    expect(screen.getAllByText(/^1 Gericht$/i).length).toBeGreaterThan(0);
   });
 
   it("renders the gallery as a dedicated visual route", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="gallery" />);
 
-    expect(screen.getByRole("heading", { name: "Gallery" })).toBeVisible();
-    expect(screen.getByText(/a visual preview of the dining room/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /explore the gallery/i })).toHaveAttribute("href", "#gallery");
-    expect(screen.getByRole("link", { name: /reserve after browsing/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(screen.getByRole("heading", { name: "Galerie" })).toBeVisible();
+    expect(screen.getByText(/ein visueller eindruck/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /galerie ansehen/i })).toHaveAttribute("href", "#gallery");
+    expect(screen.getByRole("link", { name: /nach dem Stöbern reservieren/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
     expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
     const footer = screen.getByRole("contentinfo");
     const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
-    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
-    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
-    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footerNav).getByRole("link", { name: "Speisekarte" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Tisch reservieren" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expectLegalFooterLinks(footer);
   });
 
@@ -193,7 +193,7 @@ describe("restaurant page", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Gallery" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Galerie" })).toBeVisible();
     expect(screen.getByRole("heading", { name: /the visual story is still being prepared/i })).toBeVisible();
     expect(screen.getByText(/gallery being curated/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/north-star-grill/menu");
@@ -201,7 +201,7 @@ describe("restaurant page", () => {
     expect(screen.getByRole("link", { name: /plan a visit/i })).toHaveAttribute("href", "/restaurants/north-star-grill/contact");
     expect(screen.getByText(/menu first/i)).toBeVisible();
     expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
   });
 
   it("renders immersive gallery images when present", () => {
@@ -236,13 +236,13 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
-    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Galerie" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText(/an immersive look at the room/i)).toBeVisible();
     expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
     expect(screen.queryByText(/gallery being composed/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/has not published gallery photography/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
   });
 
   it("renders a premium immersive empty gallery state when no images exist", () => {
@@ -279,19 +279,19 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
-    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Galerie" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText(/gallery being composed/i)).toBeVisible();
     expect(screen.getByRole("heading", { name: /the visual story is still being prepared/i })).toBeVisible();
     expect(screen.getByText(/has not published gallery photography yet/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/north-star-grill/menu");
-    expect(screen.getByRole("link", { name: /reserve a table/i })).toHaveAttribute("href", "/restaurants/north-star-grill/reservations");
-    expect(screen.getByRole("link", { name: /plan your visit/i })).toHaveAttribute("href", "/restaurants/north-star-grill/contact");
+    expect(screen.getByRole("link", { name: /speisekarte ansehen/i })).toHaveAttribute("href", "/restaurants/north-star-grill/menu");
+    expect(screen.getAllByRole("link", { name: /tisch reservieren/i }).some((link) => link.getAttribute("href") === "/restaurants/north-star-grill/reservations")).toBe(true);
+    expect(screen.getByRole("link", { name: /besuch planen/i })).toHaveAttribute("href", "/restaurants/north-star-grill/contact");
     expect(screen.getByText(/menu first/i)).toBeVisible();
     expect(screen.queryByText(/has not added gallery images yet/i)).not.toBeInTheDocument();
     expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
   });
 
   it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
@@ -325,13 +325,13 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
-    expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
-    expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /speisekarte ansehen/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /tisch reservieren/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
     expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
     expect(screen.getByRole("heading", { name: /some evenings need more than a table/i })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /opening hours/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /öffnungszeiten/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/AI Maitre d'/i).length).toBeGreaterThan(0);
   });
 
@@ -339,38 +339,38 @@ describe("restaurant page", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
 
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
-    expect(screen.getAllByRole("link", { name: /view menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
-    expect(screen.getAllByRole("link", { name: /reserve table/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /speisekarte ansehen/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /tisch reservieren/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/reservations")).toBe(true);
     expect(screen.getByRole("heading", { name: /a teaser, not the full menu/i })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
     const footer = screen.getByRole("contentinfo");
     const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
-    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
-    expect(within(footerNav).getByRole("link", { name: "Reservations" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
-    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footerNav).getByRole("link", { name: "Speisekarte" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Reservierungen" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Galerie" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
     expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
-    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footerNav).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expectLegalFooterLinks(footer);
   });
 
   it("uses one shared navigation shell across public restaurant routes", () => {
     const expectedLinks = [
-      ["Home", "/restaurants/bella-napoli"],
-      ["Menu", "/restaurants/bella-napoli/menu"],
-      ["Gallery", "/restaurants/bella-napoli/gallery"],
+      ["Start", "/restaurants/bella-napoli"],
+      ["Speisekarte", "/restaurants/bella-napoli/menu"],
+      ["Galerie", "/restaurants/bella-napoli/gallery"],
       ["Events", "/restaurants/bella-napoli/events"],
-      ["Contact", "/restaurants/bella-napoli/contact"],
+      ["Kontakt", "/restaurants/bella-napoli/contact"],
     ];
     const routes = [
-      ["home", "Home"],
-      ["menu", "Menu"],
-      ["gallery", "Gallery"],
+      ["home", "Start"],
+      ["menu", "Speisekarte"],
+      ["gallery", "Galerie"],
       ["events", "Events"],
-      ["contact", "Contact"],
-      ["reservations", "Reserve Table"],
+      ["contact", "Kontakt"],
+      ["reservations", "Tisch reservieren"],
     ] as const;
 
     for (const [page, activeLabel] of routes) {
@@ -388,13 +388,13 @@ describe("restaurant page", () => {
         expect(link.className).toContain("py-2.5");
       });
 
-      const reserveButton = within(banner).getByRole("link", { name: /reserve table/i });
+      const reserveButton = within(banner).getByRole("link", { name: /tisch reservieren/i });
       expect(reserveButton).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
       expect(reserveButton.className).toContain("min-h-11");
       expect(reserveButton.className).toContain("px-5");
       expect(reserveButton.className).toContain("py-2.5");
 
-      const activeElement = activeLabel === "Reserve Table"
+      const activeElement = activeLabel === "Tisch reservieren"
         ? reserveButton
         : within(nav).getByRole("link", { name: activeLabel });
       expect(activeElement).toHaveAttribute("aria-current", "page");
@@ -417,13 +417,13 @@ describe("restaurant page", () => {
     const footer = screen.getByRole("contentinfo");
     const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
 
-    expect(within(footerNav).queryByRole("link", { name: "Reserve Table" })).not.toBeInTheDocument();
-    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
-    expect(within(footer).queryByText(/menu, reservations, gallery/i)).not.toBeInTheDocument();
-    expect(within(footer).getByText(/menu, gallery, private dining/i)).toBeVisible();
+    expect(within(footerNav).queryByRole("link", { name: "Tisch reservieren" })).not.toBeInTheDocument();
+    expect(within(footerNav).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footer).queryByText(/speisekarte, reservierung, galerie/i)).not.toBeInTheDocument();
+    expect(within(footer).getByText(/speisekarte, galerie, private dining/i)).toBeVisible();
     expectLegalFooterLinks(footer);
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
   });
 
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
@@ -431,19 +431,19 @@ describe("restaurant page", () => {
 
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
     expect(margheritaCard).not.toBeNull();
-    const addMargherita = within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i });
+    const addMargherita = within(margheritaCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i });
 
     await user.click(addMargherita);
     await user.click(addMargherita);
-    await user.click(screen.getByRole("button", { name: /view order/i }));
+    await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
 
-    expect(screen.getByText(/payment is handled by the restaurant/i)).toBeVisible();
+    expect(screen.getByText(/die zahlung läuft über das restaurant/i)).toBeVisible();
     expect(screen.getAllByText("EUR 25.00").length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole("button", { name: /remove one margherita/i }));
+    await user.click(screen.getByRole("button", { name: /margherita einmal entfernen/i }));
     expect(screen.getAllByText("EUR 12.50").length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole("button", { name: /^remove margherita$/i }));
+    await user.click(screen.getByRole("button", { name: /^margherita entfernen$/i }));
     await waitFor(() => {
       expect(screen.queryByText("Margherita", { selector: "p" })).not.toBeInTheDocument();
     });
@@ -452,16 +452,16 @@ describe("restaurant page", () => {
   it("persists cart contents after remounting the page", async () => {
     const firstRender = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
-    const addMargherita = within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i });
+    const addMargherita = within(margheritaCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i });
 
     await firstRender.user.click(addMargherita);
-    expect(screen.getByRole("button", { name: /view order/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /bestellung ansehen/i })).toBeVisible();
 
     firstRender.unmount();
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
-    expect(await screen.findByRole("button", { name: /view order/i })).toBeVisible();
-    expect(screen.getByText(/1 item/i)).toBeVisible();
+    expect(await screen.findByRole("button", { name: /bestellung ansehen/i })).toBeVisible();
+    expect(screen.getByText(/1 Gericht/i)).toBeVisible();
   });
 
   it("clears the persisted cart only after a successful order", async () => {
@@ -472,11 +472,11 @@ describe("restaurant page", () => {
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
 
-    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
-    await user.click(screen.getByRole("button", { name: /view order/i }));
-    await user.type(screen.getAllByPlaceholderText(/your name/i).at(-1) as HTMLElement, "Giulia");
-    await user.type(screen.getAllByPlaceholderText(/phone number/i).at(-1) as HTMLElement, "123456");
-    await user.click(screen.getByRole("button", { name: /confirm order/i }));
+    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i }));
+    await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
+    await user.type(screen.getAllByPlaceholderText(/^name$/i).at(-1) as HTMLElement, "Giulia");
+    await user.type(screen.getAllByPlaceholderText(/telefonnummer/i).at(-1) as HTMLElement, "123456");
+    await user.click(screen.getByRole("button", { name: /bestellung bestätigen/i }));
 
     await waitFor(() => {
       expect(requestMock).toHaveBeenCalledWith(
@@ -484,10 +484,10 @@ describe("restaurant page", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
-    expect(screen.getByRole("button", { name: /confirming order/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /bestellung wird bestätigt/i })).toBeDisabled();
 
     resolveOrder(orderResponse);
-    expect(await screen.findByText(/order received/i)).toBeVisible();
+    expect((await screen.findAllByText(/bestellung erhalten/i)).length).toBeGreaterThan(0);
     expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toBeNull();
   });
 
@@ -496,11 +496,11 @@ describe("restaurant page", () => {
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
     const margheritaCard = screen.getByRole("heading", { name: "Margherita" }).closest("article");
 
-    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /add to order/i }));
-    await user.click(screen.getByRole("button", { name: /view order/i }));
-    await user.type(screen.getAllByPlaceholderText(/your name/i).at(-1) as HTMLElement, "Giulia");
-    await user.type(screen.getAllByPlaceholderText(/phone number/i).at(-1) as HTMLElement, "123456");
-    await user.click(screen.getByRole("button", { name: /confirm order/i }));
+    await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i }));
+    await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
+    await user.type(screen.getAllByPlaceholderText(/^name$/i).at(-1) as HTMLElement, "Giulia");
+    await user.type(screen.getAllByPlaceholderText(/telefonnummer/i).at(-1) as HTMLElement, "123456");
+    await user.click(screen.getByRole("button", { name: /bestellung bestätigen/i }));
 
     expect(await screen.findByText("Kitchen is closed")).toBeVisible();
     expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toContain("\"itemId\":201");
@@ -512,7 +512,7 @@ describe("restaurant page", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="menu" />);
 
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
     });
     expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toBeNull();
   });
@@ -525,42 +525,42 @@ describe("restaurant page", () => {
 
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getByRole("button", { name: /toggle menu/i })).toBeVisible();
-    expect(screen.getAllByRole("link", { name: /menu/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /speisekarte/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
   });
 
   it("keeps reservations separate from contact details", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="reservations" />);
 
-    expect(screen.getByText(/help the team prepare the right welcome/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /start reservation request/i })).toHaveAttribute("href", "#reserve");
-    expect(screen.getByRole("link", { name: /view menu first/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
-    expect(screen.getByRole("heading", { name: /request a table/i })).toBeVisible();
-    expect(screen.getByLabelText(/^your name$/i)).toBeVisible();
-    expect(screen.getByLabelText(/^email$/i)).toBeVisible();
-    expect(screen.getByLabelText(/^phone$/i)).toBeVisible();
-    expect(screen.getByLabelText(/^guests$/i)).toBeVisible();
-    expect(screen.getByLabelText(/preferred date and arrival time/i)).toBeVisible();
-    expect(screen.getByText(/choose the ideal arrival window/i)).toBeVisible();
-    expect(screen.getByLabelText(/notes for the restaurant/i)).toBeVisible();
+    expect(screen.getByText(/dem Team die richtige Vorbereitung erleichtern/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /reservierungsanfrage starten/i })).toHaveAttribute("href", "#reserve");
+    expect(screen.getByRole("link", { name: /zuerst speisekarte ansehen/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(screen.getByRole("heading", { name: /tisch anfragen/i })).toBeVisible();
+    expect(screen.getByLabelText(/^name$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^e-mail$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^telefon$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^gäste$/i)).toBeVisible();
+    expect(screen.getByLabelText(/gewünschtes datum \/ uhrzeit/i)).toBeVisible();
+    expect(screen.getByText(/bevorzugtes ankunftsfenster/i)).toBeVisible();
+    expect(screen.getByLabelText(/hinweise für das restaurant/i)).toBeVisible();
     expect(screen.queryByText(bellaNapoli.address)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
   });
 
   it("submits the labelled reservation form with the existing payload shape", async () => {
     requestMock.mockResolvedValueOnce({});
     const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="reservations" />);
 
-    await user.type(screen.getByLabelText(/^your name$/i), "Giulia Rossi");
-    await user.type(screen.getByLabelText(/^email$/i), "giulia@example.com");
-    await user.type(screen.getByLabelText(/^phone$/i), "+49123456");
-    await user.type(screen.getByLabelText(/^guests$/i), "4");
-    fireEvent.change(screen.getByLabelText(/preferred date and arrival time/i), {
+    await user.type(screen.getByLabelText(/^name$/i), "Giulia Rossi");
+    await user.type(screen.getByLabelText(/^e-mail$/i), "giulia@example.com");
+    await user.type(screen.getByLabelText(/^telefon$/i), "+49123456");
+    await user.type(screen.getByLabelText(/^gäste$/i), "4");
+    fireEvent.change(screen.getByLabelText(/gewünschtes datum \/ uhrzeit/i), {
       target: { value: "2026-07-10T19:30" },
     });
-    await user.type(screen.getByLabelText(/notes for the restaurant/i), "Window table, nut allergy.");
-    await user.click(screen.getByRole("button", { name: /send reservation request/i }));
+    await user.type(screen.getByLabelText(/hinweise für das restaurant/i), "Window table, nut allergy.");
+    await user.click(screen.getByRole("button", { name: /reservierungsanfrage senden/i }));
 
     await waitFor(() => {
       expect(requestMock).toHaveBeenCalledWith(
@@ -578,38 +578,38 @@ describe("restaurant page", () => {
       requested_at: "2026-07-10T19:30",
       message: "Window table, nut allergy.",
     });
-    expect(await screen.findByText(/your table request has been received/i)).toBeVisible();
+    expect(await screen.findByText(/reservierungsanfrage ist eingegangen/i)).toBeVisible();
   });
 
   it("renders contact details without a reservation form", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="contact" />);
 
-    expect(screen.getByText(/everything guests need before arrival/i)).toBeVisible();
+    expect(screen.getByText(/alles wichtige vor dem besuch/i)).toBeVisible();
     expect(screen.getByRole("heading", { name: /plan your visit with confidence/i })).toBeVisible();
     expect(screen.getByText(/arrival questions, same-day timing/i)).toBeVisible();
     expect(screen.queryByText(/the oven/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /view contact details/i })).toHaveAttribute("href", "#contact-details");
+    expect(screen.getByRole("link", { name: /kontaktdaten ansehen/i })).toHaveAttribute("href", "#contact-details");
     expect(screen.getAllByText(/Sonnenallee 42/).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /\+49 30 123456/i })).toHaveAttribute("href", "tel:+4930123456");
     expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
-    expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
-    expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /karte öffnen/i })).toHaveAttribute("href", "https://maps.example/bella");
+    expect(screen.getAllByText(/öffnungszeiten/i).length).toBeGreaterThan(0);
     const footer = screen.getByRole("contentinfo");
     const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
-    expect(within(footer).getByText(/^plan your visit$/i)).toBeVisible();
+    expect(within(footer).getByText(/^besuch planen$/i)).toBeVisible();
     expect(within(footer).getByText("Bella Napoli")).toBeVisible();
     expect(within(footer).getByText(/Sonnenallee 42, Berlin/i)).toBeVisible();
-    expect(within(footer).getByText(/menu, reservations, gallery, private dining/i)).toBeVisible();
-    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
-    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
-    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footer).getByText(/speisekarte, reservierung, galerie, private dining/i)).toBeVisible();
+    expect(within(footerNav).getByRole("link", { name: "Speisekarte" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Tisch reservieren" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Galerie" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
     expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
-    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footerNav).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expectLegalFooterLinks(footer);
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
   });
 
   it("renders immersive contact details as actionable visit links", () => {
@@ -643,26 +643,26 @@ describe("restaurant page", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: /plan the visit/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /besuch planen/i })).toBeVisible();
     expect(screen.getByText(/arrival questions, same-day timing/i)).toBeVisible();
     expect(screen.getByRole("link", { name: /\+49 30 123456/i })).toHaveAttribute("href", "tel:+4930123456");
     expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
-    expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
-    expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /karte öffnen/i })).toHaveAttribute("href", "https://maps.example/bella");
+    expect(screen.getAllByText(/öffnungszeiten/i).length).toBeGreaterThan(0);
     const footer = screen.getByRole("contentinfo");
     const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
-    expect(within(footer).getByText(/^plan your visit$/i)).toBeVisible();
+    expect(within(footer).getByText(/^besuch planen$/i)).toBeVisible();
     expect(within(footer).getByText("Bella Napoli")).toBeVisible();
     expect(within(footer).getByText(/Sonnenallee 42, Berlin/i)).toBeVisible();
-    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
-    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
-    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footerNav).getByRole("link", { name: "Speisekarte" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Tisch reservieren" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Galerie" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
     expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
-    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footerNav).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expectLegalFooterLinks(footer);
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
   });
 
   it("renders private dining and events as a dedicated route", () => {
@@ -670,20 +670,20 @@ describe("restaurant page", () => {
 
     expect(screen.getByRole("heading", { name: "Private Dining & Events" })).toBeVisible();
     expect(screen.getByText(/plan a private table/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /plan an event/i })).toHaveAttribute("href", "#events-details");
+    expect(screen.getByRole("link", { name: /event anfragen/i })).toHaveAttribute("href", "#events-details");
     expect(screen.getByRole("heading", { name: /private dining that starts with a clear conversation/i })).toBeVisible();
     expect(screen.getByText(/inquiry guide/i)).toBeVisible();
     expect(screen.getByText(/date, party size, and timing/i)).toBeVisible();
     expect(screen.getAllByText(/menu direction/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/direct coordination/i)).toBeVisible();
     expect(screen.getByText(/no fake calendar/i)).toBeVisible();
-    expect(screen.getByRole("link", { name: /start an inquiry/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
-    expect(screen.getByRole("link", { name: /request a table/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
-    expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(screen.getByRole("link", { name: /anfrage starten/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(screen.getByRole("link", { name: /tisch anfragen/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(screen.getByRole("link", { name: /speisekarte ansehen/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zur bestellung hinzufügen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /tisch anfragen/i })).not.toBeInTheDocument();
   });
 
   it("does not mount cart or order controls outside the menu route", () => {
@@ -695,9 +695,9 @@ describe("restaurant page", () => {
 
       const result = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page={page} />);
 
-      expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /confirm order/i })).not.toBeInTheDocument();
-      expect(screen.queryByText(/payment is handled by the restaurant/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /bestellung bestätigen/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/die zahlung läuft über das restaurant/i)).not.toBeInTheDocument();
 
       result.unmount();
       localStorage.clear();

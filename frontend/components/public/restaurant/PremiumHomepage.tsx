@@ -56,7 +56,7 @@ export default function PremiumHomepage(props: PremiumHomepageProps) {
         homeHref={basePath}
         links={getRestaurantNavigationLinks(restaurant.slug)}
         cta={{
-          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          label: reservationsEnabled ? "Tisch reservieren" : "Kontakt",
           href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
         }}
         activePage="home"
@@ -116,13 +116,13 @@ function PremiumHero({
           )}
           <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <a href={`${basePath}/menu`} className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center gap-2 bg-white px-7 py-3.5 text-sm font-bold text-[#100c08] shadow-2xl`}>
-              View Menu <ArrowRight size={17} />
+              Speisekarte ansehen <ArrowRight size={17} />
             </a>
             <a
               href={reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`}
               className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center border border-white/22 bg-white/[.08] px-7 py-3.5 text-sm font-bold text-white backdrop-blur`}
             >
-              {reservationsEnabled ? "Reserve Table" : "Contact Restaurant"}
+              {reservationsEnabled ? "Tisch reservieren" : "Restaurant kontaktieren"}
             </a>
           </div>
           <div className="mt-6 grid max-w-3xl grid-cols-3 divide-x divide-white/12 rounded-[1.5rem] border border-white/12 bg-black/24 text-center shadow-2xl backdrop-blur sm:mt-8">
@@ -215,7 +215,7 @@ function SignatureDishes({
             {themeIdentity.personality.signatureCopy}
           </p>
           <a href={`/restaurants/${restaurant.slug}/menu`} className={`${themeIdentity.buttonClass} mt-8 inline-flex min-h-12 items-center justify-center gap-2 bg-white px-6 py-3 text-sm font-bold text-[#100c08]`}>
-            View Menu <ArrowRight size={16} />
+            Speisekarte ansehen <ArrowRight size={16} />
           </a>
           <p className="mt-5 text-sm text-white/42">
             {availableItems || "Fresh"} {availableItems === 1 ? "dish" : "dishes"} available online.
@@ -277,7 +277,7 @@ function AtmosphereTeaser({
             </h2>
           </div>
           <a href={`/restaurants/${restaurant.slug}/gallery`} className="inline-flex items-center gap-2 text-sm font-bold text-white/72">
-            Open Gallery <ArrowRight size={16} />
+            Galerie öffnen <ArrowRight size={16} />
           </a>
         </div>
         <div className="grid gap-3 md:grid-cols-5">
@@ -318,7 +318,7 @@ function EventsTeaser({
           Birthdays, client dinners, tasting nights, and private requests deserve a slower conversation with the team.
         </p>
         <a href={`/restaurants/${restaurant.slug}/events`} className={`${themeIdentity.buttonClass} mt-8 inline-flex min-h-12 items-center justify-center gap-2 border border-white/20 bg-white/[.08] px-6 py-3 text-sm font-bold text-white backdrop-blur`}>
-          Explore Events <ArrowRight size={16} />
+          Events ansehen <ArrowRight size={16} />
         </a>
       </div>
     </section>
@@ -348,16 +348,16 @@ function LocationTeaser({
             This is only a contact teaser. Full address, opening hours, map, phone, email, and social links stay on the contact page.
           </p>
           <a href={`/restaurants/${restaurant.slug}/contact`} className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-white/82">
-            Open Contact <ArrowRight size={16} />
+            Kontakt öffnen <ArrowRight size={16} />
           </a>
         </div>
         <div className="grid gap-4">
           <DetailLine icon={MapPin} title="Address" copy={`${restaurant.address}, ${restaurant.postal_code} ${restaurant.city}`} color={themeIdentity.primary} />
-          <DetailLine icon={Phone} title="Phone" copy={restaurant.phone || "Phone coming soon"} color={themeIdentity.primary} />
-          <DetailLine icon={Clock3} title={firstHours ? firstHours[0] : "Hours"} copy={firstHours ? firstHours[1] : "Opening hours available on the contact page"} color={themeIdentity.primary} />
+          <DetailLine icon={Phone} title="Telefon" copy={restaurant.phone || "Telefon bald verfügbar"} color={themeIdentity.primary} />
+          <DetailLine icon={Clock3} title={firstHours ? firstHours[0] : "Öffnungszeiten"} copy={firstHours ? firstHours[1] : "Öffnungszeiten finden Sie auf der Kontaktseite"} color={themeIdentity.primary} />
           {restaurant.google_maps_url && (
             <a href={restaurant.google_maps_url} target="_blank" className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center bg-white px-5 py-3 text-sm font-bold text-[#100c08]`}>
-              Open Map
+              Karte öffnen
             </a>
           )}
         </div>
@@ -380,11 +380,11 @@ function PremiumHomepageFooter({
       <p className="mt-3 text-sm text-white/44">{restaurant.city || restaurant.address}</p>
       <nav aria-label="Footer restaurant links" className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2 text-sm font-semibold text-white/62">
         {[
-          ["Menu", `${basePath}/menu`],
-          ["Reservations", `${basePath}/reservations`],
-          ["Gallery", `${basePath}/gallery`],
+          ["Speisekarte", `${basePath}/menu`],
+          ["Reservierungen", `${basePath}/reservations`],
+          ["Galerie", `${basePath}/gallery`],
           ["Events", `${basePath}/events`],
-          ["Contact", `${basePath}/contact`],
+          ["Kontakt", `${basePath}/contact`],
         ].map(([label, href]) => (
           <a key={label} href={href} className="rounded-full border border-white/10 px-4 py-2.5 hover:text-white">
             {label}

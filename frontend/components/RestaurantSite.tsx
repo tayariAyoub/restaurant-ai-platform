@@ -143,7 +143,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     if (orderSubmitting) return;
-    setOrderStatus("Sending your order...");
+    setOrderStatus("Bestellung wird gesendet...");
     setOrderSubmitting(true);
     try {
       const order = await request<RestaurantOrder>(`/restaurants/${restaurant.slug}/orders`, {
@@ -175,7 +175,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
       clearCart(cartScope);
       setOrderStatus("");
     } catch (error) {
-      setOrderStatus(error instanceof Error ? error.message : "Could not place order.");
+      setOrderStatus(error instanceof Error ? error.message : "Bestellung konnte nicht gesendet werden.");
     } finally {
       setOrderSubmitting(false);
     }
@@ -185,7 +185,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
     event.preventDefault();
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
-    setReservationStatus("Sending...");
+    setReservationStatus("Anfrage wird gesendet...");
     try {
       await request(`/restaurants/${restaurant.slug}/reservations`, {
         method: "POST",
@@ -195,9 +195,9 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         }),
       });
       form.reset();
-      setReservationStatus("Your table request has been received. The restaurant will confirm the details shortly.");
+      setReservationStatus("Ihre Reservierungsanfrage ist eingegangen. Das Restaurant bestätigt die Details in Kürze.");
     } catch (error) {
-      setReservationStatus(error instanceof Error ? error.message : "Could not send request.");
+      setReservationStatus(error instanceof Error ? error.message : "Anfrage konnte nicht gesendet werden.");
     }
   }
 
@@ -291,8 +291,8 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
           <span className="flex min-w-0 items-center gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15"><ShoppingBag size={19} /></span>
             <span className="min-w-0">
-              <span className="block truncate">View order</span>
-              <span className="block text-xs text-white/75">{cartCount} item{cartCount === 1 ? "" : "s"}</span>
+              <span className="block truncate">Bestellung ansehen</span>
+              <span className="block text-xs text-white/75">{cartCount} Gericht{cartCount === 1 ? "" : "e"}</span>
             </span>
           </span>
           <span className="shrink-0 rounded-full bg-white/15 px-3 py-2">{formatPrice(subtotal)}</span>
@@ -332,13 +332,13 @@ function buildPublicFooterLinks(restaurant: Restaurant, reservationsEnabled: boo
   const basePath = `/restaurants/${restaurant.slug}`;
 
   return [
-    { label: "Menu", href: `${basePath}/menu` },
+    { label: "Speisekarte", href: `${basePath}/menu` },
     reservationsEnabled
-      ? { label: "Reserve Table", href: `${basePath}/reservations` }
-      : { label: "Contact", href: `${basePath}/contact` },
-    { label: "Gallery", href: `${basePath}/gallery` },
+      ? { label: "Tisch reservieren", href: `${basePath}/reservations` }
+      : { label: "Kontakt", href: `${basePath}/contact` },
+    { label: "Galerie", href: `${basePath}/gallery` },
     { label: "Events", href: `${basePath}/events` },
-    ...(reservationsEnabled ? [{ label: "Contact", href: `${basePath}/contact` }] : []),
+    ...(reservationsEnabled ? [{ label: "Kontakt", href: `${basePath}/contact` }] : []),
   ];
 }
 
@@ -354,14 +354,14 @@ function ClassicPublicFooter({
   const footerLinks = buildPublicFooterLinks(restaurant, reservationsEnabled);
   const location = [restaurant.address, restaurant.city].filter(Boolean).join(", ");
   const closingLine = reservationsEnabled
-    ? "Menu, reservations, gallery, private dining, and contact details stay close for the next step."
-    : "Menu, gallery, private dining, and contact details stay close for the next step.";
+    ? "Speisekarte, Reservierung, Galerie, Private Dining und Kontakt bleiben für den nächsten Schritt griffbereit."
+    : "Speisekarte, Galerie, Private Dining und Kontakt bleiben für den nächsten Schritt griffbereit.";
 
   return (
     <footer className="px-4 py-12 text-sm sm:px-6" style={style}>
       <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1fr_auto] md:items-end">
         <div className="text-center md:text-left">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] opacity-50">Plan your visit</p>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] opacity-50">Besuch planen</p>
           <p className="mt-3 font-display text-3xl font-semibold">{restaurant.name}</p>
           {location && <p className="mt-3 opacity-70">{location}</p>}
           <p className="mx-auto mt-5 max-w-xl text-sm leading-6 opacity-60 md:mx-0">
@@ -457,7 +457,7 @@ function renderClassicPage({
   if (page === "reservations") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservations" copy="Request a table with the details that help the team prepare the right welcome." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Reservierungen" copy="Fragen Sie einen Tisch mit den Details an, die dem Team die richtige Vorbereitung erleichtern." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicReservationPage restaurant={restaurant} themeIdentity={themeIdentity} reservationStatus={reservationStatus} onReserve={reserve} enabled={reservationsEnabled} />
       </>
     );
@@ -466,7 +466,7 @@ function renderClassicPage({
   if (page === "gallery") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Gallery" copy="A visual preview of the dining room, the plates, and the atmosphere before you arrive." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Galerie" copy="Ein visueller Eindruck von Raum, Tellern und Atmosphäre, bevor Sie ankommen." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <GalleryShowcase restaurant={restaurant} themeIdentity={themeIdentity} gallery={gallery} />
       </>
     );
@@ -475,7 +475,7 @@ function renderClassicPage({
   if (page === "contact") {
     return (
       <>
-        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Contact" copy="Everything guests need before arrival: address, hours, phone, email, map, and social links." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
+        <ClassicPageHero restaurant={restaurant} themeIdentity={themeIdentity} heroVisual={heroVisual} page={page} title="Kontakt" copy="Alles Wichtige vor dem Besuch: Adresse, Öffnungszeiten, Telefon, E-Mail, Karte und Social Links." reservationsEnabled={reservationsEnabled} mobileOpen={mobile} onToggleMobile={toggleMobile} onCloseMobile={closeMobile} />
         <ClassicContactPage restaurant={restaurant} themeIdentity={themeIdentity} hours={hours} />
       </>
     );
@@ -560,7 +560,7 @@ function ClassicPageHero({
         homeHref={basePath}
         links={getRestaurantNavigationLinks(restaurant.slug)}
         cta={{
-          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          label: reservationsEnabled ? "Tisch reservieren" : "Kontakt",
           href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
         }}
         activePage={page}
@@ -604,8 +604,8 @@ function ClassicReservationPage({
   if (!enabled) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-20 text-center sm:px-6">
-        <h2 className="text-4xl font-semibold">Online reservations are currently paused.</h2>
-        <p className="mt-4 opacity-60">Please contact {restaurant.name} directly for table requests.</p>
+        <h2 className="text-4xl font-semibold">Online-Reservierungen sind aktuell pausiert.</h2>
+        <p className="mt-4 opacity-60">Bitte kontaktieren Sie {restaurant.name} direkt für Tischanfragen.</p>
       </section>
     );
   }
@@ -613,50 +613,50 @@ function ClassicReservationPage({
     <section className="bg-[#f8f1e7] px-4 py-16 text-[#22170f] sm:px-6 lg:py-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.82fr_1.18fr] lg:items-stretch">
         <div className="rounded-[2rem] border border-[#2d1b13]/10 bg-[#25170f] p-7 text-white shadow-2xl sm:p-9">
-          <p className="luxury-kicker text-xs font-bold text-white/58">A calmer way to book</p>
+          <p className="luxury-kicker text-xs font-bold text-white/58">Ruhiger reservieren</p>
           <h2 className="mt-4 text-4xl font-semibold leading-[1.02] sm:text-5xl">Share the occasion, then let the restaurant prepare the table.</h2>
           <p className="mt-5 text-base leading-7 text-white/68">
             Share the date, party size, allergies, and occasion. {restaurant.name} can prepare the table with the same care as the kitchen.
           </p>
           <div className="mt-8 grid gap-3 text-sm font-semibold text-white/76">
-            <span className="flex items-center gap-3"><CalendarDays size={18} /> Date, time, and party size</span>
-            <span className="flex items-center gap-3"><Sparkles size={18} /> Allergies and special occasions</span>
-            <span className="flex items-center gap-3"><Phone size={18} /> Direct confirmation from the restaurant</span>
+            <span className="flex items-center gap-3"><CalendarDays size={18} /> Datum, Uhrzeit und Gästezahl</span>
+            <span className="flex items-center gap-3"><Sparkles size={18} /> Allergien und besondere Anlässe</span>
+            <span className="flex items-center gap-3"><Phone size={18} /> Direkte Bestätigung durch das Restaurant</span>
           </div>
         </div>
         <form id="reserve" onSubmit={onReserve} className="rounded-[2rem] border border-[#2d1b13]/10 bg-white p-6 text-slate-900 shadow-[0_24px_70px_rgba(45,27,19,.12)] sm:p-8">
-          <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Reservations</p>
-          <h3 className="mt-2 text-3xl font-semibold sm:text-5xl">Request a table</h3>
+          <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Reservierungen</p>
+          <h3 className="mt-2 text-3xl font-semibold sm:text-5xl">Tisch anfragen</h3>
           <p className="mt-3 text-sm leading-6 text-slate-500">The team confirms every request directly. Share the essentials now, and the restaurant will handle the details with care.</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
-              Your name
-              <input name="name" required placeholder="Full name" autoComplete="name" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+              Name
+              <input name="name" required placeholder="Vollständiger Name" autoComplete="name" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
-              Email
+              E-Mail
               <input name="email" type="email" required placeholder="you@example.com" autoComplete="email" inputMode="email" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
-              Phone
-              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Best number for confirmation" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+              Telefon
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Beste Nummer für die Bestätigung" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
-              Guests
-              <input name="party_size" type="number" min="1" inputMode="numeric" placeholder="Party size" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+              Gäste
+              <input name="party_size" type="number" min="1" inputMode="numeric" placeholder="Anzahl der Gäste" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700 sm:col-span-2">
-              Preferred date and arrival time
+              Gewünschtes Datum / Uhrzeit
               <input name="requested_at" type="datetime-local" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
-              <span className="text-xs font-normal leading-5 text-slate-500">Choose the ideal arrival window. The restaurant will confirm availability directly.</span>
+              <span className="text-xs font-normal leading-5 text-slate-500">Wählen Sie Ihr bevorzugtes Ankunftsfenster. Das Restaurant bestätigt die Verfügbarkeit direkt.</span>
             </label>
             <label className="grid gap-1.5 text-sm font-semibold text-slate-700 sm:col-span-2">
-              Notes for the restaurant
-              <textarea name="message" placeholder="Allergies, occasion, preferred table, or notes" className="min-h-28 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+              Hinweise für das Restaurant
+              <textarea name="message" placeholder="Allergien, Anlass, Tischwunsch oder Hinweise" className="min-h-28 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
             </label>
           </div>
           <button className={`luxury-button mt-4 min-h-12 w-full ${themeIdentity.buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: themeIdentity.primary }}>
-            Send reservation request
+            Reservierungsanfrage senden
           </button>
           {reservationStatus && <p className="mt-3 rounded-xl border border-green-100 bg-green-50 p-3 text-center text-sm font-semibold text-green-800">{reservationStatus}</p>}
         </form>
@@ -694,39 +694,39 @@ function ClassicContactPage({
             <p className="flex gap-4">
               <Phone size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
               <span>
-                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">Call</span>
+                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">Telefon</span>
                 {restaurant.phone ? (
                   <a href={phoneHref} className="font-semibold underline decoration-[#2d1b13]/20 underline-offset-4 transition hover:text-[#6f5144]">
                     {restaurant.phone}
                   </a>
                 ) : (
-                  <span>Phone coming soon</span>
+                  <span>Telefon bald verfügbar</span>
                 )}
               </span>
             </p>
             <p className="flex gap-4">
               <Mail size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
               <span>
-                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">Email</span>
+                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">E-Mail</span>
                 {restaurant.email ? (
                   <a href={emailHref} className="font-semibold underline decoration-[#2d1b13]/20 underline-offset-4 transition hover:text-[#6f5144]">
                     {restaurant.email}
                   </a>
                 ) : (
-                  <span>Email coming soon</span>
+                  <span>E-Mail bald verfügbar</span>
                 )}
               </span>
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold">
-            {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" rel="noreferrer" className="min-h-11 rounded-full border border-[#2d1b13]/15 px-5 py-3 transition hover:bg-[#2d1b13] hover:text-white">Open map</a>}
+            {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" rel="noreferrer" className="min-h-11 rounded-full border border-[#2d1b13]/15 px-5 py-3 transition hover:bg-[#2d1b13] hover:text-white">Karte öffnen</a>}
             {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" rel="noreferrer" className="min-h-11 rounded-full border border-[#2d1b13]/15 px-5 py-3 transition hover:bg-[#2d1b13] hover:text-white">Instagram</a>}
             {restaurant.facebook_url && <a href={restaurant.facebook_url} target="_blank" rel="noreferrer" className="min-h-11 rounded-full border border-[#2d1b13]/15 px-5 py-3 transition hover:bg-[#2d1b13] hover:text-white">Facebook</a>}
             {restaurant.tiktok_url && <a href={restaurant.tiktok_url} target="_blank" rel="noreferrer" className="min-h-11 rounded-full border border-[#2d1b13]/15 px-5 py-3 transition hover:bg-[#2d1b13] hover:text-white">TikTok</a>}
           </div>
         </div>
         <div className="rounded-[2rem] border border-[#2d1b13]/10 bg-[#25170f] p-7 text-white shadow-2xl sm:p-9">
-          <p className="luxury-kicker text-xs font-bold text-white/58">Opening hours</p>
+          <p className="luxury-kicker text-xs font-bold text-white/58">Öffnungszeiten</p>
           <div className="mt-6 divide-y divide-white/10">
             {Object.entries(hours).map(([day, value]) => (
               <p key={day} className="flex justify-between gap-6 py-3.5">
@@ -779,9 +779,9 @@ function ClassicEventsPage({ restaurant, themeIdentity }: { restaurant: Restaura
     },
   ];
   const actions = [
-    { label: "Start an inquiry", href: `${basePath}/contact`, primary: true },
-    reservationsEnabled ? { label: "Request a table", href: `${basePath}/reservations`, primary: false } : null,
-    { label: "View menu", href: `${basePath}/menu`, primary: false },
+    { label: "Anfrage starten", href: `${basePath}/contact`, primary: true },
+    reservationsEnabled ? { label: "Tisch anfragen", href: `${basePath}/reservations`, primary: false } : null,
+    { label: "Speisekarte ansehen", href: `${basePath}/menu`, primary: false },
   ].filter(Boolean) as Array<{ label: string; href: string; primary: boolean }>;
 
   return (
@@ -873,41 +873,41 @@ function classicHeroActions({
   reservationsEnabled: boolean;
 }) {
   const reservationAction = reservationsEnabled
-    ? { label: "Request a table", href: `${basePath}/reservations` }
-    : { label: "Contact the restaurant", href: `${basePath}/contact` };
+    ? { label: "Tisch anfragen", href: `${basePath}/reservations` }
+    : { label: "Restaurant kontaktieren", href: `${basePath}/contact` };
 
   if (page === "reservations") {
     return {
-      primary: { label: reservationsEnabled ? "Start reservation request" : "Contact the restaurant", href: reservationsEnabled ? "#reserve" : `${basePath}/contact` },
-      secondary: { label: "View menu first", href: `${basePath}/menu` },
+      primary: { label: reservationsEnabled ? "Reservierungsanfrage starten" : "Restaurant kontaktieren", href: reservationsEnabled ? "#reserve" : `${basePath}/contact` },
+      secondary: { label: "Zuerst Speisekarte ansehen", href: `${basePath}/menu` },
     };
   }
 
   if (page === "gallery") {
     return {
-      primary: { label: "Explore the gallery", href: "#gallery" },
+      primary: { label: "Galerie ansehen", href: "#gallery" },
       secondary: reservationsEnabled
-        ? { label: "Reserve after browsing", href: `${basePath}/reservations` }
-        : { label: "Contact after browsing", href: `${basePath}/contact` },
+        ? { label: "Nach dem Stöbern reservieren", href: `${basePath}/reservations` }
+        : { label: "Nach dem Stöbern Kontakt aufnehmen", href: `${basePath}/contact` },
     };
   }
 
   if (page === "contact") {
     return {
-      primary: { label: "View contact details", href: "#contact-details" },
+      primary: { label: "Kontaktdaten ansehen", href: "#contact-details" },
       secondary: reservationAction,
     };
   }
 
   if (page === "events") {
     return {
-      primary: { label: "Plan an event", href: "#events-details" },
-      secondary: { label: "Contact the restaurant", href: `${basePath}/contact` },
+      primary: { label: "Event anfragen", href: "#events-details" },
+      secondary: { label: "Restaurant kontaktieren", href: `${basePath}/contact` },
     };
   }
 
   return {
-    primary: { label: "View menu", href: `${basePath}/menu` },
+    primary: { label: "Speisekarte ansehen", href: `${basePath}/menu` },
     secondary: reservationAction,
   };
 }

@@ -249,7 +249,7 @@ function MenuHero({
           homeHref={basePath}
           links={getRestaurantNavigationLinks(restaurant.slug)}
           cta={{
-            label: reservationsEnabled ? "Reserve Table" : "Contact",
+            label: reservationsEnabled ? "Tisch reservieren" : "Kontakt",
             href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
           }}
           activePage="menu"
@@ -275,10 +275,10 @@ function MenuHero({
           </p>
           <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <a href="#menu" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[#2d1b13] shadow-2xl">
-              View Menu <Plus size={16} />
+              Speisekarte ansehen <Plus size={16} />
             </a>
             <a href={`${basePath}/reservations`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/[.22] bg-white/[.08] px-7 py-3.5 text-sm font-bold text-white backdrop-blur">
-              Reserve a Table <CalendarDays size={16} />
+              Tisch reservieren <CalendarDays size={16} />
             </a>
           </div>
         </div>
@@ -371,7 +371,7 @@ function MenuToolbar({
               }`}
               style={dietaryFilter === filter ? { backgroundColor: palette.terracotta, borderColor: palette.terracotta } : undefined}
             >
-              {filter}
+              {dietaryFilterLabel(filter)}
             </button>
           ))}
         </div>
@@ -388,7 +388,7 @@ function MenuToolbar({
         ))}
       </div>
       {(menuQuery || dietaryFilter !== "all") && (
-        <p className="mt-3 text-center text-xs font-semibold text-[#8a6a44]">{visibleMenuItems} dishes match your selection</p>
+        <p className="mt-3 text-center text-xs font-semibold text-[#8a6a44]">{visibleMenuItems} Gerichte passen zu Ihrer Auswahl</p>
       )}
     </div>
   );
@@ -438,7 +438,7 @@ function SignatureDishes({
               <span className="mt-2 block line-clamp-2 text-sm leading-6 text-white/[.58]">{item.description || "Prepared by the kitchen tonight."}</span>
               <span className="mt-4 flex items-center justify-between text-sm font-bold">
                 <span style={{ color: palette.gold }}>{formatPrice(item.price)}</span>
-                {orderingEnabled ? <Plus size={16} /> : <span>Browse</span>}
+                {orderingEnabled ? <Plus size={16} /> : <span>Ansehen</span>}
               </span>
             </span>
           </button>
@@ -519,7 +519,7 @@ function MenuItemCard({
           </span>
           {quantity > 0 && (
             <span className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold shadow-lg" style={{ color: palette.terracotta }}>
-              {quantity} in order
+              {quantity} in der Bestellung
             </span>
           )}
           {!item.is_available && (
@@ -682,7 +682,7 @@ function menuCopyForMood(italianMood: boolean): MenuShowcaseCopy {
       flowNoteOrderingCopy: "Browse, order, or reserve without leaving the mood.",
       flowNoteBrowseCopy: "Browse dishes and reserve without leaving the mood.",
       introKicker: "Fresh from the oven",
-      searchPlaceholder: "Search pizza, burrata, allergens...",
+    searchPlaceholder: "Pizza, Burrata, Allergene suchen...",
       signatureHeading: "Begin with the plates that smell of the oven.",
       imageFallbackKicker: "From the oven",
     };
@@ -698,7 +698,7 @@ function menuCopyForMood(italianMood: boolean): MenuShowcaseCopy {
     flowNoteOrderingCopy: "Browse, order, or reserve without leaving the experience.",
     flowNoteBrowseCopy: "Browse dishes and reserve without leaving the experience.",
     introKicker: "From the kitchen",
-    searchPlaceholder: "Search dishes, ingredients, allergens...",
+    searchPlaceholder: "Gerichte, Zutaten, Allergene suchen...",
     signatureHeading: "Begin with the plates guests come back for.",
     imageFallbackKicker: "From the kitchen",
   };
@@ -718,7 +718,7 @@ function serviceModeLabel({
     pickupEnabled && "pickup",
     deliveryEnabled && "delivery",
   ].filter(Boolean);
-  return modes.length > 0 ? `Available for ${modes.join(", ")}` : "Service details available from the restaurant";
+  return modes.length > 0 ? `Verfügbar für ${modes.join(", ")}` : "Servicedetails direkt beim Restaurant verfügbar";
 }
 
 function orderButtonLabel({
@@ -728,6 +728,12 @@ function orderButtonLabel({
   orderingEnabled: boolean;
   itemAvailable: boolean;
 }) {
-  if (!orderingEnabled) return "Ordering paused";
-  return itemAvailable ? "Add to order" : "Unavailable today";
+  if (!orderingEnabled) return "Bestellung pausiert";
+  return itemAvailable ? "Zur Bestellung hinzufügen" : "Heute nicht verfügbar";
+}
+
+function dietaryFilterLabel(filter: "all" | "vegan" | "vegetarian" | "halal") {
+  if (filter === "all") return "Alle";
+  if (filter === "vegetarian") return "Vegetarisch";
+  return filter.charAt(0).toUpperCase() + filter.slice(1);
 }

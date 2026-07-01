@@ -120,21 +120,21 @@ export function matchesMenuFilters(
 export function orderSteps(orderType: RestaurantOrder["order_type"]) {
   if (orderType === "DELIVERY") {
     return [
-      { label: "Order received", description: "The restaurant has your order.", statuses: ["NEW"] },
-      { label: "Preparing", description: "The kitchen is working on it.", statuses: ["ACCEPTED", "PREPARING"] },
-      { label: "On the way", description: "Delivery is heading to you.", statuses: ["READY", "DELIVERING"] },
-      { label: "Delivered", description: "Enjoy your meal.", statuses: ["DELIVERED", "COMPLETED"] },
+      { label: "Bestellung erhalten", description: "Das Restaurant hat Ihre Bestellung.", statuses: ["NEW"] },
+      { label: "In Vorbereitung", description: "Die Küche bereitet Ihre Bestellung vor.", statuses: ["ACCEPTED", "PREPARING"] },
+      { label: "Unterwegs", description: "Die Lieferung ist auf dem Weg zu Ihnen.", statuses: ["READY", "DELIVERING"] },
+      { label: "Geliefert", description: "Guten Appetit.", statuses: ["DELIVERED", "COMPLETED"] },
     ];
   }
   return [
-    { label: "Order received", description: "The restaurant has your order.", statuses: ["NEW"] },
-    { label: "Preparing", description: "The kitchen is working on it.", statuses: ["ACCEPTED", "PREPARING"] },
+    { label: "Bestellung erhalten", description: "Das Restaurant hat Ihre Bestellung.", statuses: ["NEW"] },
+    { label: "In Vorbereitung", description: "Die Küche bereitet Ihre Bestellung vor.", statuses: ["ACCEPTED", "PREPARING"] },
     {
-      label: orderType === "EAT_IN" ? "Ready for your table" : "Ready for pickup",
-      description: "Staff will have it ready shortly.",
+      label: orderType === "EAT_IN" ? "Bereit für Ihren Tisch" : "Bereit zur Abholung",
+      description: "Das Team stellt Ihre Bestellung gleich bereit.",
       statuses: ["READY"],
     },
-    { label: "Completed", description: "Thanks for ordering.", statuses: ["PICKED_UP", "COMPLETED"] },
+    { label: "Abgeschlossen", description: "Vielen Dank für Ihre Bestellung.", statuses: ["PICKED_UP", "COMPLETED"] },
   ];
 }
 
@@ -146,17 +146,19 @@ export function estimateText(order: RestaurantOrder) {
 }
 
 export function orderTypeLabel(orderType: RestaurantOrder["order_type"]) {
-  return orderType === "EAT_IN" ? "Dine in" : orderType.charAt(0) + orderType.slice(1).toLowerCase();
+  if (orderType === "EAT_IN") return "Vor Ort essen";
+  if (orderType === "DELIVERY") return "Lieferung";
+  return "Abholung";
 }
 
 export function nextInstruction(orderType: RestaurantOrder["order_type"]) {
   if (orderType === "DELIVERY") {
-    return "Watch this tracking page for status changes. The restaurant may call if they need delivery details.";
+    return "Behalten Sie diese Tracking-Seite im Blick. Das Restaurant ruft an, falls Lieferdetails fehlen.";
   }
   if (orderType === "EAT_IN") {
-    return "Arrive at the restaurant and mention your order number to staff.";
+    return "Kommen Sie ins Restaurant und nennen Sie dem Team Ihre Bestellnummer.";
   }
-  return "Come to the restaurant around the estimated pickup time and mention your order number.";
+  return "Kommen Sie etwa zur angegebenen Abholzeit ins Restaurant und nennen Sie Ihre Bestellnummer.";
 }
 
 export function shortOrderNumber(publicId: string) {

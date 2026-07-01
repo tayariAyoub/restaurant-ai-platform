@@ -85,7 +85,7 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
         homeHref={basePath}
         links={getRestaurantNavigationLinks(restaurant.slug)}
         cta={{
-          label: reservationsEnabled ? "Reserve Table" : "Contact",
+          label: reservationsEnabled ? "Tisch reservieren" : "Kontakt",
           href: reservationsEnabled ? `${basePath}/reservations` : `${basePath}/contact`,
         }}
         activePage={page}
@@ -124,7 +124,7 @@ function ReservationsPage(props: ImmersiveRestaurantExperienceProps & { visual: 
   const { restaurant, themeIdentity, visual, reservationsEnabled, reservationStatus, onReserve } = props;
   return (
     <>
-      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Reservations" title="Reserve the table. Let the evening do the rest." copy="One focused path for table requests, timing, party size, allergies, and occasion details." />
+      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Reservierungen" title="Tisch reservieren. Den Abend wirken lassen." copy="Ein fokussierter Weg für Tischanfragen, Uhrzeit, Gästezahl, Allergien und Anlass." />
       <section className="cinematic-chapter px-4 py-16 sm:px-6 lg:py-24">
         <div className="mx-auto max-w-3xl">
           {reservationsEnabled ? (
@@ -132,8 +132,8 @@ function ReservationsPage(props: ImmersiveRestaurantExperienceProps & { visual: 
           ) : (
             <div className="cinematic-reservation-panel rounded-[2rem] border border-white/10 p-7">
               <CalendarDays size={24} style={{ color: themeIdentity.primary }} />
-              <h2 className="mt-5 text-3xl font-semibold">Online reservations are paused.</h2>
-              <p className="mt-3 text-sm leading-7 text-white/58">Please contact the restaurant directly for table requests.</p>
+              <h2 className="mt-5 text-3xl font-semibold">Online-Reservierungen sind pausiert.</h2>
+              <p className="mt-3 text-sm leading-7 text-white/58">Bitte kontaktieren Sie das Restaurant direkt für Tischanfragen.</p>
             </div>
           )}
         </div>
@@ -175,9 +175,9 @@ function ImmersiveGalleryEmptyState({
 }) {
   const basePath = `/restaurants/${restaurant.slug}`;
   const actions = [
-    { label: "View menu", href: `${basePath}/menu`, primary: true },
-    reservationsEnabled ? { label: "Reserve a table", href: `${basePath}/reservations`, primary: false } : null,
-    { label: "Plan your visit", href: `${basePath}/contact`, primary: false },
+    { label: "Speisekarte ansehen", href: `${basePath}/menu`, primary: true },
+    reservationsEnabled ? { label: "Tisch reservieren", href: `${basePath}/reservations`, primary: false } : null,
+    { label: "Besuch planen", href: `${basePath}/contact`, primary: false },
   ].filter(Boolean) as Array<{ label: string; href: string; primary: boolean }>;
 
   return (
@@ -250,7 +250,7 @@ function ContactPage(props: ImmersiveRestaurantExperienceProps & { visual: strin
 
   return (
     <>
-      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Contact" title="Plan the visit. Reach the team directly." copy="Address, opening hours, direct phone, email, map, and social links live here without reservation clutter." />
+      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Kontakt" title="Besuch planen. Das Team direkt erreichen." copy="Adresse, Öffnungszeiten, Telefon, E-Mail, Karte und Social Links bleiben hier klar erreichbar." />
       <section className="cinematic-chapter px-4 py-16 sm:px-6 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.9fr_1.1fr]">
           <div className="cinematic-host-panel rounded-[2rem] border border-white/10 p-6 sm:p-8">
@@ -268,7 +268,7 @@ function ContactPage(props: ImmersiveRestaurantExperienceProps & { visual: strin
                     {restaurant.phone}
                   </a>
                 ) : (
-                  <span>Phone coming soon</span>
+                  <span>Telefon bald verfügbar</span>
                 )}
               </p>
               <p className="flex gap-3">
@@ -278,19 +278,19 @@ function ContactPage(props: ImmersiveRestaurantExperienceProps & { visual: strin
                     {restaurant.email}
                   </a>
                 ) : (
-                  <span>Email coming soon</span>
+                  <span>E-Mail bald verfügbar</span>
                 )}
               </p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
-              {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Open map</a>}
+              {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Karte öffnen</a>}
               {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Instagram</a>}
               {restaurant.facebook_url && <a href={restaurant.facebook_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Facebook</a>}
               {restaurant.tiktok_url && <a href={restaurant.tiktok_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">TikTok</a>}
             </div>
           </div>
           <div className="cinematic-host-panel rounded-[2rem] border border-white/10 p-6 sm:p-8">
-            <p className="luxury-kicker text-[10px] font-bold" style={{ color: themeIdentity.primary }}>Opening hours</p>
+            <p className="luxury-kicker text-[10px] font-bold" style={{ color: themeIdentity.primary }}>Öffnungszeiten</p>
             <div className="mt-5 divide-y divide-white/10">
               {Object.entries(hours).map(([day, value]) => (
                 <p key={day} className="flex justify-between gap-6 py-3">
@@ -321,7 +321,7 @@ function EventsPage(props: ImmersiveRestaurantExperienceProps & { visual: string
           ))}
         </div>
         <div className="mx-auto mt-8 max-w-7xl">
-          <a href={`/restaurants/${restaurant.slug}/contact`} className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center px-6 py-3 text-sm font-bold text-white`} style={{ backgroundColor: themeIdentity.primary }}>Contact the restaurant</a>
+          <a href={`/restaurants/${restaurant.slug}/contact`} className={`${themeIdentity.buttonClass} inline-flex min-h-12 items-center justify-center px-6 py-3 text-sm font-bold text-white`} style={{ backgroundColor: themeIdentity.primary }}>Restaurant kontaktieren</a>
         </div>
       </section>
     </>
@@ -371,21 +371,21 @@ function ReservationForm({
 }) {
   return (
     <form id="reserve" onSubmit={onReserve} className="cinematic-reservation-panel rounded-[2rem] border border-white/10 p-5 shadow-2xl sm:p-7">
-      <p className="luxury-kicker text-[10px] font-bold" style={{ color: themeIdentity.primary }}>Reservations</p>
-      <h2 className="mt-3 text-3xl font-semibold sm:text-5xl">Request a table</h2>
+      <p className="luxury-kicker text-[10px] font-bold" style={{ color: themeIdentity.primary }}>Reservierungen</p>
+      <h2 className="mt-3 text-3xl font-semibold sm:text-5xl">Tisch anfragen</h2>
       <p className="mt-3 text-sm leading-6 text-white/56">
         {restaurant.name} confirms every request directly. Share allergies, timing, or an occasion so the team can prepare properly.
       </p>
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <input name="name" required aria-label="Your name" placeholder="Your name" autoComplete="name" className="cinematic-input" />
-        <input name="email" type="email" required aria-label="Email" placeholder="Email" autoComplete="email" inputMode="email" className="cinematic-input" />
-        <input name="phone" type="tel" aria-label="Phone" placeholder="Phone" autoComplete="tel" inputMode="tel" className="cinematic-input" />
-        <input name="party_size" type="number" min="1" aria-label="Guests" inputMode="numeric" placeholder="Guests" className="cinematic-input" />
-        <input name="requested_at" type="datetime-local" aria-label="Requested date and time" className="cinematic-input sm:col-span-2" />
-        <textarea name="message" aria-label="Reservation message" placeholder="Allergies, occasion, preferred table, or notes" className="cinematic-input min-h-28 sm:col-span-2" />
+        <input name="name" required aria-label="Name" placeholder="Name" autoComplete="name" className="cinematic-input" />
+        <input name="email" type="email" required aria-label="E-Mail" placeholder="E-Mail" autoComplete="email" inputMode="email" className="cinematic-input" />
+        <input name="phone" type="tel" aria-label="Telefon" placeholder="Telefon" autoComplete="tel" inputMode="tel" className="cinematic-input" />
+        <input name="party_size" type="number" min="1" aria-label="Gäste" inputMode="numeric" placeholder="Gäste" className="cinematic-input" />
+        <input name="requested_at" type="datetime-local" aria-label="Gewünschtes Datum / Uhrzeit" className="cinematic-input sm:col-span-2" />
+        <textarea name="message" aria-label="Hinweise für das Restaurant" placeholder="Allergien, Anlass, Tischwunsch oder Hinweise" className="cinematic-input min-h-28 sm:col-span-2" />
       </div>
       <button className={`${themeIdentity.buttonClass} mt-4 min-h-12 w-full py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: themeIdentity.primary }}>
-        Send reservation request
+        Reservierungsanfrage senden
       </button>
       {reservationStatus && (
         <p className="mt-3 rounded-2xl border border-white/10 bg-white/[.06] p-3 text-center text-sm font-semibold text-white/76">
@@ -417,13 +417,13 @@ function buildFooterLinks(restaurant: Restaurant, reservationsEnabled: boolean) 
   const basePath = `/restaurants/${restaurant.slug}`;
 
   return [
-    { label: "Menu", href: `${basePath}/menu` },
+    { label: "Speisekarte", href: `${basePath}/menu` },
     reservationsEnabled
-      ? { label: "Reserve Table", href: `${basePath}/reservations` }
-      : { label: "Contact", href: `${basePath}/contact` },
-    { label: "Gallery", href: `${basePath}/gallery` },
+      ? { label: "Tisch reservieren", href: `${basePath}/reservations` }
+      : { label: "Kontakt", href: `${basePath}/contact` },
+    { label: "Galerie", href: `${basePath}/gallery` },
     { label: "Events", href: `${basePath}/events` },
-    ...(reservationsEnabled ? [{ label: "Contact", href: `${basePath}/contact` }] : []),
+    ...(reservationsEnabled ? [{ label: "Kontakt", href: `${basePath}/contact` }] : []),
   ];
 }
 
@@ -439,14 +439,14 @@ function MinimalFooter({
   const links = buildFooterLinks(restaurant, reservationsEnabled);
   const location = [restaurant.address, restaurant.city].filter(Boolean).join(", ") || restaurant.city || restaurant.address;
   const closingLine = reservationsEnabled
-    ? "Menu, reservations, gallery, private dining, and contact details stay close for the next step."
-    : "Menu, gallery, private dining, and contact details stay close for the next step.";
+    ? "Speisekarte, Reservierung, Galerie, Private Dining und Kontakt bleiben für den nächsten Schritt griffbereit."
+    : "Speisekarte, Galerie, Private Dining und Kontakt bleiben für den nächsten Schritt griffbereit.";
 
   return (
     <footer className="border-t border-white/10 px-4 py-12 text-sm text-white sm:px-6">
       <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1fr_auto] md:items-end">
         <div className="text-center md:text-left">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Plan your visit</p>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Besuch planen</p>
           <p className="mt-3 text-3xl font-semibold" style={{ color: themeIdentity.primary }}>{restaurant.name}</p>
           {location && <p className="mt-3 text-white/52">{location}</p>}
           <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-white/46 md:mx-0">

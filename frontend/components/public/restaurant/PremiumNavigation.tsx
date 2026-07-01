@@ -31,11 +31,11 @@ export function getRestaurantNavigationLinks(slug: string): PremiumNavigationLin
   const basePath = `/restaurants/${slug}`;
 
   return [
-    { key: "home", label: "Home", href: basePath },
-    { key: "menu", label: "Menu", href: `${basePath}/menu` },
-    { key: "gallery", label: "Gallery", href: `${basePath}/gallery` },
+    { key: "home", label: "Start", href: basePath },
+    { key: "menu", label: "Speisekarte", href: `${basePath}/menu` },
+    { key: "gallery", label: "Galerie", href: `${basePath}/gallery` },
     { key: "events", label: "Events", href: `${basePath}/events` },
-    { key: "contact", label: "Contact", href: `${basePath}/contact` },
+    { key: "contact", label: "Kontakt", href: `${basePath}/contact` },
   ];
 }
 
