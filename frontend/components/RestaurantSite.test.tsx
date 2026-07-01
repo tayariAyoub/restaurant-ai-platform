@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import RestaurantSite from "./RestaurantSite";
@@ -401,10 +401,50 @@ describe("restaurant page", () => {
     expect(screen.getByRole("link", { name: /start reservation request/i })).toHaveAttribute("href", "#reserve");
     expect(screen.getByRole("link", { name: /view menu first/i })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
     expect(screen.getByRole("heading", { name: /request a table/i })).toBeVisible();
+    expect(screen.getByLabelText(/^your name$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^email$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^phone$/i)).toBeVisible();
+    expect(screen.getByLabelText(/^guests$/i)).toBeVisible();
+    expect(screen.getByLabelText(/preferred date and arrival time/i)).toBeVisible();
+    expect(screen.getByText(/choose the ideal arrival window/i)).toBeVisible();
+    expect(screen.getByLabelText(/notes for the restaurant/i)).toBeVisible();
     expect(screen.queryByText(bellaNapoli.address)).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+  });
+
+  it("submits the labelled reservation form with the existing payload shape", async () => {
+    requestMock.mockResolvedValueOnce({});
+    const { user } = renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="reservations" />);
+
+    await user.type(screen.getByLabelText(/^your name$/i), "Giulia Rossi");
+    await user.type(screen.getByLabelText(/^email$/i), "giulia@example.com");
+    await user.type(screen.getByLabelText(/^phone$/i), "+49123456");
+    await user.type(screen.getByLabelText(/^guests$/i), "4");
+    fireEvent.change(screen.getByLabelText(/preferred date and arrival time/i), {
+      target: { value: "2026-07-10T19:30" },
+    });
+    await user.type(screen.getByLabelText(/notes for the restaurant/i), "Window table, nut allergy.");
+    await user.click(screen.getByRole("button", { name: /send reservation request/i }));
+
+    await waitFor(() => {
+      expect(requestMock).toHaveBeenCalledWith(
+        "/restaurants/bella-napoli/reservations",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
+    const [, requestOptions] = requestMock.mock.calls[0];
+    expect(JSON.parse(requestOptions.body as string)).toEqual({
+      name: "Giulia Rossi",
+      email: "giulia@example.com",
+      phone: "+49123456",
+      party_size: 4,
+      requested_at: "2026-07-10T19:30",
+      message: "Window table, nut allergy.",
+    });
+    expect(await screen.findByText(/your table request has been received/i)).toBeVisible();
   });
 
   it("renders contact details without a reservation form", () => {

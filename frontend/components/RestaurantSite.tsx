@@ -575,14 +575,33 @@ function ClassicReservationPage({
         <form id="reserve" onSubmit={onReserve} className="rounded-[2rem] border border-[#2d1b13]/10 bg-white p-6 text-slate-900 shadow-[0_24px_70px_rgba(45,27,19,.12)] sm:p-8">
           <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Reservations</p>
           <h3 className="mt-2 text-3xl font-semibold sm:text-5xl">Request a table</h3>
-          <p className="mt-3 text-sm leading-6 text-slate-500">The team confirms every request directly, so no detail is lost.</p>
+          <p className="mt-3 text-sm leading-6 text-slate-500">The team confirms every request directly. Share the essentials now, and the restaurant will handle the details with care.</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <input name="name" required placeholder="Your name" autoComplete="name" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
-            <input name="email" type="email" required placeholder="Email" autoComplete="email" inputMode="email" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
-            <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Phone" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
-            <input name="party_size" type="number" min="1" inputMode="numeric" placeholder="Guests" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
-            <input name="requested_at" type="datetime-local" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:col-span-2 sm:text-sm" />
-            <textarea name="message" placeholder="Allergies, occasion, preferred table, or notes" className="min-h-28 rounded-xl border border-slate-200 px-4 py-3 text-base outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:col-span-2 sm:text-sm" />
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+              Your name
+              <input name="name" required placeholder="Full name" autoComplete="name" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+              Email
+              <input name="email" type="email" required placeholder="you@example.com" autoComplete="email" inputMode="email" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+              Phone
+              <input name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Best number for confirmation" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+              Guests
+              <input name="party_size" type="number" min="1" inputMode="numeric" placeholder="Party size" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700 sm:col-span-2">
+              Preferred date and arrival time
+              <input name="requested_at" type="datetime-local" className="min-h-12 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+              <span className="text-xs font-normal leading-5 text-slate-500">Choose the ideal arrival window. The restaurant will confirm availability directly.</span>
+            </label>
+            <label className="grid gap-1.5 text-sm font-semibold text-slate-700 sm:col-span-2">
+              Notes for the restaurant
+              <textarea name="message" placeholder="Allergies, occasion, preferred table, or notes" className="min-h-28 rounded-xl border border-slate-200 px-4 py-3 text-base font-normal outline-none transition focus:border-slate-500 focus:ring-4 focus:ring-slate-100 sm:text-sm" />
+            </label>
           </div>
           <button className={`luxury-button mt-4 min-h-12 w-full ${themeIdentity.buttonClass} py-3.5 font-semibold text-white shadow-lg`} style={{ backgroundColor: themeIdentity.primary }}>
             Send reservation request
