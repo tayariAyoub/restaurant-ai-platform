@@ -437,6 +437,11 @@ describe("restaurant page", () => {
     await user.click(addMargherita);
     await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
 
+    expect(screen.getByRole("button", { name: /abholung/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /vor ort essen/i })).toBeVisible();
+    expect(screen.queryByRole("button", { name: /lieferung/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/liefergebühr/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/straße und hausnummer/i)).not.toBeInTheDocument();
     expect(screen.getByText(/die zahlung läuft über das restaurant/i)).toBeVisible();
     expect(screen.getAllByText("EUR 25.00").length).toBeGreaterThan(0);
 
@@ -484,6 +489,11 @@ describe("restaurant page", () => {
         expect.objectContaining({ method: "POST" }),
       );
     });
+    const [, requestOptions] = requestMock.mock.calls[0];
+    expect(JSON.parse(requestOptions.body as string)).toEqual(expect.objectContaining({
+      order_type: "PICKUP",
+      delivery_address: null,
+    }));
     expect(screen.getByRole("button", { name: /bestellung wird bestätigt/i })).toBeDisabled();
 
     resolveOrder(orderResponse);
@@ -498,11 +508,17 @@ describe("restaurant page", () => {
 
     await user.click(within(margheritaCard as HTMLElement).getByRole("button", { name: /zur bestellung hinzufügen/i }));
     await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
+    await user.click(screen.getByRole("button", { name: /vor ort essen/i }));
     await user.type(screen.getAllByPlaceholderText(/^name$/i).at(-1) as HTMLElement, "Giulia");
     await user.type(screen.getAllByPlaceholderText(/telefonnummer/i).at(-1) as HTMLElement, "123456");
     await user.click(screen.getByRole("button", { name: /bestellung bestätigen/i }));
 
     expect(await screen.findByText("Kitchen is closed")).toBeVisible();
+    const [, requestOptions] = requestMock.mock.calls[0];
+    expect(JSON.parse(requestOptions.body as string)).toEqual(expect.objectContaining({
+      order_type: "EAT_IN",
+      delivery_address: null,
+    }));
     expect(localStorage.getItem(cartStorageKey(bellaNapoli.slug))).toContain("\"itemId\":201");
   });
 

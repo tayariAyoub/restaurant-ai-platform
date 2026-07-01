@@ -58,9 +58,11 @@ export default function OrderCartDrawer({
 }: OrderCartDrawerProps) {
   if (!cartOpen) return null;
 
-  const total = subtotal + (orderType === "DELIVERY" ? 3.5 : 0);
   const completedEstimate = completedOrder ? estimateText(completedOrder) : "";
-  const availableModes = orderModes.length > 0 ? orderModes : ["PICKUP" as const];
+  const publicModes: RestaurantOrder["order_type"][] = orderModes.filter((mode) => mode !== "DELIVERY");
+  const availableModes: RestaurantOrder["order_type"][] = publicModes.length > 0 ? publicModes : ["PICKUP"];
+  const deliverySelected = orderType === "DELIVERY" && availableModes.includes("DELIVERY");
+  const total = subtotal + (deliverySelected ? 3.5 : 0);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-5">
@@ -125,7 +127,7 @@ export default function OrderCartDrawer({
             </div>
             <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
               <p className="font-semibold">Die Zahlung läuft über das Restaurant.</p>
-              <p className="mt-1 opacity-75">Sie zahlen je nach Ablauf des Restaurants bei Abholung, am Tisch oder bei Lieferung.</p>
+              <p className="mt-1 opacity-75">Sie zahlen je nach Ablauf des Restaurants bei Abholung oder am Tisch.</p>
             </div>
             <div className="mt-6 space-y-3">
               {cartLines.map((line) => (
@@ -165,7 +167,7 @@ export default function OrderCartDrawer({
               <input required name="customer_name" placeholder="Name" autoComplete="name" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
               <input required name="customer_phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="Telefonnummer" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
               <input name="customer_email" type="email" inputMode="email" autoComplete="email" placeholder="E-Mail (optional)" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
-              {orderType === "DELIVERY" && (
+              {deliverySelected && (
                 <>
                   <input required name="street" autoComplete="street-address" placeholder="Straße und Hausnummer" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:col-span-2 sm:text-sm" />
                   <input required name="delivery_postal_code" inputMode="numeric" autoComplete="postal-code" placeholder="Postleitzahl" className="min-h-12 rounded-xl border px-4 py-3 text-base sm:text-sm" />
@@ -178,7 +180,7 @@ export default function OrderCartDrawer({
 
             <div className="mt-6 space-y-2 border-t pt-4 text-sm">
               <div className="flex justify-between"><span>Zwischensumme</span><span>{formatPrice(subtotal)}</span></div>
-              {orderType === "DELIVERY" && <div className="flex justify-between"><span>Liefergebühr</span><span>EUR 3.50</span></div>}
+              {deliverySelected && <div className="flex justify-between"><span>Liefergebühr</span><span>EUR 3.50</span></div>}
               <div className="flex justify-between text-xl font-bold"><span>Gesamt</span><span>{formatPrice(total)}</span></div>
             </div>
 

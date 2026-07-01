@@ -71,7 +71,8 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
   const reservationsEnabled = restaurant.reservations_enabled !== false;
   const orderingEnabled = restaurant.ordering_enabled !== false;
   const cartEnabled = page === "menu" && orderingEnabled;
-  const deliveryEnabled = restaurant.delivery_enabled !== false;
+  // TODO: Restore public delivery once fees are configurable per restaurant.
+  const publicDeliveryEnabled = false;
   const pickupEnabled = restaurant.pickup_enabled !== false;
   const dineInEnabled = restaurant.dine_in_enabled !== false;
   const chatbotEnabled = restaurant.chatbot_enabled !== false;
@@ -80,9 +81,8 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
       [
         pickupEnabled && "PICKUP",
         dineInEnabled && "EAT_IN",
-        deliveryEnabled && "DELIVERY",
       ].filter(Boolean) as RestaurantOrder["order_type"][],
-    [deliveryEnabled, dineInEnabled, pickupEnabled],
+    [dineInEnabled, pickupEnabled],
   );
   const immersiveTheme = themeIdentity.homepageStyle === "immersive";
   const footerStyle = immersiveTheme
@@ -224,7 +224,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
             hours={hours}
             reservationsEnabled={reservationsEnabled}
             orderingEnabled={orderingEnabled}
-            deliveryEnabled={deliveryEnabled}
+            deliveryEnabled={publicDeliveryEnabled}
             pickupEnabled={pickupEnabled}
             dineInEnabled={dineInEnabled}
             chatbotEnabled={chatbotEnabled}
@@ -245,7 +245,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
             availableItems,
             reservationsEnabled,
             orderingEnabled,
-            deliveryEnabled,
+            deliveryEnabled: publicDeliveryEnabled,
             pickupEnabled,
             dineInEnabled,
             mobile,
