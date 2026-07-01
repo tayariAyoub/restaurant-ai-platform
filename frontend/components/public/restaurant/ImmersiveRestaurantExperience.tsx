@@ -95,7 +95,7 @@ export default function ImmersiveRestaurantExperience(props: ImmersiveRestaurant
       {page === "gallery" && <GalleryPage {...props} visual={primaryVisual} />}
       {page === "contact" && <ContactPage {...props} visual={primaryVisual} />}
       {page === "events" && <EventsPage {...props} visual={primaryVisual} />}
-      <MinimalFooter restaurant={restaurant} themeIdentity={themeIdentity} />
+      <MinimalFooter restaurant={restaurant} themeIdentity={themeIdentity} reservationsEnabled={reservationsEnabled} />
     </div>
   );
 }
@@ -409,11 +409,54 @@ function SceneImage({ src, alt, treatment, priority = false }: { src: string; al
   );
 }
 
-function MinimalFooter({ restaurant, themeIdentity }: { restaurant: Restaurant; themeIdentity: RestaurantThemeIdentity }) {
+function buildFooterLinks(restaurant: Restaurant, reservationsEnabled: boolean) {
+  const basePath = `/restaurants/${restaurant.slug}`;
+
+  return [
+    { label: "Menu", href: `${basePath}/menu` },
+    reservationsEnabled
+      ? { label: "Reserve Table", href: `${basePath}/reservations` }
+      : { label: "Contact", href: `${basePath}/contact` },
+    { label: "Gallery", href: `${basePath}/gallery` },
+    { label: "Events", href: `${basePath}/events` },
+    ...(reservationsEnabled ? [{ label: "Contact", href: `${basePath}/contact` }] : []),
+  ];
+}
+
+function MinimalFooter({
+  restaurant,
+  themeIdentity,
+  reservationsEnabled,
+}: {
+  restaurant: Restaurant;
+  themeIdentity: RestaurantThemeIdentity;
+  reservationsEnabled: boolean;
+}) {
+  const links = buildFooterLinks(restaurant, reservationsEnabled);
+  const location = [restaurant.address, restaurant.city].filter(Boolean).join(", ") || restaurant.city || restaurant.address;
+  const closingLine = reservationsEnabled
+    ? "Menu, reservations, gallery, private dining, and contact details stay close for the next step."
+    : "Menu, gallery, private dining, and contact details stay close for the next step.";
+
   return (
-    <footer className="border-t border-white/10 px-4 py-10 text-center text-xs uppercase tracking-[0.24em] text-white/38 sm:px-6">
-      <p className="font-semibold" style={{ color: themeIdentity.primary }}>{restaurant.name}</p>
-      <p className="mt-3">{restaurant.city || restaurant.address}</p>
+    <footer className="border-t border-white/10 px-4 py-12 text-sm text-white sm:px-6">
+      <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="text-center md:text-left">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-white/38">Plan your visit</p>
+          <p className="mt-3 text-3xl font-semibold" style={{ color: themeIdentity.primary }}>{restaurant.name}</p>
+          {location && <p className="mt-3 text-white/52">{location}</p>}
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-white/46 md:mx-0">
+            {closingLine}
+          </p>
+        </div>
+        <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
+          {links.map((link) => (
+            <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/10 bg-white/[.06] px-4 py-2.5 font-semibold text-white/72 transition hover:bg-white/[.12] hover:text-white">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
     </footer>
   );
 }

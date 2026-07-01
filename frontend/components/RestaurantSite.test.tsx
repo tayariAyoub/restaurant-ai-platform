@@ -223,7 +223,7 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText(/an immersive look at the room/i)).toBeVisible();
     expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
     expect(screen.queryByText(/gallery being composed/i)).not.toBeInTheDocument();
@@ -266,7 +266,7 @@ describe("restaurant page", () => {
     );
 
     expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(within(screen.getByRole("banner")).getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByText(/gallery being composed/i)).toBeVisible();
     expect(screen.getByRole("heading", { name: /the visual story is still being prepared/i })).toBeVisible();
     expect(screen.getByText(/has not published gallery photography yet/i)).toBeVisible();
@@ -380,6 +380,28 @@ describe("restaurant page", () => {
 
       result.unmount();
     }
+  });
+
+  it("falls footer reservation CTA back to contact when reservations are disabled", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...bellaNapoli,
+          reservations_enabled: false,
+        }}
+        page="gallery"
+      />,
+    );
+
+    const footer = screen.getByRole("contentinfo");
+    const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
+
+    expect(within(footerNav).queryByRole("link", { name: "Reserve Table" })).not.toBeInTheDocument();
+    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(footer).queryByText(/menu, reservations, gallery/i)).not.toBeInTheDocument();
+    expect(within(footer).getByText(/menu, gallery, private dining/i)).toBeVisible();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
   });
 
   it("adds items, updates quantity, removes items, and recalculates totals", async () => {
@@ -550,6 +572,17 @@ describe("restaurant page", () => {
     expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
     expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
     expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
+    const footer = screen.getByRole("contentinfo");
+    const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
+    expect(within(footer).getByText(/^plan your visit$/i)).toBeVisible();
+    expect(within(footer).getByText("Bella Napoli")).toBeVisible();
+    expect(within(footer).getByText(/Sonnenallee 42, Berlin/i)).toBeVisible();
+    expect(within(footer).getByText(/menu, reservations, gallery, private dining/i)).toBeVisible();
+    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
+    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
@@ -593,6 +626,16 @@ describe("restaurant page", () => {
     expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
     expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
     expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
+    const footer = screen.getByRole("contentinfo");
+    const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
+    expect(within(footer).getByText(/^plan your visit$/i)).toBeVisible();
+    expect(within(footer).getByText("Bella Napoli")).toBeVisible();
+    expect(within(footer).getByText(/Sonnenallee 42, Berlin/i)).toBeVisible();
+    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
+    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();

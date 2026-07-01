@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, type LucideIcon } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
 import GalleryShowcase from "@/components/public/restaurant/GalleryShowcase";
@@ -80,12 +80,6 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
       ].filter(Boolean) as RestaurantOrder["order_type"][],
     [deliveryEnabled, dineInEnabled, pickupEnabled],
   );
-  const footerServices = [
-    "Menu",
-    reservationsEnabled && "reservations",
-    "directions",
-    orderingEnabled && "ordering",
-  ].filter(Boolean).join(", ");
   const immersiveTheme = themeIdentity.homepageStyle === "immersive";
   const footerStyle = immersiveTheme
     ? {
@@ -267,14 +261,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
       </main>
 
       {!immersiveTheme && page !== "home" && (
-        <footer
-          className="px-6 py-12 text-center text-sm"
-          style={footerStyle}
-        >
-          <p className="font-display text-3xl font-semibold">{restaurant.name}</p>
-          <p className="mt-3 opacity-70">{restaurant.address}, {restaurant.city}</p>
-          <p className="mt-6 text-xs uppercase tracking-[0.24em] opacity-50">{footerServices}.</p>
-        </footer>
+        <ClassicPublicFooter restaurant={restaurant} reservationsEnabled={reservationsEnabled} style={footerStyle} />
       )}
 
       {chatbotEnabled && (
@@ -335,6 +322,58 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
 
 function safeJsonLd(value: unknown) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+function buildPublicFooterLinks(restaurant: Restaurant, reservationsEnabled: boolean) {
+  const basePath = `/restaurants/${restaurant.slug}`;
+
+  return [
+    { label: "Menu", href: `${basePath}/menu` },
+    reservationsEnabled
+      ? { label: "Reserve Table", href: `${basePath}/reservations` }
+      : { label: "Contact", href: `${basePath}/contact` },
+    { label: "Gallery", href: `${basePath}/gallery` },
+    { label: "Events", href: `${basePath}/events` },
+    ...(reservationsEnabled ? [{ label: "Contact", href: `${basePath}/contact` }] : []),
+  ];
+}
+
+function ClassicPublicFooter({
+  restaurant,
+  reservationsEnabled,
+  style,
+}: {
+  restaurant: Restaurant;
+  reservationsEnabled: boolean;
+  style: CSSProperties;
+}) {
+  const footerLinks = buildPublicFooterLinks(restaurant, reservationsEnabled);
+  const location = [restaurant.address, restaurant.city].filter(Boolean).join(", ");
+  const closingLine = reservationsEnabled
+    ? "Menu, reservations, gallery, private dining, and contact details stay close for the next step."
+    : "Menu, gallery, private dining, and contact details stay close for the next step.";
+
+  return (
+    <footer className="px-4 py-12 text-sm sm:px-6" style={style}>
+      <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[1fr_auto] md:items-end">
+        <div className="text-center md:text-left">
+          <p className="text-xs font-bold uppercase tracking-[0.24em] opacity-50">Plan your visit</p>
+          <p className="mt-3 font-display text-3xl font-semibold">{restaurant.name}</p>
+          {location && <p className="mt-3 opacity-70">{location}</p>}
+          <p className="mx-auto mt-5 max-w-xl text-sm leading-6 opacity-60 md:mx-0">
+            {closingLine}
+          </p>
+        </div>
+        <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
+          {footerLinks.map((link) => (
+            <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/15 bg-white/[.06] px-4 py-2.5 font-semibold transition hover:bg-white/[.12]">
+              {link.label}
+            </a>
+          ))}
+        </nav>
+      </div>
+    </footer>
+  );
 }
 
 function renderClassicPage({
