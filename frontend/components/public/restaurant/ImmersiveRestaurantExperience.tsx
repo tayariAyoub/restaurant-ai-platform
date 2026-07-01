@@ -1,9 +1,12 @@
 import {
   ArrowRight,
   CalendarDays,
+  Camera,
   Mail,
   MapPin,
   Phone,
+  Utensils,
+  type LucideIcon,
 } from "lucide-react";
 import type { FormEvent } from "react";
 
@@ -136,7 +139,7 @@ function ReservationsPage(props: ImmersiveRestaurantExperienceProps & { visual: 
 }
 
 function GalleryPage(props: ImmersiveRestaurantExperienceProps & { visual: string }) {
-  const { restaurant, themeIdentity, visual, gallery } = props;
+  const { restaurant, themeIdentity, visual, gallery, reservationsEnabled } = props;
   return (
     <>
       <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Gallery" title="A night told through shadow, glass, heat, and silence." copy="An immersive look at the room, food, and atmosphere before you arrive." />
@@ -149,11 +152,90 @@ function GalleryPage(props: ImmersiveRestaurantExperienceProps & { visual: strin
               <figcaption className="sr-only">{image.alt_text || `${restaurant.name} atmosphere`}</figcaption>
             </figure>
           )) : (
-            <p className="col-span-full rounded-[2rem] border border-white/10 p-10 text-center text-white/58">The restaurant has not added gallery images yet.</p>
+            <ImmersiveGalleryEmptyState restaurant={restaurant} themeIdentity={themeIdentity} reservationsEnabled={reservationsEnabled} />
           )}
         </div>
       </section>
     </>
+  );
+}
+
+function ImmersiveGalleryEmptyState({
+  restaurant,
+  themeIdentity,
+  reservationsEnabled,
+}: {
+  restaurant: Restaurant;
+  themeIdentity: RestaurantThemeIdentity;
+  reservationsEnabled: boolean;
+}) {
+  const basePath = `/restaurants/${restaurant.slug}`;
+  const actions = [
+    { label: "View menu", href: `${basePath}/menu`, primary: true },
+    reservationsEnabled ? { label: "Reserve a table", href: `${basePath}/reservations`, primary: false } : null,
+    { label: "Plan your visit", href: `${basePath}/contact`, primary: false },
+  ].filter(Boolean) as Array<{ label: string; href: string; primary: boolean }>;
+
+  return (
+    <div className="col-span-full overflow-hidden rounded-[2rem] border border-white/10 bg-white/[.05] p-6 shadow-2xl sm:p-8 lg:p-10">
+      <div className="grid gap-8 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+        <div>
+          <span className="inline-grid h-14 w-14 place-items-center rounded-2xl bg-white/10" style={{ color: themeIdentity.primary }}>
+            <Camera size={24} />
+          </span>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[0.26em]" style={{ color: themeIdentity.primary }}>
+            Gallery being composed
+          </p>
+          <h2 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.02] sm:text-6xl">
+            The visual story is still being prepared.
+          </h2>
+          <p className="mt-5 max-w-2xl text-base leading-8 text-white/62">
+            {restaurant.name} has not published gallery photography yet. The essentials are ready: explore the menu, request a table, or plan your visit directly with the restaurant.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {actions.map((action) => (
+              <a
+                key={action.label}
+                href={action.href}
+                className={`inline-flex min-h-12 items-center justify-center rounded-full px-6 py-3 text-sm font-bold transition hover:-translate-y-0.5 ${
+                  action.primary
+                    ? "text-white shadow-lg"
+                    : "border border-white/12 bg-white/[.08] text-white"
+                }`}
+                style={action.primary ? { backgroundColor: themeIdentity.primary } : undefined}
+              >
+                {action.label}
+              </a>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-3 text-sm text-white/62">
+          <ImmersiveGalleryEmptySignal icon={Utensils} title="Menu first" copy="Guests can still inspect dishes, prices, dietary notes, and ordering options." />
+          <ImmersiveGalleryEmptySignal icon={CalendarDays} title="Table ready" copy={reservationsEnabled ? "Reservation requests remain available while the gallery is curated." : "Contact the restaurant directly for table requests."} />
+          <ImmersiveGalleryEmptySignal icon={MapPin} title="Visit details" copy="Address, hours, phone, email, and map details stay one step away." />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ImmersiveGalleryEmptySignal({
+  icon: Icon,
+  title,
+  copy,
+}: {
+  icon: LucideIcon;
+  title: string;
+  copy: string;
+}) {
+  return (
+    <p className="grid grid-cols-[auto_1fr] gap-4 rounded-[1.25rem] border border-white/10 bg-white/[.05] p-4">
+      <Icon size={19} className="mt-0.5 opacity-70" />
+      <span>
+        <b className="block text-white">{title}</b>
+        <span className="mt-1 block leading-6">{copy}</span>
+      </span>
+    </p>
   );
 }
 

@@ -191,6 +191,96 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
   });
 
+  it("renders immersive gallery images when present", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...bellaNapoli,
+          theme: bellaNapoli.theme
+            ? {
+                ...bellaNapoli.theme,
+                key: "ultraviolet-luxury",
+                name: "Ultraviolet Luxury",
+                primary_color: "#b78cff",
+                secondary_color: "#20d6d2",
+                background_color: "#05030b",
+                text_color: "#f7f2ff",
+                homepage_style: "immersive",
+                menu_style: "refined",
+                gallery_style: "masonry",
+              }
+            : null,
+          primary_color: "#b78cff",
+          secondary_color: "#20d6d2",
+          background_color: "#05030b",
+          text_color: "#f7f2ff",
+          homepage_style: "immersive",
+          menu_style: "refined",
+          gallery_style: "masonry",
+        }}
+        page="gallery"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText(/an immersive look at the room/i)).toBeVisible();
+    expect(screen.getAllByAltText("Dining room")[0]).toBeVisible();
+    expect(screen.queryByText(/gallery being composed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/has not published gallery photography/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
+  it("renders a premium immersive empty gallery state when no images exist", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...northStarGrill,
+          images: [],
+          hero_image: "",
+          theme: northStarGrill.theme
+            ? {
+                ...northStarGrill.theme,
+                key: "ultraviolet-luxury",
+                name: "Ultraviolet Luxury",
+                primary_color: "#b78cff",
+                secondary_color: "#20d6d2",
+                background_color: "#05030b",
+                text_color: "#f7f2ff",
+                homepage_style: "immersive",
+                menu_style: "refined",
+                gallery_style: "masonry",
+              }
+            : null,
+          primary_color: "#b78cff",
+          secondary_color: "#20d6d2",
+          background_color: "#05030b",
+          text_color: "#f7f2ff",
+          homepage_style: "immersive",
+          menu_style: "refined",
+          gallery_style: "masonry",
+        }}
+        page="gallery"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /a night told through shadow/i })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Gallery" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText(/gallery being composed/i)).toBeVisible();
+    expect(screen.getByRole("heading", { name: /the visual story is still being prepared/i })).toBeVisible();
+    expect(screen.getByText(/has not published gallery photography yet/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /^view menu$/i })).toHaveAttribute("href", "/restaurants/north-star-grill/menu");
+    expect(screen.getByRole("link", { name: /reserve a table/i })).toHaveAttribute("href", "/restaurants/north-star-grill/reservations");
+    expect(screen.getByRole("link", { name: /plan your visit/i })).toHaveAttribute("href", "/restaurants/north-star-grill/contact");
+    expect(screen.getByText(/menu first/i)).toBeVisible();
+    expect(screen.queryByText(/has not added gallery images yet/i)).not.toBeInTheDocument();
+    expect(screen.queryByAltText("Dining room")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
   it("renders immersive homepage as a cinematic gateway without full menu or reservation form", () => {
     renderWithUser(
       <RestaurantSite
