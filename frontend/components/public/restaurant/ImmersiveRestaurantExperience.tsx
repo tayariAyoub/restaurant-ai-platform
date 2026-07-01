@@ -1,6 +1,7 @@
 import {
   ArrowRight,
   CalendarDays,
+  Mail,
   MapPin,
   Phone,
 } from "lucide-react";
@@ -158,16 +159,43 @@ function GalleryPage(props: ImmersiveRestaurantExperienceProps & { visual: strin
 
 function ContactPage(props: ImmersiveRestaurantExperienceProps & { visual: string }) {
   const { restaurant, themeIdentity, visual, hours } = props;
+  const phoneHref = restaurant.phone ? `tel:${restaurant.phone.replace(/[^\d+]/g, "")}` : "";
+  const emailHref = restaurant.email ? `mailto:${restaurant.email}` : "";
+
   return (
     <>
-      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Contact" title="Find the room. Know the hour. Call the team." copy="Address, opening hours, phone, email, map, and social links live here without reservation clutter." />
+      <PageHero restaurant={restaurant} themeIdentity={themeIdentity} visual={visual} eyebrow="Contact" title="Plan the visit. Reach the team directly." copy="Address, opening hours, direct phone, email, map, and social links live here without reservation clutter." />
       <section className="cinematic-chapter px-4 py-16 sm:px-6 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.9fr_1.1fr]">
           <div className="cinematic-host-panel rounded-[2rem] border border-white/10 p-6 sm:p-8">
             <MapPin size={22} style={{ color: themeIdentity.primary }} />
             <p className="mt-5 text-2xl font-semibold">{restaurant.address}</p>
             <p className="mt-2 text-white/58">{restaurant.postal_code} {restaurant.city}</p>
-            <p className="mt-6 flex gap-3 text-white/70"><Phone size={17} /> {restaurant.phone || "Phone coming soon"} / {restaurant.email}</p>
+            <p className="mt-6 text-sm leading-7 text-white/58">
+              Use these details for arrival questions, same-day timing, private dining context, or anything the team should know before you arrive.
+            </p>
+            <div className="mt-6 grid gap-3 text-white/70">
+              <p className="flex gap-3">
+                <Phone size={17} className="mt-1 shrink-0" />
+                {restaurant.phone ? (
+                  <a href={phoneHref} className="font-semibold underline decoration-white/20 underline-offset-4 transition hover:text-white">
+                    {restaurant.phone}
+                  </a>
+                ) : (
+                  <span>Phone coming soon</span>
+                )}
+              </p>
+              <p className="flex gap-3">
+                <Mail size={17} className="mt-1 shrink-0" />
+                {restaurant.email ? (
+                  <a href={emailHref} className="font-semibold underline decoration-white/20 underline-offset-4 transition hover:text-white">
+                    {restaurant.email}
+                  </a>
+                ) : (
+                  <span>Email coming soon</span>
+                )}
+              </p>
+            </div>
             <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
               {restaurant.google_maps_url && <a href={restaurant.google_maps_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Open map</a>}
               {restaurant.instagram_url && <a href={restaurant.instagram_url} target="_blank" className="min-h-11 rounded-full border border-white/10 px-4 py-3">Instagram</a>}

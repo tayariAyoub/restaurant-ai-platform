@@ -622,12 +622,18 @@ function ClassicContactPage({
   themeIdentity: RestaurantThemeIdentity;
   hours: Record<string, string>;
 }) {
+  const phoneHref = restaurant.phone ? `tel:${restaurant.phone.replace(/[^\d+]/g, "")}` : "";
+  const emailHref = restaurant.email ? `mailto:${restaurant.email}` : "";
+
   return (
     <section id="contact-details" className="bg-[#fbf6ee] px-4 py-16 text-[#21160f] sm:px-6 lg:py-24">
       <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_.86fr]">
         <div className="rounded-[2rem] border border-[#2d1b13]/10 bg-white p-7 shadow-[0_24px_70px_rgba(45,27,19,.1)] sm:p-9">
           <p className="luxury-kicker text-xs font-bold" style={{ color: themeIdentity.primary }}>Visit {restaurant.name}</p>
-          <h2 className="mt-3 text-4xl font-semibold leading-[1.03] sm:text-6xl">Find the table, the details, and the people behind the meal.</h2>
+          <h2 className="mt-3 text-4xl font-semibold leading-[1.03] sm:text-6xl">Plan your visit with confidence.</h2>
+          <p className="mt-5 max-w-2xl text-base leading-8 text-[#6f5144]">
+            Use the direct details below for arrival questions, same-day timing, private dining context, or anything the team should know before you arrive.
+          </p>
           <div className="mt-8 grid gap-5 text-base leading-7">
             <p className="flex gap-4">
               <MapPin size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
@@ -635,11 +641,29 @@ function ClassicContactPage({
             </p>
             <p className="flex gap-4">
               <Phone size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
-              <span>{restaurant.phone || "Phone coming soon"}</span>
+              <span>
+                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">Call</span>
+                {restaurant.phone ? (
+                  <a href={phoneHref} className="font-semibold underline decoration-[#2d1b13]/20 underline-offset-4 transition hover:text-[#6f5144]">
+                    {restaurant.phone}
+                  </a>
+                ) : (
+                  <span>Phone coming soon</span>
+                )}
+              </span>
             </p>
             <p className="flex gap-4">
               <Mail size={22} className="mt-1 shrink-0" style={{ color: themeIdentity.primary }} />
-              <span>{restaurant.email}</span>
+              <span>
+                <span className="block text-xs font-bold uppercase tracking-[0.18em] text-[#6f5144]">Email</span>
+                {restaurant.email ? (
+                  <a href={emailHref} className="font-semibold underline decoration-[#2d1b13]/20 underline-offset-4 transition hover:text-[#6f5144]">
+                    {restaurant.email}
+                  </a>
+                ) : (
+                  <span>Email coming soon</span>
+                )}
+              </span>
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 text-sm font-bold">
@@ -660,7 +684,7 @@ function ClassicContactPage({
             ))}
           </div>
           <p className="mt-6 rounded-2xl border border-white/[.10] bg-white/[.08] p-4 text-sm leading-6 text-white/66">
-            For table availability, private dining, or urgent changes, contact the restaurant directly before visiting.
+            For table availability, private dining, accessibility notes, or urgent changes, reach the restaurant directly before visiting.
           </p>
         </div>
       </div>

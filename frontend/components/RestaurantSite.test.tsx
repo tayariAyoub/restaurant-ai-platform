@@ -451,13 +451,59 @@ describe("restaurant page", () => {
     renderWithUser(<RestaurantSite restaurant={bellaNapoli} page="contact" />);
 
     expect(screen.getByText(/everything guests need before arrival/i)).toBeVisible();
-    expect(screen.getByRole("heading", { name: /find the table, the details/i })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /plan your visit with confidence/i })).toBeVisible();
+    expect(screen.getByText(/arrival questions, same-day timing/i)).toBeVisible();
     expect(screen.queryByText(/the oven/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view contact details/i })).toHaveAttribute("href", "#contact-details");
     expect(screen.getAllByText(/Sonnenallee 42/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/opening hours/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /\+49 30 123456/i })).toHaveAttribute("href", "tel:+4930123456");
+    expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
+    expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
+    expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+  });
+
+  it("renders immersive contact details as actionable visit links", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...bellaNapoli,
+          theme: bellaNapoli.theme
+            ? {
+                ...bellaNapoli.theme,
+                key: "ultraviolet-luxury",
+                name: "Ultraviolet Luxury",
+                primary_color: "#b78cff",
+                secondary_color: "#20d6d2",
+                background_color: "#05030b",
+                text_color: "#f7f2ff",
+                homepage_style: "immersive",
+                menu_style: "refined",
+                gallery_style: "masonry",
+              }
+            : null,
+          primary_color: "#b78cff",
+          secondary_color: "#20d6d2",
+          background_color: "#05030b",
+          text_color: "#f7f2ff",
+          homepage_style: "immersive",
+          menu_style: "refined",
+          gallery_style: "masonry",
+        }}
+        page="contact"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: /plan the visit/i })).toBeVisible();
+    expect(screen.getByText(/arrival questions, same-day timing/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: /\+49 30 123456/i })).toHaveAttribute("href", "tel:+4930123456");
+    expect(screen.getByRole("link", { name: /ciao@bella.example/i })).toHaveAttribute("href", "mailto:ciao@bella.example");
+    expect(screen.getByRole("link", { name: /open map/i })).toHaveAttribute("href", "https://maps.example/bella");
+    expect(screen.getAllByText(/opening hours/i).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
   });
