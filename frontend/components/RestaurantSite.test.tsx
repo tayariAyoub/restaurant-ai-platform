@@ -101,6 +101,13 @@ const northStarGrill = {
   ],
 };
 
+function expectLegalFooterLinks(footer: HTMLElement) {
+  const legalNav = within(footer).getByRole("navigation", { name: /legal links/i });
+
+  expect(within(legalNav).getByRole("link", { name: "Impressum" })).toHaveAttribute("href", "/impressum");
+  expect(within(legalNav).getByRole("link", { name: "Datenschutz" })).toHaveAttribute("href", "/datenschutz");
+}
+
 describe("restaurant page", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -166,6 +173,12 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    const footer = screen.getByRole("contentinfo");
+    const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
+    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Reserve Table" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expectLegalFooterLinks(footer);
   });
 
   it("renders a premium empty gallery state when no images exist", () => {
@@ -333,6 +346,14 @@ describe("restaurant page", () => {
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();
+    const footer = screen.getByRole("contentinfo");
+    const footerNav = within(footer).getByRole("navigation", { name: /footer restaurant links/i });
+    expect(within(footerNav).getByRole("link", { name: "Menu" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(footerNav).getByRole("link", { name: "Reservations" })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
+    expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
+    expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expectLegalFooterLinks(footer);
   });
 
   it("uses one shared navigation shell across public restaurant routes", () => {
@@ -400,6 +421,7 @@ describe("restaurant page", () => {
     expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
     expect(within(footer).queryByText(/menu, reservations, gallery/i)).not.toBeInTheDocument();
     expect(within(footer).getByText(/menu, gallery, private dining/i)).toBeVisible();
+    expectLegalFooterLinks(footer);
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
   });
@@ -583,6 +605,7 @@ describe("restaurant page", () => {
     expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
     expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
     expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expectLegalFooterLinks(footer);
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /add to order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
@@ -636,6 +659,7 @@ describe("restaurant page", () => {
     expect(within(footerNav).getByRole("link", { name: "Gallery" })).toHaveAttribute("href", "/restaurants/bella-napoli/gallery");
     expect(within(footerNav).getByRole("link", { name: "Events" })).toHaveAttribute("href", "/restaurants/bella-napoli/events");
     expect(within(footerNav).getByRole("link", { name: "Contact" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expectLegalFooterLinks(footer);
     expect(screen.queryByRole("heading", { name: "Antipasti" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /view order/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /request a table/i })).not.toBeInTheDocument();

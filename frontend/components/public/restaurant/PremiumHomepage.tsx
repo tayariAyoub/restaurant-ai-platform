@@ -17,6 +17,11 @@ import type { MenuItem, Restaurant, RestaurantImage } from "@/lib/types";
 import { formatPrice } from "./experience";
 import PremiumNavigation, { getRestaurantNavigationLinks } from "./PremiumNavigation";
 
+const LEGAL_FOOTER_LINKS = [
+  { label: "Impressum", href: "/impressum" },
+  { label: "Datenschutz", href: "/datenschutz" },
+];
+
 type PremiumHomepageProps = {
   restaurant: Restaurant;
   themeIdentity: RestaurantThemeIdentity;
@@ -373,7 +378,7 @@ function PremiumHomepageFooter({
     <footer className="border-t border-white/10 px-4 py-12 text-center sm:px-6">
       <p className="font-display text-4xl font-semibold">{restaurant.name}</p>
       <p className="mt-3 text-sm text-white/44">{restaurant.city || restaurant.address}</p>
-      <nav className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2 text-sm font-semibold text-white/62">
+      <nav aria-label="Footer restaurant links" className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-2 text-sm font-semibold text-white/62">
         {[
           ["Menu", `${basePath}/menu`],
           ["Reservations", `${basePath}/reservations`],
@@ -383,6 +388,13 @@ function PremiumHomepageFooter({
         ].map(([label, href]) => (
           <a key={label} href={href} className="rounded-full border border-white/10 px-4 py-2.5 hover:text-white">
             {label}
+          </a>
+        ))}
+      </nav>
+      <nav aria-label="Legal links" className="mx-auto mt-5 flex max-w-3xl flex-wrap justify-center gap-4 text-xs font-semibold text-white/40">
+        {LEGAL_FOOTER_LINKS.map((link) => (
+          <a key={link.label} href={link.href} className="underline-offset-4 transition hover:text-white hover:underline">
+            {link.label}
           </a>
         ))}
       </nav>

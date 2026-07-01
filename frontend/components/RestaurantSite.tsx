@@ -23,6 +23,10 @@ import {
 
 type CartLine = StoredCart[number];
 type RestaurantSitePage = "home" | "menu" | "reservations" | "gallery" | "contact" | "events";
+const LEGAL_FOOTER_LINKS = [
+  { label: "Impressum", href: "/impressum" },
+  { label: "Datenschutz", href: "/datenschutz" },
+];
 
 export default function RestaurantSite({ restaurant, page = "home" }: { restaurant: Restaurant; page?: RestaurantSitePage }) {
   const [mobile, setMobile] = useState(false);
@@ -364,13 +368,22 @@ function ClassicPublicFooter({
             {closingLine}
           </p>
         </div>
-        <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
-          {footerLinks.map((link) => (
-            <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/15 bg-white/[.06] px-4 py-2.5 font-semibold transition hover:bg-white/[.12]">
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        <div className="grid gap-4">
+          <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
+            {footerLinks.map((link) => (
+              <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/15 bg-white/[.06] px-4 py-2.5 font-semibold transition hover:bg-white/[.12]">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <nav aria-label="Legal links" className="flex flex-wrap justify-center gap-4 text-xs font-semibold opacity-55 md:justify-end">
+            {LEGAL_FOOTER_LINKS.map((link) => (
+              <a key={link.label} href={link.href} className="underline-offset-4 transition hover:underline">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );

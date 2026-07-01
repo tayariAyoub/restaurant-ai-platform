@@ -17,6 +17,10 @@ import PremiumHomepage from "./PremiumHomepage";
 import PremiumNavigation, { getRestaurantNavigationLinks } from "./PremiumNavigation";
 
 type ImmersivePage = "home" | "menu" | "reservations" | "gallery" | "contact" | "events";
+const LEGAL_FOOTER_LINKS = [
+  { label: "Impressum", href: "/impressum" },
+  { label: "Datenschutz", href: "/datenschutz" },
+];
 
 type ImmersiveRestaurantExperienceProps = {
   page: ImmersivePage;
@@ -449,13 +453,22 @@ function MinimalFooter({
             {closingLine}
           </p>
         </div>
-        <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
-          {links.map((link) => (
-            <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/10 bg-white/[.06] px-4 py-2.5 font-semibold text-white/72 transition hover:bg-white/[.12] hover:text-white">
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        <div className="grid gap-4">
+          <nav aria-label="Footer restaurant links" className="flex flex-wrap justify-center gap-2 md:justify-end">
+            {links.map((link) => (
+              <a key={`${link.label}-${link.href}`} href={link.href} className="min-h-11 rounded-full border border-white/10 bg-white/[.06] px-4 py-2.5 font-semibold text-white/72 transition hover:bg-white/[.12] hover:text-white">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <nav aria-label="Legal links" className="flex flex-wrap justify-center gap-4 text-xs font-semibold text-white/42 md:justify-end">
+            {LEGAL_FOOTER_LINKS.map((link) => (
+              <a key={link.label} href={link.href} className="underline-offset-4 transition hover:text-white hover:underline">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );
