@@ -399,6 +399,8 @@ describe("restaurant page", () => {
         : within(nav).getByRole("link", { name: activeLabel });
       expect(activeElement).toHaveAttribute("aria-current", "page");
 
+      expect(screen.getByRole("navigation", { name: /mobile schnellaktionen/i })).toBeVisible();
+
       result.unmount();
     }
   });
@@ -435,6 +437,9 @@ describe("restaurant page", () => {
 
     await user.click(addMargherita);
     await user.click(addMargherita);
+
+    expect(screen.queryByRole("navigation", { name: /mobile schnellaktionen/i })).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: /bestellung ansehen/i }));
 
     expect(screen.getByRole("button", { name: /abholung/i })).toBeVisible();
@@ -542,6 +547,38 @@ describe("restaurant page", () => {
     expect(screen.getByRole("heading", { name: bellaNapoli.name })).toBeVisible();
     expect(screen.getByRole("button", { name: /toggle menu/i })).toBeVisible();
     expect(screen.getAllByRole("link", { name: /speisekarte/i }).some((link) => link.getAttribute("href") === "/restaurants/bella-napoli/menu")).toBe(true);
+  });
+
+  it("exposes mobile quick actions for menu, reservation, phone, and route", () => {
+    renderWithUser(<RestaurantSite restaurant={bellaNapoli} />);
+
+    const quickActions = screen.getByRole("navigation", { name: /mobile schnellaktionen/i });
+
+    expect(within(quickActions).getByRole("link", { name: "Speisekarte" })).toHaveAttribute("href", "/restaurants/bella-napoli/menu");
+    expect(within(quickActions).getByRole("link", { name: /tisch reservieren/i })).toHaveAttribute("href", "/restaurants/bella-napoli/reservations");
+    expect(within(quickActions).getByRole("link", { name: /restaurant anrufen/i })).toHaveAttribute("href", "tel:+4930123456");
+    expect(within(quickActions).getByRole("link", { name: /route/i })).toHaveAttribute("href", "https://maps.example/bella");
+    expect(within(quickActions).queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
+  });
+
+  it("falls mobile quick actions back to contact when reservations or maps are unavailable", () => {
+    renderWithUser(
+      <RestaurantSite
+        restaurant={{
+          ...bellaNapoli,
+          phone: "",
+          google_maps_url: "",
+          reservations_enabled: false,
+        }}
+      />,
+    );
+
+    const quickActions = screen.getByRole("navigation", { name: /mobile schnellaktionen/i });
+
+    expect(within(quickActions).queryByRole("link", { name: /tisch reservieren/i })).not.toBeInTheDocument();
+    expect(within(quickActions).getByRole("link", { name: "Kontakt" })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(quickActions).getByRole("link", { name: /kontakt öffnen/i })).toHaveAttribute("href", "/restaurants/bella-napoli/contact");
+    expect(within(quickActions).queryByRole("link", { name: /restaurant anrufen/i })).not.toBeInTheDocument();
   });
 
   it("keeps reservations separate from contact details", () => {
@@ -714,6 +751,8 @@ describe("restaurant page", () => {
       expect(screen.queryByRole("button", { name: /bestellung ansehen/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /bestellung bestätigen/i })).not.toBeInTheDocument();
       expect(screen.queryByText(/die zahlung läuft über das restaurant/i)).not.toBeInTheDocument();
+
+      expect(screen.getByRole("navigation", { name: /mobile schnellaktionen/i })).toBeVisible();
 
       result.unmount();
       localStorage.clear();

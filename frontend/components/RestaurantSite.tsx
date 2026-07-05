@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, type LucideIcon } from "lucide-react";
+import { CalendarDays, Clock, Mail, MapPin, Phone, ShoppingBag, Sparkles, Utensils, type LucideIcon } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState, type CSSProperties } from "react";
 
 import ChatWidget from "@/components/ChatWidget";
@@ -92,6 +92,9 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
         color: themeIdentity.text,
       }
     : { backgroundColor: text, color: background };
+  const cartPreviewVisible = cartEnabled && cartCount > 0;
+  const showMobileVisitorActions = !cartPreviewVisible;
+  const chatBottomOffsetClass = "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5";
 
   useEffect(() => {
     if (orderModes.length > 0 && !orderModes.includes(orderType)) {
@@ -203,7 +206,7 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
 
   return (
     <div
-      className="luxury-shell min-h-screen antialiased"
+      className={`luxury-shell min-h-screen antialiased ${showMobileVisitorActions ? "pb-24 sm:pb-0" : ""}`}
       style={{ background: themeIdentity.shellBackground, backgroundColor: background, color: text, fontFamily: font }}
     >
       <script
@@ -278,11 +281,18 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
           primaryColor={primary}
           menuHighlights={featuredItems.map((item) => item.name)}
           dietaryPrompts={dietaryPrompts}
-          bottomOffsetClass={cartEnabled && cartCount > 0 ? "bottom-[calc(6.75rem+env(safe-area-inset-bottom))] sm:bottom-5" : "bottom-[calc(1.25rem+env(safe-area-inset-bottom))]"}
+          bottomOffsetClass={chatBottomOffsetClass}
         />
       )}
 
-      {cartEnabled && cartCount > 0 && (
+      <MobileVisitorActionBar
+        restaurant={restaurant}
+        reservationsEnabled={reservationsEnabled}
+        visible={showMobileVisitorActions}
+        primaryColor={primary}
+      />
+
+      {cartPreviewVisible && (
         <button
           onClick={() => setCartOpen(true)}
           className="luxury-button fixed inset-x-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex min-h-16 items-center justify-between gap-3 rounded-2xl border border-white/15 px-4 py-3 text-left text-sm font-bold text-white shadow-2xl backdrop-blur sm:left-1/2 sm:right-auto sm:w-[min(560px,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-full sm:px-6 sm:py-4 sm:text-base"
@@ -326,6 +336,66 @@ export default function RestaurantSite({ restaurant, page = "home" }: { restaura
 
 function safeJsonLd(value: unknown) {
   return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+function buildPhoneHref(phone: string) {
+  const normalized = phone.replace(/[^\d+]/g, "");
+  return normalized ? `tel:${normalized}` : "";
+}
+
+function MobileVisitorActionBar({
+  restaurant,
+  reservationsEnabled,
+  visible,
+  primaryColor,
+}: {
+  restaurant: Restaurant;
+  reservationsEnabled: boolean;
+  visible: boolean;
+  primaryColor: string;
+}) {
+  if (!visible) return null;
+
+  const basePath = `/restaurants/${restaurant.slug}`;
+  const phoneHref = restaurant.phone ? buildPhoneHref(restaurant.phone) : "";
+  const actions = [
+    { label: "Speisekarte", href: `${basePath}/menu`, icon: Utensils },
+    reservationsEnabled
+      ? { label: "Tisch", ariaLabel: "Tisch reservieren", href: `${basePath}/reservations`, icon: CalendarDays }
+      : { label: "Kontakt", href: `${basePath}/contact`, icon: Mail },
+    phoneHref ? { label: "Anrufen", ariaLabel: "Restaurant anrufen", href: phoneHref, icon: Phone } : null,
+    restaurant.google_maps_url
+      ? { label: "Route", ariaLabel: "Route öffnen", href: restaurant.google_maps_url, icon: MapPin, external: true }
+      : { label: "Kontakt", ariaLabel: "Kontakt öffnen", href: `${basePath}/contact`, icon: MapPin },
+  ].filter(Boolean) as Array<{
+    label: string;
+    ariaLabel?: string;
+    href: string;
+    icon: LucideIcon;
+    external?: boolean;
+  }>;
+
+  return (
+    <nav aria-label="Mobile Schnellaktionen" className="fixed inset-x-3 bottom-[calc(.75rem+env(safe-area-inset-bottom))] z-40 sm:hidden">
+      <div className="grid overflow-hidden rounded-[1.4rem] border border-white/55 bg-white/92 text-[#241811] shadow-[0_20px_60px_rgba(0,0,0,.18)] backdrop-blur" style={{ gridTemplateColumns: `repeat(${actions.length}, minmax(0, 1fr))` }}>
+        {actions.map(({ label, ariaLabel, href, icon: Icon, external }) => (
+          <a
+            key={`${label}-${href}`}
+            href={href}
+            aria-label={ariaLabel}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noreferrer" : undefined}
+            className="flex min-h-[4.45rem] min-w-0 flex-col items-center justify-center gap-1.5 border-r border-[#241811]/10 px-1 py-2 text-[10px] font-bold last:border-r-0"
+          >
+            <span className="grid h-8 w-8 place-items-center rounded-full text-white" style={{ backgroundColor: primaryColor }}>
+              <Icon size={15} />
+            </span>
+            <span className="max-w-full truncate">{label}</span>
+          </a>
+        ))}
+      </div>
+    </nav>
+  );
 }
 
 function buildPublicFooterLinks(restaurant: Restaurant, reservationsEnabled: boolean) {
