@@ -36,6 +36,7 @@ from app.schemas import (
 )
 from app.services.chat import answer_question
 from app.services.maps import distance_km, geocode
+from app.services.notifications import notify_new_contact_request, notify_new_order
 
 router = APIRouter(tags=["public"])
 
@@ -152,6 +153,7 @@ def create_reservation(
     db.add(request)
     db.commit()
     db.refresh(request)
+    notify_new_contact_request(restaurant, request)
     return request
 
 
@@ -168,6 +170,7 @@ def legacy_contact(payload: ContactCreate, db: Session = Depends(get_db)) -> Con
     db.add(request)
     db.commit()
     db.refresh(request)
+    notify_new_contact_request(restaurant, request)
     return request
 
 
@@ -309,6 +312,7 @@ def create_order(
             )
         )
     db.commit()
+    notify_new_order(restaurant, order)
     return db.scalar(
         select(Order)
         .where(Order.id == order.id)

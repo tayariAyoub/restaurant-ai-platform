@@ -105,6 +105,16 @@ Optional but recommended:
 | `RATE_LIMIT_CHAT_PER_MINUTE` | Chat abuse protection, default `10`. |
 | `RATE_LIMIT_PUBLIC_PER_MINUTE` | General public API limit, default `100`. |
 | `RATE_LIMIT_AUTH_PER_MINUTE` | Login attempt protection, default `10`. |
+| `SMTP_HOST` | SMTP host for order and reservation notification emails. Leave empty to disable email notifications safely. |
+| `SMTP_PORT` | SMTP port, usually `587` with STARTTLS or `465` with SSL. |
+| `SMTP_USERNAME` | SMTP username, if required by the provider. |
+| `SMTP_PASSWORD` | SMTP password, if required by the provider. |
+| `SMTP_FROM_EMAIL` | Sender address for notification emails. |
+| `SMTP_USE_TLS` | Use STARTTLS for non-465 SMTP connections. |
+| `NOTIFICATION_TO_EMAIL` | Operator recipient for new public order and reservation notifications. |
+| `ADMIN_BASE_URL` | Optional admin base URL included in notification emails. |
+
+Order and reservation creation must not depend on email delivery. If notification settings are incomplete or SMTP fails, RestaurantAI logs the issue and keeps the customer request successful.
 | `AUTH_COOKIE_ENABLED` | Optional cookie-auth support. Bearer auth still works. |
 | `AUTH_COOKIE_SECURE` | Must be `true` if cookie auth is enabled in production. |
 

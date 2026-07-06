@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     openai_embedding_model: str = "text-embedding-3-small"
     frontend_origin: str | None = None
     frontend_url: str = "http://localhost:3000"
+    admin_base_url: str = ""
     admin_email: str = "admin@example.com"
     admin_password: str = ""
     demo_owner_email: str = "owner@example.com"
@@ -59,6 +60,13 @@ class Settings(BaseSettings):
     auth_cookie_secure: bool = False
     auth_cookie_samesite: str = "lax"
     auth_cookie_max_age_seconds: int = 43200
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = ""
+    smtp_use_tls: bool = True
+    notification_to_email: str = ""
 
     model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 

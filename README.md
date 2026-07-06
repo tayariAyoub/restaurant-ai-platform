@@ -213,6 +213,16 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `AUTH_COOKIE_SECURE` | Set to `true` in production when cookie auth is enabled |
 | `AUTH_COOKIE_SAMESITE` | Cookie SameSite mode |
 | `AUTH_COOKIE_MAX_AGE_SECONDS` | Cookie lifetime in seconds |
+| `SMTP_HOST` | Optional SMTP host for order/reservation email notifications |
+| `SMTP_PORT` | SMTP port, usually `587` or `465` |
+| `SMTP_USERNAME` | Optional SMTP username |
+| `SMTP_PASSWORD` | Optional SMTP password |
+| `SMTP_FROM_EMAIL` | Sender address for notification emails |
+| `SMTP_USE_TLS` | Use SMTP STARTTLS for non-465 SMTP connections |
+| `NOTIFICATION_TO_EMAIL` | Recipient for new order and reservation notifications |
+| `ADMIN_BASE_URL` | Optional admin URL used in notification emails, for example `https://app.example.com` |
+
+If SMTP settings are missing or sending fails, customer orders and reservation requests are still accepted and the backend logs the notification issue.
 
 Generate a strong JWT secret in PowerShell:
 

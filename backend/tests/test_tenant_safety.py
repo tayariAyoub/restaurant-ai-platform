@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 import pytest
@@ -26,7 +27,7 @@ from app.models import (
     RestaurantImage,
     User,
 )
-from app.services import admin_chat, analytics, chat, knowledge
+from app.services import admin_chat, analytics, chat, knowledge, notifications
 from app.services import faqs as faq_service
 from app.services import menu as menu_service
 from app.services import restaurants as restaurant_service
@@ -1066,6 +1067,76 @@ def test_public_order_creation_stores_order_and_returns_response(
     assert db.query(DeliveryAddress).filter_by(order_id=order.id).one().city == "Berlin"
 
 
+def test_public_order_creation_triggers_notification_after_success(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    sent_messages: list[tuple[str, str]] = []
+    monkeypatch.setattr(notifications.settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(notifications.settings, "smtp_from_email", "orders@example.com")
+    monkeypatch.setattr(notifications.settings, "notification_to_email", "owner@example.com")
+    monkeypatch.setattr(notifications.settings, "admin_base_url", "https://admin.example.com")
+
+    def fake_send_email(config: object, subject: str, body: str) -> None:
+        sent_messages.append((subject, body))
+
+    monkeypatch.setattr(notifications, "send_email", fake_send_email)
+
+    order = public.create_order("tenant-one", order_payload(item), db=db)
+
+    assert len(sent_messages) == 1
+    subject, body = sent_messages[0]
+    assert subject == "New order for Tenant One"
+    assert "Restaurant: Tenant One" in body
+    assert "Type: New public order" in body
+    assert "Customer name: PICKUP Customer" in body
+    assert "Customer email: pickup@example.com" in body
+    assert "Customer phone: 333" in body
+    assert "Order mode: PICKUP" in body
+    assert f"Public order ID: {order.public_id}" in body
+    assert "Total: EUR 12.00" in body
+    assert "Admin: https://admin.example.com/admin/restaurants/" in body
+
+
+def test_public_order_creation_does_not_fail_when_notification_config_is_missing(
+    db: Session, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    monkeypatch.setattr(notifications.settings, "smtp_host", "")
+    monkeypatch.setattr(notifications.settings, "smtp_from_email", "")
+    monkeypatch.setattr(notifications.settings, "notification_to_email", "")
+
+    with caplog.at_level(logging.INFO, logger="restaurantai.notifications"):
+        order = public.create_order("tenant-one", order_payload(item), db=db)
+
+    assert order.status == "NEW"
+    assert "Skipping order email notification" in caplog.text
+    assert "SMTP_HOST" in caplog.text
+
+
+def test_public_order_creation_does_not_fail_when_notification_send_fails(
+    db: Session, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    monkeypatch.setattr(notifications.settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(notifications.settings, "smtp_from_email", "orders@example.com")
+    monkeypatch.setattr(notifications.settings, "notification_to_email", "owner@example.com")
+
+    def fail_send(*_: object) -> None:
+        raise RuntimeError("SMTP unavailable")
+
+    monkeypatch.setattr(notifications, "send_email", fail_send)
+
+    with caplog.at_level(logging.ERROR, logger="restaurantai.notifications"):
+        order = public.create_order("tenant-one", order_payload(item), db=db)
+
+    assert order.status == "NEW"
+    assert "Failed to send order email notification" in caplog.text
+
+
 def test_public_reservation_rejected_when_reservations_disabled(db: Session) -> None:
     restaurant_one, _ = restaurants(db)
     restaurant_one.reservations_enabled = False
@@ -1102,6 +1173,52 @@ def test_public_reservation_still_works_when_enabled(db: Session) -> None:
     assert request.email == "guest@example.com"
     assert request.party_size == 2
     assert request.status == "new"
+
+
+def test_public_reservation_creation_triggers_notification_after_success(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sent_messages: list[tuple[str, str]] = []
+    monkeypatch.setattr(notifications.settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(notifications.settings, "smtp_from_email", "orders@example.com")
+    monkeypatch.setattr(notifications.settings, "notification_to_email", "owner@example.com")
+    monkeypatch.setattr(notifications.settings, "admin_base_url", "https://admin.example.com")
+
+    def fake_send_email(config: object, subject: str, body: str) -> None:
+        sent_messages.append((subject, body))
+
+    monkeypatch.setattr(notifications, "send_email", fake_send_email)
+
+    request = public.create_reservation("tenant-one", reservation_payload(), db=db)
+
+    assert len(sent_messages) == 1
+    subject, body = sent_messages[0]
+    assert subject == "New reservation request for Tenant One"
+    assert "Restaurant: Tenant One" in body
+    assert "Type: New reservation/contact request" in body
+    assert f"Customer name: {request.name}" in body
+    assert "Customer email: guest@example.com" in body
+    assert "Customer phone: 333" in body
+    assert "Requested date/time: Friday 19:00" in body
+    assert "Party size: 2" in body
+    assert "Message: Window table" in body
+    assert "Admin: https://admin.example.com/admin/restaurants/" in body
+
+
+def test_legacy_contact_creation_triggers_notification_after_success(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    notifications_sent: list[tuple[str, str]] = []
+
+    def fake_notify(restaurant: Restaurant, request: ContactRequest) -> bool:
+        notifications_sent.append((restaurant.slug, request.email))
+        return True
+
+    monkeypatch.setattr(public, "notify_new_contact_request", fake_notify)
+
+    public.legacy_contact(reservation_payload(), db=db)
+
+    assert notifications_sent == [("tenant-one", "guest@example.com")]
 
 
 def test_ai_context_retrieval_is_restaurant_scoped(db: Session, monkeypatch: pytest.MonkeyPatch) -> None:
