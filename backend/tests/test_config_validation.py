@@ -5,6 +5,7 @@ from app.core.config import (
     collect_configuration_issues,
     cors_origins,
     should_run_legacy_startup_migrations,
+    should_seed_demo_data,
 )
 
 
@@ -20,6 +21,7 @@ def make_config(**overrides):
         "demo_owner_password": "safe-development-owner-password",
         "storage_provider": "local",
         "auto_migrate_on_startup": None,
+        "seed_demo_data": False,
         "openai_api_key": "",
         "frontend_origin": None,
         "frontend_url": "http://localhost:3000",
@@ -186,3 +188,43 @@ def test_production_rejects_automatic_startup_migrations():
     )
 
     assert "AUTO_MIGRATE_ON_STARTUP" in " ".join(report.errors)
+
+
+def test_demo_seed_data_is_disabled_by_default():
+    assert should_seed_demo_data(make_config(app_env="development")) is False
+
+
+def test_demo_seed_data_can_be_enabled_for_local_demo():
+    assert should_seed_demo_data(make_config(app_env="development", seed_demo_data=True)) is True
+
+
+def test_demo_seed_data_never_runs_in_production():
+    assert should_seed_demo_data(make_config(app_env="production", seed_demo_data=True)) is False
+
+
+def test_production_rejects_demo_seed_data_flag():
+    report = collect_configuration_issues(
+        make_config(
+            app_env="production",
+            jwt_secret="production-secret-with-enough-length",
+            database_url="postgresql+psycopg://user:pass@db:5432/app",
+            frontend_origin="https://app.example.com",
+            frontend_url="https://app.example.com",
+            seed_demo_data=True,
+        )
+    )
+
+    assert "SEED_DEMO_DATA" in " ".join(report.errors)
+
+
+def test_demo_seed_data_requires_demo_passwords_when_enabled():
+    report = collect_configuration_issues(
+        make_config(
+            seed_demo_data=True,
+            admin_password="",
+            demo_owner_password="",
+        )
+    )
+
+    assert "ADMIN_PASSWORD is required when SEED_DEMO_DATA=true" in " ".join(report.errors)
+    assert "DEMO_OWNER_PASSWORD is required when SEED_DEMO_DATA=true" in " ".join(report.errors)

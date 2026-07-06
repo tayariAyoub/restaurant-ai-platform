@@ -129,7 +129,8 @@ For local development and Docker demos, `AUTO_MIGRATE_ON_STARTUP=true` keeps the
 
 - create missing tables
 - run the old idempotent bridge
-- seed demo data
+
+Demo content and local demo users are controlled separately with `SEED_DEMO_DATA=true`.
 
 This is intentionally not the production path.
 

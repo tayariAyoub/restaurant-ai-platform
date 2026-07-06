@@ -41,12 +41,13 @@ class Settings(BaseSettings):
     frontend_origin: str | None = None
     frontend_url: str = "http://localhost:3000"
     admin_email: str = "admin@example.com"
-    admin_password: str
+    admin_password: str = ""
     demo_owner_email: str = "owner@example.com"
-    demo_owner_password: str
+    demo_owner_password: str = ""
     upload_dir: str = "uploads"
     storage_provider: str = "local"
     auto_migrate_on_startup: bool | None = None
+    seed_demo_data: bool = False
     rate_limit_chat_per_minute: int = 10
     rate_limit_reservations_per_minute: int = 5
     rate_limit_orders_per_minute: int = 10
@@ -90,6 +91,12 @@ def should_run_legacy_startup_migrations(config: Any) -> bool:
     if explicit_value is not None:
         return bool(explicit_value)
     return True
+
+
+def should_seed_demo_data(config: Any) -> bool:
+    if _is_production(config):
+        return False
+    return bool(getattr(config, "seed_demo_data", False))
 
 
 def configured_frontend_origin(config: Any) -> str:
@@ -170,12 +177,19 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
     required_values = {
         "DATABASE_URL": "database_url",
         "JWT_SECRET": "jwt_secret",
-        "ADMIN_PASSWORD": "admin_password",
-        "DEMO_OWNER_PASSWORD": "demo_owner_password",
     }
     for env_name, attr_name in required_values.items():
         if not _clean(getattr(config, attr_name, "")):
             errors.append(f"{env_name} is required.")
+
+    seed_demo_data = bool(getattr(config, "seed_demo_data", False))
+    if seed_demo_data:
+        for env_name, attr_name in {
+            "ADMIN_PASSWORD": "admin_password",
+            "DEMO_OWNER_PASSWORD": "demo_owner_password",
+        }.items():
+            if not _clean(getattr(config, attr_name, "")):
+                errors.append(f"{env_name} is required when SEED_DEMO_DATA=true.")
 
     log_level = _clean(getattr(config, "log_level", "INFO")).upper()
     if log_level not in {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}:
@@ -215,6 +229,8 @@ def collect_configuration_issues(config: Any) -> ConfigurationReport:
 
     if _is_production(config) and getattr(config, "auto_migrate_on_startup", None) is True:
         errors.append("AUTO_MIGRATE_ON_STARTUP must be false in production. Run Alembic migrations explicitly.")
+    if _is_production(config) and seed_demo_data:
+        errors.append("SEED_DEMO_DATA must be false in production. Create production accounts intentionally.")
 
     if not _clean(getattr(config, "openai_api_key", "")):
         warnings.append(

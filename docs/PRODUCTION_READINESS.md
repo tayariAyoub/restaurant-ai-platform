@@ -79,8 +79,9 @@ The backend requires these values:
 | `LOG_LEVEL` | Yes | Use `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Default is `INFO`. |
 | `DATABASE_URL` | Yes | SQLAlchemy database URL. Docker uses PostgreSQL with pgvector. |
 | `JWT_SECRET` | Yes | Must be long, random, and private. Never use the local demo value in production. |
-| `ADMIN_PASSWORD` | Yes | Initial super-admin password. Replace before pilots. |
-| `DEMO_OWNER_PASSWORD` | Yes | Initial demo owner password. Replace before pilots or disable demo seed data later. |
+| `ADMIN_PASSWORD` | Demo seed only | Initial super-admin password when `SEED_DEMO_DATA=true`. Do not use demo values in production. |
+| `DEMO_OWNER_PASSWORD` | Demo seed only | Initial demo owner password when `SEED_DEMO_DATA=true`. Do not use demo values in production. |
+| `SEED_DEMO_DATA` | Local only | Keep `true` only for local/private demos. Set `false` or leave unset in production. |
 | `FRONTEND_ORIGIN` | Yes | Preferred CORS origin, for example `https://your-domain.com`. Do not use `*` in production. |
 | `FRONTEND_URL` | Compatible fallback | Existing deployments can keep using this, but `FRONTEND_ORIGIN` is preferred for new production config. |
 | `STORAGE_PROVIDER` | Yes | Currently supports `local` only. |
@@ -91,6 +92,7 @@ Frontend/public URL variables:
 | Variable | Required | Notes |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | Yes for production SEO | Public canonical site URL, for example `https://your-domain.com`. |
+| `NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS` | Local only | Shows demo credential helpers on the admin login page. Keep unset or `false` in production. |
 | `BACKEND_INTERNAL_URL` | Yes in Docker | Internal URL used by Next.js rewrites, usually `http://backend:8000`. |
 
 Optional but recommended:

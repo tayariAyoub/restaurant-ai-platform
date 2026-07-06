@@ -12,6 +12,7 @@ from app.core.config import (
     cors_origins,
     settings,
     should_run_legacy_startup_migrations,
+    should_seed_demo_data,
 )
 from app.core.database import Base, SessionLocal, engine
 from app.core.errors import register_exception_handlers
@@ -58,12 +59,20 @@ def prepare_database_for_startup() -> None:
     upgrade_existing_database()
 
 
+def seed_database_for_startup() -> None:
+    if not should_seed_demo_data(settings):
+        logger.info("Skipping demo seed data. Set SEED_DEMO_DATA=true only for local/demo environments.")
+        return
+
+    with SessionLocal() as db:
+        seed_demo_data(db)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     validate_environment_configuration()
     prepare_database_for_startup()
-    with SessionLocal() as db:
-        seed_demo_data(db)
+    seed_database_for_startup()
     yield
 
 

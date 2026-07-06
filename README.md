@@ -80,6 +80,7 @@ docker compose up --build
 | Restaurant owner | `owner@restaurantai.com` | `owner12345` |
 
 These are demo-only credentials. Change them before using the project outside local development.
+The login page shows helper buttons only when `NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS=true`.
 
 ## Quick start with Docker
 
@@ -193,10 +194,12 @@ Create `.env` from `.env.example`. Never commit `.env`.
 | `ADMIN_EMAIL` | Initial super-admin email |
 | `ADMIN_PASSWORD` | Initial super-admin password |
 | `DEMO_OWNER_EMAIL` | Demo restaurant-owner email |
-| `DEMO_OWNER_PASSWORD` | Demo restaurant-owner password |
+| `DEMO_OWNER_PASSWORD` | Demo restaurant-owner password, required only when `SEED_DEMO_DATA=true` |
+| `SEED_DEMO_DATA` | Seeds local Bella Napoli demo data and demo users when `true`; keep `false` in production |
 | `FRONTEND_ORIGIN` | Preferred backend CORS origin; use one explicit origin such as `https://app.example.com` |
 | `FRONTEND_URL` | Allowed frontend origin |
 | `NEXT_PUBLIC_SITE_URL` | Public frontend URL used for canonical SEO metadata |
+| `NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS` | Shows demo credential helper buttons on the admin login page when `true`; keep unset or `false` in production |
 | `BACKEND_INTERNAL_URL` | Backend URL used by the Next.js proxy |
 | `STORAGE_PROVIDER` | Upload storage backend; use `local` for development |
 | `AUTO_MIGRATE_ON_STARTUP` | Local/demo schema compatibility bridge; set to `false` in production and run Alembic explicitly |
@@ -297,6 +300,7 @@ docker-compose.yml  local full-stack environment
 - Restaurant management and RAG queries are scoped to the authenticated restaurant.
 - Passwords are stored as bcrypt hashes.
 - Replace all development credentials before deploying.
+- Keep `SEED_DEMO_DATA=false` and `NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS=false` in production.
 - Before a public launch, add HTTP-only cookie sessions, rate limiting, password reset, audit logs, backups, object storage, monitoring, and a formal migration system such as Alembic.
 
 ## Team workflow

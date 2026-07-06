@@ -13,19 +13,35 @@ vi.mock("@/lib/api", () => ({
 
 describe("admin login", () => {
   beforeEach(() => {
+    vi.unstubAllEnvs();
     localStorage.clear();
     requestMock.mockReset();
     routerPushMock.mockReset();
   });
 
-  it("renders the login form and demo account helpers", () => {
+  it("renders the login form without demo account helpers by default", () => {
     renderWithUser(<LoginPage />);
 
     expect(screen.getByRole("heading", { name: /welcome back/i })).toBeVisible();
     expect(screen.getByPlaceholderText("Email")).toBeVisible();
     expect(screen.getByPlaceholderText("Password")).toBeVisible();
     expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
+    expect(screen.queryByText(/demo accounts/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/owner12345/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/admin12345/i)).not.toBeInTheDocument();
+  });
+
+  it("shows demo account helpers only when explicitly enabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS", "true");
+    const { user } = renderWithUser(<LoginPage />);
+
+    expect(screen.getByText("Local demo accounts")).toBeVisible();
     expect(screen.getByRole("button", { name: /restaurant owner/i })).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: /restaurant owner/i }));
+
+    expect(screen.getByPlaceholderText("Email")).toHaveValue("owner@restaurantai.com");
+    expect(screen.getByPlaceholderText("Password")).toHaveValue("owner12345");
   });
 
   it("does not submit when required fields are empty", async () => {

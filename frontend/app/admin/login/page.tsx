@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const showDemoCredentials = process.env.NEXT_PUBLIC_SHOW_DEMO_CREDENTIALS === "true";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,17 +46,20 @@ export default function LoginPage() {
           </button>
         </form>
         {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        <div className="mt-6 rounded-xl bg-stone-100 p-3 text-xs leading-5 text-stone-600">
-          <p className="font-semibold text-stone-800">Demo accounts</p>
-          <div className="mt-3 grid gap-2">
-            <button type="button" onClick={() => { setEmail("owner@restaurantai.com"); setPassword("owner12345"); }} className="rounded-lg bg-white px-3 py-2 text-left shadow-sm">
-              Restaurant owner: owner@restaurantai.com / owner12345
-            </button>
-            <button type="button" onClick={() => { setEmail("admin@restaurantai.com"); setPassword("admin12345"); }} className="rounded-lg bg-white px-3 py-2 text-left shadow-sm">
-              Super admin: admin@restaurantai.com / admin12345
-            </button>
+        {showDemoCredentials && (
+          <div className="mt-6 rounded-xl bg-stone-100 p-3 text-xs leading-5 text-stone-600">
+            <p className="font-semibold text-stone-800">Local demo accounts</p>
+            <p className="mt-1">Only enable these helpers in local or private demo environments.</p>
+            <div className="mt-3 grid gap-2">
+              <button type="button" onClick={() => { setEmail("owner@restaurantai.com"); setPassword("owner12345"); }} className="rounded-lg bg-white px-3 py-2 text-left shadow-sm">
+                Restaurant owner: owner@restaurantai.com / owner12345
+              </button>
+              <button type="button" onClick={() => { setEmail("admin@restaurantai.com"); setPassword("admin12345"); }} className="rounded-lg bg-white px-3 py-2 text-left shadow-sm">
+                Super admin: admin@restaurantai.com / admin12345
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </main>
   );
