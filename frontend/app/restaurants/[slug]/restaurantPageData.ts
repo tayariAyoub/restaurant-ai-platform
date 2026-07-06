@@ -139,7 +139,7 @@ export async function generateRestaurantPageMetadata(
       url: canonical,
       siteName: SITE_NAME,
       type: "website",
-      locale: "en_US",
+      locale: "de_DE",
       images: image
         ? [
             {
@@ -171,11 +171,11 @@ function pageTitle(restaurant: Restaurant, page: PublicRestaurantPage) {
   if (page === "home") return restaurantSeoTitle(restaurant);
   const place = restaurant.city ? ` in ${restaurant.city}` : "";
   const labels: Record<Exclude<PublicRestaurantPage, "home">, string> = {
-    menu: "Menu",
-    reservations: "Reservations",
-    gallery: "Gallery",
-    contact: "Contact",
-    events: "Private Dining & Events",
+    menu: "Speisekarte",
+    reservations: "Reservierungen",
+    gallery: "Galerie",
+    contact: "Kontakt",
+    events: "Private Dining und Events",
   };
   return `${restaurant.name} ${labels[page]}${place}`;
 }
@@ -183,22 +183,22 @@ function pageTitle(restaurant: Restaurant, page: PublicRestaurantPage) {
 function pageDescription(restaurant: Restaurant, page: PublicRestaurantPage) {
   if (page === "home") return restaurantSeoDescription(restaurant);
   const city = restaurant.city ? ` in ${restaurant.city}` : "";
-  if (page === "menu") return `Explore ${restaurant.name}'s menu${city}, including dishes, prices, dietary notes, and ordering options.`;
-  if (page === "reservations") return `Request a table at ${restaurant.name}${city} and share timing, party size, allergies, or occasion details.`;
-  if (page === "gallery") return `Step inside ${restaurant.name}${city} through food, atmosphere, and dining room photography.`;
-  if (page === "contact") return `Find ${restaurant.name}'s address, opening hours, phone, email, map, and social links${city}.`;
-  return `Plan private dining, special tables, or events with ${restaurant.name}${city}.`;
+  if (page === "menu") return `Entdecken Sie die Speisekarte von ${restaurant.name}${city} mit Gerichten, Preisen, Hinweisen und Bestelloptionen.`;
+  if (page === "reservations") return `Fragen Sie einen Tisch bei ${restaurant.name}${city} an und teilen Sie Uhrzeit, Gästezahl, Allergien oder Anlass mit.`;
+  if (page === "gallery") return `Erleben Sie ${restaurant.name}${city} mit Eindrücken von Speisen, Raum und Atmosphäre.`;
+  if (page === "contact") return `Finden Sie Adresse, Öffnungszeiten, Telefon, E-Mail, Karte und Social-Media-Links von ${restaurant.name}${city}.`;
+  return `Planen Sie Private Dining, besondere Tische oder Events mit ${restaurant.name}${city}.`;
 }
 
 function pageKeyword(page: PublicRestaurantPage, restaurant: Restaurant) {
   if (page === "home") return "";
   const city = restaurant.city || "";
   const labels: Record<Exclude<PublicRestaurantPage, "home">, string> = {
-    menu: "restaurant menu",
-    reservations: "restaurant reservations",
-    gallery: "restaurant gallery",
-    contact: "restaurant contact",
-    events: "private dining",
+    menu: "Restaurant Speisekarte",
+    reservations: "Restaurant Reservierung",
+    gallery: "Restaurant Galerie",
+    contact: "Restaurant Kontakt",
+    events: "Private Dining",
   };
   return `${restaurant.name} ${labels[page]} ${city}`.trim();
 }

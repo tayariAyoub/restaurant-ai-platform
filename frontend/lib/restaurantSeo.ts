@@ -6,7 +6,7 @@ export const SITE_NAME = "RestaurantAI";
 export const FALLBACK_SITE_URL = "http://localhost:3000";
 export const FALLBACK_SEO_TITLE = "Restaurant | RestaurantAI";
 export const FALLBACK_SEO_DESCRIPTION =
-  "Discover restaurant menus, reservations, online ordering, and AI-powered hospitality with RestaurantAI.";
+  "Entdecken Sie Restaurant-Speisekarten, Reservierungen, Online-Bestellungen und KI-gestützte Gastkommunikation mit RestaurantAI.";
 
 const KNOWN_CUISINES = [
   "Italian",
@@ -29,6 +29,29 @@ const KNOWN_CUISINES = [
   "Steakhouse",
   "Fine Dining",
 ];
+
+const GERMAN_CUISINE_LABELS: Record<string, string> = {
+  Italian: "italienisches Restaurant",
+  Pizza: "Pizza-Restaurant",
+  French: "französisches Restaurant",
+  Japanese: "japanisches Restaurant",
+  Sushi: "Sushi-Restaurant",
+  Mediterranean: "mediterranes Restaurant",
+  Greek: "griechisches Restaurant",
+  Spanish: "spanisches Restaurant",
+  Mexican: "mexikanisches Restaurant",
+  Indian: "indisches Restaurant",
+  Thai: "thailändisches Restaurant",
+  Chinese: "chinesisches Restaurant",
+  Lebanese: "libanesisches Restaurant",
+  Turkish: "türkisches Restaurant",
+  Vegan: "veganes Restaurant",
+  Vegetarian: "vegetarisches Restaurant",
+  Seafood: "Fischrestaurant",
+  Steakhouse: "Steakhouse",
+  "Fine Dining": "Fine-Dining-Restaurant",
+  Restaurant: "Restaurant",
+};
 
 export function siteUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
@@ -89,45 +112,48 @@ export function restaurantSpecialties(restaurant: Restaurant, limit = 4) {
 
 export function restaurantSeoTitle(restaurant: Restaurant) {
   const cuisine = restaurantCuisine(restaurant);
+  const cuisineLabel = sentenceCase(restaurantCuisineLabel(cuisine));
   const city = restaurant.city ? ` in ${restaurant.city}` : "";
-  return `${restaurant.name} | ${cuisine} Restaurant${city}`;
+  return `${restaurant.name} | ${cuisineLabel}${city}`;
 }
 
 export function restaurantSeoDescription(restaurant: Restaurant) {
   const cuisine = restaurantCuisine(restaurant);
-  const location = restaurant.city ? `in ${restaurant.city}` : "near you";
+  const cuisineLabel = restaurantCuisineLabel(cuisine);
+  const location = restaurant.city ? `in ${restaurant.city}` : "in Ihrer Nähe";
   const specialties = restaurantSpecialties(restaurant, 3);
-  const specialtyText = specialties.length > 0 ? ` known for ${toHumanList(specialties)}` : "";
+  const specialtyText = specialties.length > 0 ? ` mit ${toHumanList(specialties)}` : "";
   const base = compactSentence(restaurant.description || restaurant.tagline || restaurant.story);
 
   if (base) {
     return trimDescription(
-      `${base}. Visit ${restaurant.name}, a ${cuisine.toLowerCase()} restaurant ${location}${specialtyText}. Explore the menu, book a table, or order online.`,
+      `${base}. Besuchen Sie ${restaurant.name}, ein ${cuisineLabel} ${location}${specialtyText}. Entdecken Sie Speisekarte, Reservierung und Online-Bestellung.`,
     );
   }
 
   return trimDescription(
-    `${restaurant.name} is a ${cuisine.toLowerCase()} restaurant ${location}${specialtyText}. Explore the menu, reserve a table, order online, and enjoy premium hospitality.`,
+    `${restaurant.name} ist ein ${cuisineLabel} ${location}${specialtyText}. Entdecken Sie Speisekarte, Reservierung, Online-Bestellung und digitale Gastfreundschaft.`,
   );
 }
 
 export function restaurantSeoKeywords(restaurant: Restaurant) {
   const cuisine = restaurantCuisine(restaurant);
+  const cuisineLabel = sentenceCase(restaurantCuisineLabel(cuisine));
   const city = restaurant.city;
   return unique(
     [
       restaurant.name,
-      city && `${cuisine} Restaurant ${city}`,
+      city && `${cuisineLabel} ${city}`,
       city && `Restaurant ${city}`,
-      city && `Menu ${city}`,
-      city && `Reservations ${city}`,
-      city && `Online ordering ${city}`,
-      cuisine,
-      `${restaurant.name} menu`,
-      `${restaurant.name} reservations`,
+      city && `Speisekarte ${city}`,
+      city && `Reservierung ${city}`,
+      city && `Online Bestellung ${city}`,
+      cuisineLabel,
+      `${restaurant.name} Speisekarte`,
+      `${restaurant.name} Reservierung`,
       ...restaurantSpecialties(restaurant, 8),
       ...restaurant.categories.map((category) => category.name),
-      "Fine Dining",
+      "Restaurant",
     ].filter(Boolean) as string[],
   );
 }
@@ -144,8 +170,9 @@ export function restaurantSeoImage(restaurant: Restaurant) {
 
 export function restaurantSeoImageAlt(restaurant: Restaurant) {
   const cuisine = restaurantCuisine(restaurant);
+  const cuisineLabel = restaurantCuisineLabel(cuisine);
   const city = restaurant.city ? ` in ${restaurant.city}` : "";
-  return `${restaurant.name} ${cuisine.toLowerCase()} restaurant${city}`;
+  return `${restaurant.name} ${cuisineLabel}${city}`;
 }
 
 export function restaurantRobots(restaurant?: Restaurant | null): NonNullable<Metadata["robots"]> {
@@ -233,10 +260,18 @@ function trimDescription(value: string) {
   return compact.length <= 165 ? compact : `${compact.slice(0, 162).replace(/\s+\S*$/, "")}...`;
 }
 
+function restaurantCuisineLabel(cuisine: string) {
+  return GERMAN_CUISINE_LABELS[cuisine] || `${cuisine} Restaurant`;
+}
+
+function sentenceCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function toHumanList(values: string[]) {
   if (values.length <= 1) return values[0] || "";
-  if (values.length === 2) return `${values[0]} and ${values[1]}`;
-  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+  if (values.length === 2) return `${values[0]} und ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")} und ${values[values.length - 1]}`;
 }
 
 function unique<T>(values: T[]) {

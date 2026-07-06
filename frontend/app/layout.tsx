@@ -11,15 +11,15 @@ const display = Cormorant_Garamond({
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "RestaurantAI | Premium restaurant operating system",
-  description: "Premium restaurant websites, ordering, reservations, and an AI Maître d' for independent restaurants.",
+  title: "RestaurantAI | Premium-Websites für Restaurants",
+  description: "Premium-Websites, Online-Speisekarten, Bestellungen, Reservierungen und KI-gestützte Gastkommunikation für Restaurants.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="de">
       <body className={`${display.variable} ${sans.variable}`}>{children}</body>
     </html>
   );
