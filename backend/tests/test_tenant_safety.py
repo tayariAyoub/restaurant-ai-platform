@@ -35,6 +35,7 @@ from app.schemas import (
     ChatRequest,
     ChatResponse,
     CategoryUpdate,
+    ContactCreate,
     DeliveryAddressCreate,
     DeliveryAssignmentCreate,
     DeliveryStatusUpdate,
@@ -167,6 +168,53 @@ def users(db: Session) -> tuple[User, User, User]:
 
 def restaurants(db: Session) -> tuple[Restaurant, Restaurant]:
     return db.query(Restaurant).filter_by(slug="tenant-one").one(), db.query(Restaurant).filter_by(slug="tenant-two").one()
+
+
+def menu_item_for(db: Session, restaurant: Restaurant) -> MenuItem:
+    item = (
+        db.query(MenuItem)
+        .join(MenuCategory)
+        .filter(MenuCategory.restaurant_id == restaurant.id)
+        .first()
+    )
+    assert item is not None
+    return item
+
+
+def order_payload(
+    item: MenuItem,
+    *,
+    order_type: str = "PICKUP",
+    delivery_address: DeliveryAddressCreate | None = None,
+) -> OrderCreate:
+    return OrderCreate(
+        order_type=order_type,
+        customer_name=f"{order_type} Customer",
+        customer_phone="333",
+        customer_email=f"{order_type.lower().replace('_', '-')}@example.com",
+        items=[OrderItemCreate(menu_item_id=item.id, quantity=1)],
+        delivery_address=delivery_address,
+    )
+
+
+def delivery_address_payload() -> DeliveryAddressCreate:
+    return DeliveryAddressCreate(
+        street="Three Street",
+        postal_code="10115",
+        city="Berlin",
+        instructions="Back door",
+    )
+
+
+def reservation_payload() -> ContactCreate:
+    return ContactCreate(
+        name="Reservation Guest",
+        email="guest@example.com",
+        phone="333",
+        party_size=2,
+        requested_at="Friday 19:00",
+        message="Window table",
+    )
 
 
 def assigned_delivery_order(
@@ -884,17 +932,101 @@ def test_public_restaurant_sitemap_source_returns_only_published_restaurants(db:
     assert {restaurant.slug for restaurant in summaries} == {"tenant-one", "tenant-two"}
 
 
+def test_public_order_rejected_when_ordering_disabled(db: Session) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    restaurant_one.ordering_enabled = False
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        public.create_order("tenant-one", order_payload(item), db=db)
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Online ordering is disabled for this restaurant"
+    assert db.query(Order).filter_by(customer_name="PICKUP Customer").count() == 0
+
+
+@pytest.mark.parametrize(
+    ("flag_name", "order_type", "expected_detail"),
+    [
+        ("pickup_enabled", "PICKUP", "Pickup ordering is disabled for this restaurant"),
+        ("dine_in_enabled", "EAT_IN", "Dine-in ordering is disabled for this restaurant"),
+        ("dine_in_enabled", "DINE_IN", "Dine-in ordering is disabled for this restaurant"),
+        ("delivery_enabled", "DELIVERY", "Delivery ordering is disabled for this restaurant"),
+    ],
+)
+def test_public_order_rejected_when_selected_service_mode_is_disabled(
+    db: Session,
+    flag_name: str,
+    order_type: str,
+    expected_detail: str,
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    setattr(restaurant_one, flag_name, False)
+    db.commit()
+
+    payload = order_payload(
+        item,
+        order_type=order_type,
+        delivery_address=delivery_address_payload() if order_type == "DELIVERY" else None,
+    )
+    with pytest.raises(HTTPException) as error:
+        public.create_order("tenant-one", payload, db=db)
+
+    assert error.value.status_code == 400
+    assert error.value.detail == expected_detail
+
+
+def test_public_delivery_order_still_requires_address_when_delivery_is_enabled(db: Session) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+    restaurant_one.delivery_enabled = True
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        public.create_order("tenant-one", order_payload(item, order_type="DELIVERY"), db=db)
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Delivery address is required"
+
+
+@pytest.mark.parametrize(
+    ("requested_order_type", "stored_order_type"),
+    [
+        ("PICKUP", "PICKUP"),
+        ("EAT_IN", "EAT_IN"),
+        ("DINE_IN", "EAT_IN"),
+    ],
+)
+def test_public_pickup_and_dine_in_orders_still_work_when_enabled(
+    db: Session,
+    requested_order_type: str,
+    stored_order_type: str,
+) -> None:
+    restaurant_one, _ = restaurants(db)
+    item = menu_item_for(db, restaurant_one)
+
+    order = public.create_order(
+        "tenant-one",
+        order_payload(item, order_type=requested_order_type),
+        db=db,
+    )
+
+    assert order.restaurant_id == restaurant_one.id
+    assert order.order_type == stored_order_type
+    assert order.status == "NEW"
+    assert order.subtotal == Decimal("12.00")
+    assert order.delivery_fee == Decimal("0.00")
+    assert order.delivery_address is None
+    assert [line.item_name for line in order.items] == [item.name]
+
+
 def test_public_order_creation_stores_order_and_returns_response(
     db: Session, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     restaurant_one, _ = restaurants(db)
-    item = (
-        db.query(MenuItem)
-        .join(MenuCategory)
-        .filter(MenuCategory.restaurant_id == restaurant_one.id)
-        .first()
-    )
-    assert item is not None
+    item = menu_item_for(db, restaurant_one)
     monkeypatch.setattr(public, "geocode", lambda _: None)
 
     order = public.create_order(
@@ -932,6 +1064,44 @@ def test_public_order_creation_stores_order_and_returns_response(
     assert order.delivery_address.street == "Three Street"
     assert [status.status for status in order.status_history] == ["NEW"]
     assert db.query(DeliveryAddress).filter_by(order_id=order.id).one().city == "Berlin"
+
+
+def test_public_reservation_rejected_when_reservations_disabled(db: Session) -> None:
+    restaurant_one, _ = restaurants(db)
+    restaurant_one.reservations_enabled = False
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        public.create_reservation("tenant-one", reservation_payload(), db=db)
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Reservations are disabled for this restaurant"
+    assert db.query(ContactRequest).filter_by(name="Reservation Guest").count() == 0
+
+
+def test_legacy_contact_rejected_when_reservations_disabled(db: Session) -> None:
+    restaurant_one, _ = restaurants(db)
+    restaurant_one.reservations_enabled = False
+    db.commit()
+
+    with pytest.raises(HTTPException) as error:
+        public.legacy_contact(reservation_payload(), db=db)
+
+    assert error.value.status_code == 400
+    assert error.value.detail == "Reservations are disabled for this restaurant"
+    assert db.query(ContactRequest).filter_by(name="Reservation Guest").count() == 0
+
+
+def test_public_reservation_still_works_when_enabled(db: Session) -> None:
+    restaurant_one, _ = restaurants(db)
+
+    request = public.create_reservation("tenant-one", reservation_payload(), db=db)
+
+    assert request.restaurant_id == restaurant_one.id
+    assert request.name == "Reservation Guest"
+    assert request.email == "guest@example.com"
+    assert request.party_size == 2
+    assert request.status == "new"
 
 
 def test_ai_context_retrieval_is_restaurant_scoped(db: Session, monkeypatch: pytest.MonkeyPatch) -> None:

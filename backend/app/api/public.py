@@ -39,6 +39,9 @@ from app.services.maps import distance_km, geocode
 
 router = APIRouter(tags=["public"])
 
+PUBLIC_ORDER_TYPES = {"PICKUP", "EAT_IN", "DINE_IN", "DELIVERY"}
+DINE_IN_ORDER_TYPES = {"EAT_IN", "DINE_IN"}
+
 
 def public_restaurant_query():
     return select(Restaurant).options(
@@ -61,6 +64,42 @@ def get_public_restaurant(db: Session, slug: str | None = None) -> Restaurant:
     restaurant.categories.sort(key=lambda category: category.sort_order)
     restaurant.images.sort(key=lambda image: image.sort_order)
     return restaurant
+
+
+def ensure_reservations_enabled(restaurant: Restaurant) -> None:
+    if not restaurant.reservations_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Reservations are disabled for this restaurant",
+        )
+
+
+def normalize_public_order_type(order_type: str) -> str:
+    normalized = order_type.strip().upper()
+    return "EAT_IN" if normalized == "DINE_IN" else normalized
+
+
+def ensure_ordering_enabled(restaurant: Restaurant, order_type: str) -> None:
+    if not restaurant.ordering_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Online ordering is disabled for this restaurant",
+        )
+    if order_type == "PICKUP" and not restaurant.pickup_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Pickup ordering is disabled for this restaurant",
+        )
+    if order_type in DINE_IN_ORDER_TYPES and not restaurant.dine_in_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Dine-in ordering is disabled for this restaurant",
+        )
+    if order_type == "DELIVERY" and not restaurant.delivery_enabled:
+        raise HTTPException(
+            status_code=400,
+            detail="Delivery ordering is disabled for this restaurant",
+        )
 
 
 @router.get(
@@ -108,6 +147,7 @@ def create_reservation(
     slug: str, payload: ContactCreate, db: Session = Depends(get_db)
 ) -> ContactRequest:
     restaurant = get_public_restaurant(db, slug)
+    ensure_reservations_enabled(restaurant)
     request = ContactRequest(restaurant_id=restaurant.id, **payload.model_dump())
     db.add(request)
     db.commit()
@@ -123,6 +163,7 @@ def create_reservation(
 )
 def legacy_contact(payload: ContactCreate, db: Session = Depends(get_db)) -> ContactRequest:
     restaurant = get_public_restaurant(db)
+    ensure_reservations_enabled(restaurant)
     request = ContactRequest(restaurant_id=restaurant.id, **payload.model_dump())
     db.add(request)
     db.commit()
@@ -190,9 +231,11 @@ def create_order(
     slug: str, payload: OrderCreate, db: Session = Depends(get_db)
 ) -> Order:
     restaurant = get_public_restaurant(db, slug)
-    order_type = payload.order_type.upper()
-    if order_type not in {"PICKUP", "EAT_IN", "DELIVERY"}:
+    requested_order_type = payload.order_type.strip().upper()
+    if requested_order_type not in PUBLIC_ORDER_TYPES:
         raise HTTPException(status_code=400, detail="Invalid order type")
+    order_type = normalize_public_order_type(requested_order_type)
+    ensure_ordering_enabled(restaurant, order_type)
     if order_type == "DELIVERY" and not payload.delivery_address:
         raise HTTPException(status_code=400, detail="Delivery address is required")
 
