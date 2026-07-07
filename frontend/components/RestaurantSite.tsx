@@ -10,6 +10,7 @@ import MenuShowcase from "@/components/public/restaurant/MenuShowcase";
 import OrderCartDrawer from "@/components/public/restaurant/OrderCartDrawer";
 import PremiumHomepage from "@/components/public/restaurant/PremiumHomepage";
 import PremiumNavigation, { getRestaurantNavigationLinks } from "@/components/public/restaurant/PremiumNavigation";
+import WiseAyoTheme, { isWiseAyoTheme } from "@/components/public/restaurant/WiseAyoTheme";
 import request from "@/lib/api";
 import { clearCart, loadCart, saveCart, type StoredCart } from "@/lib/cartStorage";
 import { buildRestaurantJsonLd } from "@/lib/restaurantSeo";
@@ -29,6 +30,14 @@ const LEGAL_FOOTER_LINKS = [
 ];
 
 export default function RestaurantSite({ restaurant, page = "home" }: { restaurant: Restaurant; page?: RestaurantSitePage }) {
+  if (isWiseAyoTheme(restaurant)) {
+    return <WiseAyoTheme restaurant={restaurant} />;
+  }
+
+  return <StandardRestaurantSite restaurant={restaurant} page={page} />;
+}
+
+function StandardRestaurantSite({ restaurant, page = "home" }: { restaurant: Restaurant; page?: RestaurantSitePage }) {
   const [mobile, setMobile] = useState(false);
   const [reservationStatus, setReservationStatus] = useState("");
   const [cart, setCart] = useState<Record<number, CartLine>>({});

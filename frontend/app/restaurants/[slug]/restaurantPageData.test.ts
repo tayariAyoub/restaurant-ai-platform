@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { localBellaNapoliRestaurant } from "@/lib/mockRestaurants";
+import { localBellaNapoliRestaurant, localWiseAyoRestaurant } from "@/lib/mockRestaurants";
 import { fetchPublicRestaurant } from "./restaurantPageData";
 
 const fetchMock = vi.fn();
@@ -36,6 +36,17 @@ describe("public restaurant data loading", () => {
     const restaurant = await fetchPublicRestaurant("bella-napoli");
 
     expect(restaurant?.name).toBe("Bella Napoli");
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("backend responded with 500"));
+  });
+
+  it("falls back to Wise & Ayo in development when the backend returns 500", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
+
+    const restaurant = await fetchPublicRestaurant("wise-and-ayo");
+
+    expect(restaurant?.name).toBe("Wise & Ayo");
+    expect(restaurant?.slug).toBe("wise-and-ayo");
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("backend responded with 500"));
   });
 
@@ -83,6 +94,16 @@ describe("public restaurant data loading", () => {
 
     expect(restaurant?.name).toBe("Bella Napoli");
     expect(restaurant?.slug).toBe("bella-napoli");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("no backend URL configured"));
+  });
+
+  it("uses Wise & Ayo demo fallback in production when no backend URL is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    const restaurant = await fetchPublicRestaurant("wise-and-ayo");
+
+    expect(restaurant).toEqual(localWiseAyoRestaurant);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("no backend URL configured"));
   });

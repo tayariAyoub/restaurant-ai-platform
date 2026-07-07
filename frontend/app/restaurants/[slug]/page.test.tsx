@@ -57,6 +57,22 @@ describe("restaurant public page runtime fallback", () => {
     expect(getRestaurantBySlugMock).not.toHaveBeenCalled();
   });
 
+  it("renders mock Wise & Ayo in development when the backend returns 500", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    fetchMock.mockResolvedValueOnce(mockFetchResponse(500));
+
+    const page = await RestaurantWebsite({
+      params: Promise.resolve({ slug: "wise-and-ayo" }),
+    });
+
+    renderWithUser(page);
+
+    expect(screen.getByRole("heading", { name: /Where Fire Meets Flavor/i })).toBeVisible();
+    expect(screen.getByLabelText("Wise & Ayo home")).toBeVisible();
+    expect(screen.queryByText("The kitchen is not connected yet.")).not.toBeInTheDocument();
+    expect(getRestaurantBySlugMock).not.toHaveBeenCalled();
+  });
+
   it("does not use mock Bella Napoli on 404", async () => {
     vi.stubEnv("NODE_ENV", "development");
     fetchMock.mockResolvedValueOnce(mockFetchResponse(404));
@@ -82,6 +98,20 @@ describe("restaurant public page runtime fallback", () => {
     renderWithUser(page);
 
     expect(screen.getAllByRole("heading", { name: "Bella Napoli" }).length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getRestaurantBySlugMock).not.toHaveBeenCalled();
+  });
+
+  it("renders mock Wise & Ayo in production when no backend URL is configured", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    const page = await RestaurantWebsite({
+      params: Promise.resolve({ slug: "wise-and-ayo" }),
+    });
+
+    renderWithUser(page);
+
+    expect(screen.getByRole("heading", { name: /Where Fire Meets Flavor/i })).toBeVisible();
     expect(fetchMock).not.toHaveBeenCalled();
     expect(getRestaurantBySlugMock).not.toHaveBeenCalled();
   });
